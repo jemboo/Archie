@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30128.36
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Archie", "Archie\Archie.fsproj", "{AE5164D5-428C-407E-B334-7BED974DA627}"
-EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Archie.core", "Archie.core\Archie.core.fsproj", "{23285EF0-699D-4C37-A6ED-82D9C85E4388}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Archie.core.test", "Archie.core.test\Archie.core.test.fsproj", "{EEF39B4D-102A-4E7A-8F83-7FFFBA4857A3}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Archie.console", "Archie.console\Archie.console.fsproj", "{078931BA-9487-4028-9AF2-44173AD0B7E3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{AE5164D5-428C-407E-B334-7BED974DA627}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AE5164D5-428C-407E-B334-7BED974DA627}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AE5164D5-428C-407E-B334-7BED974DA627}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AE5164D5-428C-407E-B334-7BED974DA627}.Release|Any CPU.Build.0 = Release|Any CPU
 		{23285EF0-699D-4C37-A6ED-82D9C85E4388}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{23285EF0-699D-4C37-A6ED-82D9C85E4388}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{23285EF0-699D-4C37-A6ED-82D9C85E4388}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -27,6 +23,10 @@ Global
 		{EEF39B4D-102A-4E7A-8F83-7FFFBA4857A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EEF39B4D-102A-4E7A-8F83-7FFFBA4857A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EEF39B4D-102A-4E7A-8F83-7FFFBA4857A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{078931BA-9487-4028-9AF2-44173AD0B7E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{078931BA-9487-4028-9AF2-44173AD0B7E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{078931BA-9487-4028-9AF2-44173AD0B7E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{078931BA-9487-4028-9AF2-44173AD0B7E3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
