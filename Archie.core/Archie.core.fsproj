@@ -5,7 +5,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Result.fs" />
+    <Compile Include="ConstrainedType.fs" />
+    <Compile Include="CommonTypes.fs" />
+    <Compile Include="Utils.fs" />
+    <Compile Include="Combinatorics.fs" />
+    <Compile Include="Sorting.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>
+
+  <ItemGroup />
 
 </Project>
