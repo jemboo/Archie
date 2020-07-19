@@ -2,10 +2,10 @@
 open System
 
 type String50 = private String50 of string
-type KeyOrder = private KeyOrder of int
+type Degree = private Degree of int
 type RandomSeed = private RandomSeed of int
 type SorterCount = private SorterCount of int
-type SorterLength = private SorterLength of int
+type SwitchCount = private SwitchCount of int
 type SortableCount = private SortableCount of int
 type EntityId = private EntityId of Guid
 type JsonString = private JsonString of string
@@ -13,6 +13,7 @@ type RngType = | Lcg | Net
 type IRando =
     abstract member Count: int
     abstract member Seed : RandomSeed 
+    //abstract member NextInt : int32 
     abstract member NextUInt : uint32 
     abstract member NextULong : uint64
     abstract member NextFloat : float
@@ -26,20 +27,20 @@ module String50 =
     let createOption fieldName str = 
         ConstrainedType.createStringOption fieldName String50 50 str
 
-module KeyOrder  =
-    let value (KeyOrder v) = v
+module Degree  =
+    let value (Degree v) = v
     let create fieldName v = 
-        ConstrainedType.createInt fieldName KeyOrder 1 1000 v
+        ConstrainedType.createInt fieldName Degree 1 1000 v
 
 module RandomSeed =
     let value (RandomSeed seed) = seed
     let create fieldName seed =
         ConstrainedType.createInt fieldName RandomSeed 1 2147483647 seed
 
-module SorterLength  =
-    let value (SorterLength v) = v
+module SwitchCount  =
+    let value (SwitchCount v) = v
     let create fieldName v = 
-        ConstrainedType.createInt fieldName SorterLength 1 1000 v
+        ConstrainedType.createInt fieldName SwitchCount 1 1000 v
 
 module SorterCount  =
     let value (SorterCount v) = v
@@ -62,5 +63,13 @@ module JsonString =
     let createOption fieldName str = 
         ConstrainedType.createStringOption fieldName JsonString 50 str
 
-
-
+module RngType =
+    let toDto (rngt: RngType) =
+        match rngt with
+        | Lcg -> "Lcg"
+        | Net -> "Net"
+    let create str =
+        match str with
+        | "Lcg" -> RngType.Lcg |> Ok
+        | "Net" -> RngType.Net |> Ok
+        | _ -> Error [|(sprintf "no match for RngType: %s" str)|]

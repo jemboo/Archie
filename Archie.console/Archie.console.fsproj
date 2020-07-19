@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Benchmarks.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -14,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Archie.core.test\Archie.core.test.fsproj" />
     <ProjectReference Include="..\Archie.core\Archie.core.fsproj" />
   </ItemGroup>
 
