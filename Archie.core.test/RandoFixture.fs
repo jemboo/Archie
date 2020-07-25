@@ -24,12 +24,12 @@ type RandoFixture () =
 
     [<TestMethod>]
     member this.TestPermutations () =        
-        let degree = 6 |> Degree.create "" |> Result.toOption
-        let seed = RandomSeed.create "" 424 |> Result.toOption
-        let randoLcg = new RandomLcg(seed.Value)
+        let degree = 6 |> Degree.create "" |> Result.ExtractOrThrow
+        let seed = RandomSeed.create "" 424 |> Result.ExtractOrThrow
+        let randoLcg = new RandomLcg(seed)
         let sortableCount = 4
 
-        let perms = Permutation.CreateRandom randoLcg (Degree.value degree.Value)
+        let perms = Permutation.CreateRandom degree randoLcg
                     |> Seq.map(fun i -> Permutation.value i )
                     |> Seq.take sortableCount
 

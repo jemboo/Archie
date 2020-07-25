@@ -1,197 +1,88 @@
 ﻿namespace Archie.Base
 open Microsoft.FSharp.Collections
 open Sorting
+open Combinatorics_Types
 
- module Sorter =
+ module SorterX =
+    let SwitchSeqOnSortable (sorterDef:SorterDef) (switchIndexes:seq<int>)
+                            (sortable:int[]) =
+         switchIndexes
+             |> Seq.iter(fun i ->
+                 let switch = sorterDef.switches.[i]
+                 let lv = sortable.[switch.low]
+                 let hv = sortable.[switch.hi]
+                 if(lv > hv) then
+                     sortable.[switch.hi] <- lv
+                     sortable.[switch.low] <- hv)
+         sortable
+  
+    let SorterOnSortable (sorterDef:SorterDef) (sortable:int[]) =
+             SwitchSeqOnSortable sorterDef { 0 .. (sorterDef.switches.Length - 1) }             
+                                 sortable
 
-    let SwitchSeqOnSortable
-                    (sorterDef:SorterDef)
-                    (switchIndexes:seq<int>)
-                    (sortable:int[]) =
+    // returns early if a sort fails on any of the sortables
+    let SorterFullTestPassFail (sorterDef:SorterDef) =
+          (IntBits.AllBinaryTestCases (Degree.value(sorterDef.degree)))
+               |> Seq.map(fun s-> SorterOnSortable sorterDef s)
+               |> Seq.forall(fun s -> Combinatorics.IsSorted s)
+
+
+ module SorterC =
+    let SwitchSeqOnSortable (sorterDef:SorterDef) (switchIndexes:seq<int>) (sortable:SortableIntArray) =
+        let sir = SortableIntArray.copy sortable
+        let intsOut = SortableIntArray.value sir
         switchIndexes
             |> Seq.iter(fun i ->
                 let switch = sorterDef.switches.[i]
-                let lv = sortable.[switch.low]
-                let hv = sortable.[switch.hi]
+                let lv = intsOut.[switch.low]
+                let hv = intsOut.[switch.hi]
                 if(lv > hv) then
-                    sortable.[switch.hi] <- lv
-                    sortable.[switch.low] <- hv)
-        sortable
-   
+                    intsOut.[switch.hi] <- lv
+                    intsOut.[switch.low] <- hv)
+        sortable, sir
 
-    let SorterOnSortable
-                (sorterDef:SorterDef)
-                (sortable:int[]) =
-            SwitchSeqOnSortable
-                sorterDef
-                { 0 .. (sorterDef.switches.Length - 1) }             
-                sortable
+    let CollectFails (sorterDef:SorterDef) (sorterIndexes:int[] option) (sortableSeq: seq<SortableIntArray> option) =
+           let indexes = match sorterIndexes with
+                            | Some indexes -> indexes
+                            | None ->  Array.init(sorterDef.switches.Length) (fun i -> i)
 
-   
-    // returns early if a sort fails on any of the sortables
-    let EvalSortableSeq
-                   (sorterDef:SorterDef)
-                   (sortableSeq: seq<int[]>) =
-   
-           sortableSeq 
-                |> Seq.map(SorterOnSortable sorterDef)
-                |> Seq.forall(Combinatorics.IsSorted)
+           let sortables = match sortableSeq with
+                             | Some sortables -> sortables
+                             | None ->  (Sorting.SortableIntArray.AllBinary sorterDef.degree)
 
-    let EvalSorter (sorterDef:SorterDef) =
-        EvalSortableSeq
-            sorterDef
-            (Sorting.SortableIntArray.SortableSeqAllBinary sorterDef.degree)
-
-
-
-module SorterC =
-
-   let SwitchSeqOnSortable
-                   (sorterDef:SorterDef)
-                   (switchIndexes:seq<int>)
-                   (sortable:int[]) =
-
-       let sc = sortable |> Array.copy
-       switchIndexes
-           |> Seq.iter(fun i ->
-               let switch = sorterDef.switches.[i]
-               let lv = sc.[switch.low]
-               let hv = sc.[switch.hi]
-               if(lv > hv) then
-                   sc.[switch.hi] <- lv
-                   sc.[switch.low] <- hv)
-       sc
-  
-
-   let SorterOnSortable
-               (sorterDef:SorterDef)
-               (sortable:int[]) =
-           SwitchSeqOnSortable
-               sorterDef
-               { 0 .. (sorterDef.switches.Length - 1) }             
-               sortable
-
-  
-   // returns early if a sort fails on any of the sortables
-   let EvalSortableSeq
-                  (sorterDef:SorterDef)
-                  (sortableSeq: seq<int[]>) =
-  
-          sortableSeq 
-               |> Seq.map(SorterOnSortable sorterDef)
-               |> Seq.forall(Combinatorics.IsSorted)
-
-   let EvalSorter (sorterDef:SorterDef) =
-       EvalSortableSeq
-           sorterDef
-           (Sorting.SortableIntArray.SortableSeqAllBinary sorterDef.degree)
-
-
-
-
+           sortables |> Seq.map(SwitchSeqOnSortable sorterDef indexes)
+                       |> Seq.filter(fun s -> not (Combinatorics.IsSorted (SortableIntArray.value (snd s))))
 
 module SorterT =
-    let SwitchSeqOnSortableT
-                    (sorterDef:SorterDef) 
-                    (switchTracker:SwitchTracker)
-                    (switchIndexes:seq<int>)
-                    (sortable:int[]) =
-        let sc = sortable |> Array.copy
+    let SwitchSeqOnSortable (sorterDef:SorterDef) (switchIndexes:seq<int>)
+                            (sortReaction:int->unit) (sortable:SortableIntArray) =
+        let sir = SortableIntArray.copy sortable
+        let intsOut = SortableIntArray.value sortable
         switchIndexes
             |> Seq.iter(fun i ->
                 let switch = sorterDef.switches.[i]
-                let lv = sc.[switch.low]
-                let hv = sc.[switch.hi]
+                let lv = intsOut.[switch.low]
+                let hv = intsOut.[switch.hi]
                 if(lv > hv) then
-                    sc.[switch.hi] <- lv
-                    sc.[switch.low] <- hv
-                    switchTracker.weights.[i] <-
-                        switchTracker.weights.[i] + 1)
-        sc
+                    intsOut.[switch.hi] <- lv
+                    intsOut.[switch.low] <- hv
+                    sortReaction i)
+        sortable, sir
 
+    let CollectFailsAndTracker (sorterDef:SorterDef) (sorterIndexes:int[] option) 
+                               (sortableSeq:seq<SortableIntArray> option) =
+           let indexes = match sorterIndexes with
+                            | Some indexes -> indexes
+                            | None ->  Array.init(sorterDef.switches.Length) (fun i -> i)
 
-    let CondenseSortableSeqWithSwitchSeq
-                 (sorterDef:SorterDef) 
-                 (switchTracker:SwitchTracker) 
-                 (switchIndexes:seq<int>)
-                 (sortableSeq: seq<int[]>) = 
+           let sortables = match sortableSeq with
+                              | Some sortables -> sortables
+                              | None ->  (Sorting.SortableIntArray.AllBinary sorterDef.degree)
 
-         let arrayOfCondensedSortables 
-                 = sortableSeq   |> Seq.map(SwitchSeqOnSortableT sorterDef 
-                                             switchTracker switchIndexes)
-                                 |> Seq.countBy id
-                                 |> Seq.map fst
-                                 |> Seq.toArray
-
-         (switchTracker, arrayOfCondensedSortables)
-
-
-    let CondenseSortableSeqWithSorter 
-                   (sorterDef:SorterDef) 
-                   (switchTracker:SwitchTracker) 
-                   (sortableSeq: seq<int[]>) = 
-  
-           CondenseSortableSeqWithSwitchSeq
-                       sorterDef
-                       switchTracker
-                       {0 .. (sorterDef.switches.Length - 1)}
-                       sortableSeq
-
-
-    let CondenseSortables 
-        (sorterDef:SorterDef) 
-        (sortableSeq:seq<int[]>) =
-   
-        let switchTracker = SwitchTracker.Make sorterDef.switchCount
-        let (switchTracker, sortedItemsList) =  
-            CondenseSortableSeqWithSorter
-                    sorterDef
-                    switchTracker
-                    sortableSeq
-        (
-            switchTracker,
-            sortedItemsList // |> Seq.filter(fun stb -> not (Combinatorics.IsSorted stb))
-        )
-   
-
-    let CondenseAllZeroOneSortables (sorterDef:SorterDef) =
-        CondenseSortables 
-                    sorterDef 
-                    (SortableIntArray.SortableSeqAllBinary sorterDef.degree)
-
-
-
-    let SorterOnSortableT
-                (sorterDef:SorterDef) 
-                (switchTracker:SwitchTracker) 
-                (sortable:int[]) =
-            SwitchSeqOnSortableT
-                sorterDef 
-                switchTracker
-                { 0 .. (sorterDef.switches.Length - 1) }             
-                sortable
-   
-   
-   
-    // returns early if a sort fails on any of the sortables
-    let EvalSortableSeqT 
-                (sorterDef:SorterDef)
-                (switchTracker:SwitchTracker)
-                (sortableSeq: seq<int[]>) =
-   
-        let allGood = sortableSeq 
-                        |> Seq.map(SorterOnSortableT sorterDef switchTracker)
-                        |> Seq.forall(Combinatorics.IsSorted)
-   
-        if allGood then
-            (allGood, Some (SwitchUsage.CollectTheUsedSwitches sorterDef switchTracker))
-        else (allGood, None)
-   
-   
-    let EvalSorterT (sorterDef:SorterDef) =
-       let switchTracker = SwitchTracker.Make sorterDef.switchCount
-       EvalSortableSeqT
-           sorterDef
-           switchTracker
-           (Sorting.SortableIntArray.SortableSeqAllBinary sorterDef.degree)
-
+           let switchTracker = SwitchTracker.create sorterDef.switchCount
+           let weights = (SwitchTracker.weights switchTracker)
+           let sortReaction = fun i -> weights.[i] <- weights.[i] + 1
+           let sortFailsPairs  = sortables |> Seq.map(SwitchSeqOnSortable sorterDef indexes sortReaction)
+                                           |> Seq.filter(fun s -> not (Combinatorics.IsSorted (SortableIntArray.value (snd s))))
+                                           |> Seq.toArray
+           sortFailsPairs, switchTracker

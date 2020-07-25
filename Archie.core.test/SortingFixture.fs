@@ -10,13 +10,13 @@ type SortingFixture () =
 
     [<TestMethod>]
     member this.MakeRandomSwitches() =
-        let degree = Degree.create "" 10 |> Result.toOption
-        let shortLength = SwitchCount.create "" 100 |> Result.toOption
-        let longLength = SwitchCount.create "" 500 |> Result.toOption
-        let seed = RandomSeed.create "" 424 |> Result.toOption
-        let randoLcg = new RandomNet(seed.Value)
+        let degree = Degree.create "" 10 |> Result.ExtractOrThrow
+        let shortLength = SwitchCount.create "" 100 |> Result.ExtractOrThrow
+        let longLength = SwitchCount.create "" 500 |> Result.ExtractOrThrow
+        let seed = RandomSeed.create "" 424 |> Result.ExtractOrThrow
+        let randoLcg = new RandomNet(seed)
 
-        let swGen = Switch.RandomSwitchesOfDegree degree.Value randoLcg
+        let swGen = Switch.RandomSwitchesOfDegree degree randoLcg
 
         let genArray = swGen |> Seq.take 1000 |> Seq.toArray
         let lowMin = genArray |> Seq.map (fun s->s.hi) |> Seq.min
@@ -26,23 +26,22 @@ type SortingFixture () =
 
         Assert.AreEqual(0, lowMin)
         Assert.AreEqual(0, hiMin)
-        Assert.AreEqual((Degree.value degree.Value) - 1, lowMax)
-        Assert.AreEqual((Degree.value degree.Value) - 1, hiMax)
-        Assert.AreEqual(100, (SwitchCount.value shortLength.Value))
+        Assert.AreEqual((Degree.value degree) - 1, lowMax)
+        Assert.AreEqual((Degree.value degree) - 1, hiMax)
+        Assert.AreEqual(100, (SwitchCount.value shortLength))
 
         Assert.IsTrue(true);
 
 
     [<TestMethod>]
     member this.RandSwitchUniformity() =
-        let degree = Degree.create "" 10 |> Result.toOption
-        let shortLength = SwitchCount.create "" 100 |> Result.toOption
-        let longLength = SwitchCount.create "" 500 |> Result.toOption
-        let seed = RandomSeed.create "" 424 |> Result.toOption
-        let randoLcg = new RandomNet(seed.Value)
+        let degree = Degree.create "" 10 |> Result.ExtractOrThrow
+        let shortLength = SwitchCount.create "" 100 |> Result.ExtractOrThrow
+        let longLength = SwitchCount.create "" 500 |> Result.ExtractOrThrow
+        let seed = RandomSeed.create "" 424 |> Result.ExtractOrThrow
+        let randoLcg = new RandomNet(seed)
 
-        let swGen = Switch.RandomSwitchesOfDegree degree.Value randoLcg
-
+        let swGen = Switch.RandomSwitchesOfDegree degree randoLcg
         let genArray = swGen |> Seq.take 55000 |> Seq.toArray
         let histo = Utils.histogram (fun i->i) genArray
     
@@ -50,14 +49,22 @@ type SortingFixture () =
 
 
     [<TestMethod>]
-    member this.MakeRandomSorter () =
-        let degree = Degree.create "" 16 |> Result.toOption
-        let shortLength = SwitchCount.create "" 100 |> Result.toOption
-        let longLength = SwitchCount.create "" 500 |> Result.toOption
-        let seed = RandomSeed.create "" 424 |> Result.toOption
-        let randoLcg = new RandomNet(seed.Value)
+    member this.MakeRandomSorter() =
+        let degree = Degree.create "" 16 |> Result.ExtractOrThrow
+        let switchCount = SwitchCount.create "" 100 |> Result.ExtractOrThrow
+        let seed = RandomSeed.create "" 424 |> Result.ExtractOrThrow
 
-        let sorter = SorterDef.CreateRandom degree.Value shortLength.Value randoLcg
+        let randoLcg = new RandomNet(seed)
+        let sorter = SorterDef.CreateRandom degree switchCount randoLcg
+        Assert.AreEqual(sorter.switches.Length, (SwitchCount.value switchCount))
 
-        Assert.AreEqual(sorter.switches.Length, (SwitchCount.value shortLength.Value))
+        let randoLcg2 = new RandomNet(seed)
+        let sorter2 = SorterDef.CreateRandom degree switchCount randoLcg2
+        Assert.AreEqual(sorter, sorter2)
+
+        let seed2 = RandomSeed.create "" 425 |> Result.ExtractOrThrow
+        let randoLcg3 = new RandomNet(seed2)
+        let sorter3 = SorterDef.CreateRandom degree switchCount randoLcg3
+        Assert.AreNotEqual(sorter, sorter3)
+
         Assert.IsTrue(true);

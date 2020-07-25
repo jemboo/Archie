@@ -22,18 +22,23 @@ module SortersFromData =
 
 
     let ParseToSwitches (stagesStr:string) (degree:Degree)=
-         (ParseToStages degree stagesStr)
-         |> Seq.map(fun s -> s.switches |> List.toSeq)
-         |> Seq.concat
+         result {
+            let! stages = Result.ErrorOnException (ParseToStages degree) stagesStr
+            return stages |> Seq.map(fun s -> s.switches |> List.toSeq)
+                          |> Seq.concat
+         }
 
 
     let ParseToSorter (sorterString:string) (degree:Degree) =
-        let switches = ParseToSwitches sorterString degree
-                            |> Seq.toArray
-        let switchCount = SwitchCount.create "" switches.Length |> Result.toOption
-        {SorterDef.degree=degree; 
-         switchCount=switchCount.Value; 
-         switches= ParseToSwitches sorterString degree |> Seq.toArray}
+        result {
+           let! switchSeq = ParseToSwitches sorterString degree
+           let switches = switchSeq |> Seq.toArray
+           let! switchCount = SwitchCount.create "" switches.Length 
+           return { SorterDef.degree = degree; 
+                    switchCount = switchCount;
+                    switches = switches }
+        }
+
 
     type RefSorter =
         | Degree8 | Degree8Prefix3 | Degree10

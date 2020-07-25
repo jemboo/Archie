@@ -12,8 +12,7 @@ type JsonString = private JsonString of string
 type RngType = | Lcg | Net
 type IRando =
     abstract member Count: int
-    abstract member Seed : RandomSeed 
-    //abstract member NextInt : int32 
+    abstract member Seed : RandomSeed
     abstract member NextUInt : uint32 
     abstract member NextULong : uint64
     abstract member NextFloat : float

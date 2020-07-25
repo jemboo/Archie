@@ -37,37 +37,37 @@ module Sorting =
 
 
 
-    type SortableIntArray = {values:int[]}
+    type SortableIntArray = {degree:Degree; values:int[]}
     module SortableIntArray =
-
-        let Identity (order: int) = { SortableIntArray.values = [|0 .. order-1|] }
+        let Identity (degree:Degree) = { degree=degree; values=[|0 .. (Degree.value degree)-1|] }
         let apply f (p:SortableIntArray) = f p.values
         let value p = apply id p
 
-        let SwitchFuncForSwitch (sw:Switch) =
-            fun (x:int[]) -> 
-                if (x.[sw.low] > x.[sw.hi]) then
-                    let lv = x.[sw.low]
-                    x.[sw.low] <- x.[sw.hi]
-                    x.[sw.hi] <- lv
-                    (x, true)
-                else (x, false)
+        let create (degree:Degree) (vals:int[]) =
+            if vals.Length <> (Degree.value degree) then
+                Error (sprintf "array length %d <> degree %d:" 
+                        vals.Length (Degree.value degree))
+            else
+                {SortableIntArray.degree=degree; values=vals } |> Ok
 
-        let CreateRandom (order:int) (rnd : IRando) =
-            Permutation.CreateRandom rnd order
-            |> Seq.map(fun i -> { SortableIntArray.values = Permutation.value i })
+        let copy (sIntArray:SortableIntArray) =
+            {degree=sIntArray.degree; values= apply Array.copy sIntArray}
 
-        let SortableSeq (sortables:int[][]) =
-            sortables
-                |> Array.map(fun a -> Array.copy a)
-                |> Array.toSeq
+        let fromPermutation (p:Permutation) = 
+            {degree=(Permutation.degree p); values=(Permutation.value p) }
+
+        let CreateRandom (degree:Degree) (rnd:IRando) =
+            Permutation.CreateRandom degree rnd 
+            |> Seq.map(fun i -> fromPermutation i)
 
         let WeightedSortableSeq (sortables:int[][]) =
             sortables
                 |> Seq.map(fun a -> (Array.copy a, 1))
 
-        let SortableSeqAllBinary (degree:Degree) =
+        let AllBinary (degree:Degree) =
                 IntBits.AllBinaryTestCases (Degree.value degree)
+                |> Seq.map(fun s -> {degree=degree; values=s})
+                
 
 
     type Stage = {switches:Switch list; degree:Degree}
@@ -112,14 +112,6 @@ module Sorting =
     type SorterDef = {degree:Degree; switches: array<Switch>; switchCount:SwitchCount}
      module SorterDef =
 
-         //let Equals (sdA:SorterDef) (sdB:SorterDef) =
-         //   if sdA.order <> sdB.order then false
-         //   elif sdA.switches.Length <> sdB.switches.Length then false
-         //   else seq { for r in 0 .. sdA.switches.Length - 1 do
-         //              if sdA.switches.[r] <> sdB.switches.[r]  then
-         //                yield false }
-         //           |> Seq.forall id
-
          let CreateRandom (degree:Degree) (switchCount:SwitchCount) (rnd:IRando) =
              {
                  SorterDef.degree=degree;
@@ -147,45 +139,46 @@ module Sorting =
                  switches = (switches |> Seq.toArray) |> Array.append sorterDef.switches
              }
 
-    type SwitchTracker = {weights:int[]}
+         let TrimLength (sorterDef:SorterDef) (newLength:SwitchCount) =
+             if (SwitchCount.value sorterDef.switchCount) < (SwitchCount.value newLength) then
+                "New length is longer than sorter" |> Error
+             else
+                let newSwitches = sorterDef.switches |> Array.take (SwitchCount.value newLength)
+                {
+                    SorterDef.degree = sorterDef.degree;
+                    switchCount = newLength;
+                    switches = newSwitches
+                } |> Ok
+             
+
+    type SwitchTracker = private {switchCount: SwitchCount; weights:int[]}
     module SwitchTracker =
-        let Make (switchCount: SwitchCount) =
-            {weights=Array.init (SwitchCount.value switchCount) (fun i -> 0)}
 
+        let create (switchCount: SwitchCount) =
+            {switchCount=switchCount; weights=Array.init (SwitchCount.value switchCount) (fun i -> 0)}
 
+        let weights tracker = tracker.weights
+        let switchCount tracker = (SwitchCount.value tracker.switchCount)
 
-        //let ToStageArrays (switchTracker:SwitchTracker) 
-        //                  (sorterDef:SorterDef) =
-
-        //    Combinatorics.BreakArrayIntoSegments 
-        //        switchTracker.weights 
-        //        stagedSorterDef.stageIndexes
-
-
-        //let ToStageReportString 
-        //                (switchTracker:SwitchTracker) 
-        //                (stagedSorterDef:StagedSorterDef) =
-
-        //    let ArrayToString(array:'a[]) =
-        //        sprintf "(%s)" (array |> Seq.map(fun a -> string a) |> String.concat ", ")
-
-        //    let NestedArrayToString (af: 'a[]->string) (nestedArray:'a[][]) =
-        //        sprintf "(%s)" (nestedArray |> Seq.map(fun a -> ArrayToString a) |> String.concat ", ")
-
-        //    NestedArrayToString ArrayToString (ToStageArrays switchTracker stagedSorterDef)
-
+        let Add (trackerA:SwitchTracker) (trackerB:SwitchTracker) =
+            if ((switchCount trackerA) <> (switchCount trackerB))  then
+               (sprintf "switchCounts: %d, %d are not equal" (switchCount trackerA) (switchCount trackerB))  |> Error
+            else
+               let weightsSum = Array.map2 (+) (weights trackerA) (weights trackerB) 
+               {
+                   switchCount = (SwitchCount.create "" weightsSum.Length) |> Result.ExtractOrThrow
+                   weights = weightsSum;
+               } |> Ok
 
 
     type SwitchUsage = {switch:Switch; switchIndex:int; useCount:int}
     module SwitchUsage =
 
-        let CollectTheUsedSwitches 
-                    (sorterDef:SorterDef) 
-                    (switchTracker:SwitchTracker) = 
-            seq { for i = 0 to switchTracker.weights.Length - 1 do
-                    if (switchTracker.weights.[i] > 0) then
-                        yield {switch=sorterDef.switches.[i]; switchIndex=i; 
-                               useCount=switchTracker.weights.[i] } }
+        let CollectTheUsedSwitches (sorter:SorterDef) (tracker:SwitchTracker) = 
+            seq { for i = 0 to tracker.weights.Length - 1 do
+                    if (tracker.weights.[i] > 0) then
+                        yield {switch=sorter.switches.[i]; switchIndex=i; 
+                               useCount=tracker.weights.[i] } }
             |> Seq.toArray
 
         let ToString (sw:SwitchUsage) =

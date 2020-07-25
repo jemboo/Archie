@@ -14,28 +14,27 @@ module Combinatorics =
         |> Seq.toArray
 
     let FisherYatesShuffle (rnd:IRando) (initialList : array<'a>) =
-        let rnd max =
-            rnd.NextUInt % max
-
+        let rndmx max = rnd.NextUInt % max
         let availableFlags = Array.init initialList.Length (fun i -> (i, true))
                                                           // Which items are available and their indices
         let nextItem nLeft =
-            let nItem = (rnd nLeft)                       // Index out of available items
+            let nItem = (rndmx nLeft)                     // Index out of available items
             let index =                                   // Index in original deck
                 availableFlags                            // Go through available array
                 |> Seq.filter (fun (ndx,f) -> f)          // and pick out only the available tuples
-                |> Seq.item (int nItem)                         // Get the one at our chosen index
+                |> Seq.item (int nItem)                   // Get the one at our chosen index
                 |> fst                                    // and retrieve it's index into the original array
             availableFlags.[index] <- (index, false)      // Mark that index as unavailable
             initialList.[index]                           // and return the original item
         seq {(initialList.Length) .. -1 .. 1}             // Going from the length of the list down to 1
-        |> Seq.map (fun i -> nextItem (uint32 i))                  // yield the next item
+        |> Seq.map (fun i -> nextItem (uint32 i))         // yield the next item
 
 
     let IsSorted (values:int[]) =
         seq{for i=1 to values.Length - 1 do
                 if values.[i-1] > values.[i] then
                     yield false} |> Seq.forall id
+
 
     let Int_To_IntArray01 (len:int) (intVers:int) =
         let bitLoc (loc:int) (intBits:int) =
@@ -53,16 +52,14 @@ module Combinatorics =
         intRet
 
     let RandomIntPermutations (rnd :IRando) (len: int) (count:int) =
-        let initialList = [|0 .. len-1|]                                
-        let permuter = (FisherYatesShuffle rnd)
-        Seq.init count (fun n -> (permuter initialList) |> Seq.toArray)
+         FisherYatesShuffle rnd [|0 .. len-1|] |> Seq.toArray
+
 
     let CompareArrays (a: array<int>) (b: array<int>) =
         if (a.Length <> b.Length) then false
         else seq {for i = 0 to a.Length - 1 do
-                    if (a.[i] <> b.[i]) then
-                        yield false}
-             |> Seq.forall id
+                    if (a.[i] <> b.[i]) then yield false}
+                 |> Seq.forall id
   
     let InverseMapArray (a:array<int>) =
         let aInv = Array.init a.Length (fun i -> 0)
@@ -77,7 +74,7 @@ module Combinatorics =
         product
   
     // conj * a * conj ^ -1
-    let ConjugateIntArrays (a: array<int>) (conj: array<int>) =
+    let ConjugateIntArrays (a:array<int>) (conj:array<int>) =
         conj |> ComposeMapIntArrays a |> ComposeMapIntArrays (InverseMapArray conj)
 
     let DistanceSquared (a:array<int>) (b:array<int>) =
@@ -85,8 +82,7 @@ module Combinatorics =
         acc + (elem1 - elem2) * (elem1 - elem2)) 0 a b
 
     let UnsortednessSquared (a:array<int>) =
-        let ref = [|0 .. (a.Length - 1)|]
-        DistanceSquared a ref
+        DistanceSquared a [|0 .. (a.Length - 1)|]
 
     // will do conventional sort if the stage array is all 1 or 2 cycles
     let SortIntArray (sortable: array<int>) (stage:array<int>) (counter:array<int>) =
@@ -139,24 +135,38 @@ module Combinatorics =
 
 module Combinatorics_Types =
 
-    type Permutation = private Permutation of int[]
+    type Permutation = private {degree:Degree; values:int[] }
     module Permutation =
+        let create (degree:Degree) (vals:int[]) =
+            if vals.Length <> (Degree.value degree) then
+                Error (sprintf "array length %d <> degree %d:" 
+                        vals.Length (Degree.value degree))
+            else
+                {Permutation.degree=degree; values=vals } |> Ok
 
-        let Identity (order:int) = Permutation [|0 .. order-1|]
-        let apply f (Permutation p) = f p
-        let value p = apply id p
-  
-        let CreateRandom (rnd : IRando) (order:int) =
-            let initialList = (Identity order) |> value                             
-            let permuter = (Combinatorics.FisherYatesShuffle rnd)
-            seq { while true do yield Permutation ((permuter initialList) |> Seq.toArray)}
+        let Identity (degree:Degree) = 
+            {degree=degree; values=[|0 .. (Degree.value degree)-1|] }
 
-        let Inverse (p: Permutation) =
-            Permutation (Combinatorics.InverseMapArray (p |> value))
+        let value perm = perm.values
+        let degree perm = perm.degree
+
+        let CreateRandom (degree:Degree) (rnd:IRando) =
+            let initialList = (Identity degree) |> value                             
+            seq { while true do 
+                    yield { degree=degree;
+                            values=(Combinatorics.FisherYatesShuffle rnd initialList |> Seq.toArray)}}
+
+        let Inverse (p:Permutation) =
+            create p.degree (Combinatorics.InverseMapArray (p |> value))
  
-        let Product (pA: Permutation) (pB:Permutation) =
-            Permutation (Combinatorics.ComposeMapIntArrays (pA |> value) (pB |> value))
+        let Product (pA:Permutation) (pB:Permutation) =
+            if (Degree.value pA.degree) <> (Degree.value pB.degree) then
+                    Error (sprintf "degree %d <> degree %d:" 
+                            (Degree.value pA.degree) (Degree.value pB.degree))
+            else
+                create pA.degree  (Combinatorics.ComposeMapIntArrays (pA |> value) (pB |> value))
  
+
     type TwoCycleIntArray = private TwoCycleIntArray of int[]
     module TwoCycleIntArray =
 
@@ -180,10 +190,9 @@ module Combinatorics_Types =
 
     type BitArray = {order:int; items: array<bool>}
     module BitArray =
-
         let Zero (order: int) =  { order=order; items=Array.init order (fun i -> false) }
-
         let Next (bits: BitArray) =  { order=bits.order; items=bits.items }
+
 
     module IntBits =
         let Sorted_O_1_Sequence (blockLen:int) (onesCount:int) =
@@ -193,8 +202,7 @@ module Combinatorics_Types =
         //Returns a bloclLen + 1 length array of all possible sorted 0-1 sequences of length blockLen
         let Sorted_0_1_Sequences (blockLen:int) =
             seq {for i = 0 to blockLen 
-                    do yield (Sorted_O_1_Sequence blockLen i)
-                                |> Seq.toArray }
+                    do yield (Sorted_O_1_Sequence blockLen i) |> Seq.toArray }
                 |> Seq.toArray
 
         let AllBinaryTestCases (order:int) =

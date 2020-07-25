@@ -11,10 +11,8 @@ open Archie.Base.Combinatorics_Types
 
 //[<MemoryDiagnoser>]
 type Md5VsSha256() =
-    let N = 10000
-    let rando = new Random(42)
+    let N = 100000
     let data = Array.zeroCreate N
-    let res = rando.NextBytes(data)
     let sha256 = SHA256.Create();
     let md5 = MD5.Create()
 
@@ -33,23 +31,35 @@ type Md5VsSha256() =
 type RandoBench() =
     let seed = RandomSeed.create "" 424 |> Result.toOption
     let seed2 = RandomSeed.create "" 42 |> Result.toOption
-    let randoNet = new RandomNet(seed.Value)
-    let randoLcg = new RandomLcg(seed.Value)
-    let randoNet2 = new RandomNet(seed2.Value)
-    let randoLcg2 = new RandomLcg(seed2.Value)
+    let randoNet = new RandomNet(seed.Value) :> IRando
+    let randoLcg = new RandomLcg(seed.Value) :> IRando
+    let randoNet2 = new RandomNet(seed2.Value) :> IRando
+    let randoLcg2 = new RandomLcg(seed2.Value) :> IRando
 
     [<Benchmark(Baseline = true)>]
-    member this.Net() =
-        Rando.NextGuid randoNet
+    member this.NetI() =
+        randoNet.NextUInt
 
     [<Benchmark>]
-    member this.Lcg() =
-        Rando.NextGuid randoLcg
+    member this.NetL() =
+        randoNet.NextULong
+
+    //[<Benchmark>]
+    //member this.Lcg() =
+    //    Rando.NextGuid randoLcg
+
+    //[<Benchmark>]
+    //member this.Net2() =
+    //    Rando.NextGuid2 randoNet randoNet2
+
+    //[<Benchmark>]
+    //member this.Lcg2() =
+    //    Rando.NextGuid2 randoLcg randoLcg2
 
     [<Benchmark>]
-    member this.Net2() =
-        Rando.NextGuid2 randoNet randoNet2
+    member this.LcgUInt() =
+        randoLcg2.NextUInt
 
     [<Benchmark>]
-    member this.Lcg2() =
-        Rando.NextGuid2 randoLcg randoLcg2
+    member this.LcgLong() =
+        randoLcg2.NextULong

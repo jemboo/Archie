@@ -22,10 +22,10 @@ type Result<'success, 'failure> =
 [<RequireQualifiedAccess>]  // RequireQualifiedAccess forces the `Result.xxx` prefix to be used
 module Result =
 
-    //let ExtractOrThrow (res:Result<'a, 'b>) =
-    //    match res with
-    //    | Ok v -> v
-    //    | Error e -> Err
+    let ExtractOrThrow (res:Result<'a, 'b>) =
+        match res with
+        | Ok v -> v
+        | Error ex -> failwith (sprintf "%A" ex)
 
     let ErrorOnException f arg =
         try

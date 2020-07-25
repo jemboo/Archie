@@ -13,7 +13,7 @@ module Consolo =
 
     [<EntryPoint>]
     let main argv =
-        let summary = BenchmarkRunner.Run<RunSorterRef>()
+        let summary = BenchmarkRunner.Run<PrivateTrackerTest>()
         printfn "%A" summary
         Console.ReadKey() |> ignore
         0 // return an integer exit code

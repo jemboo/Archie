@@ -3,73 +3,82 @@
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open Archie.Base
 open Archie.Base.Sorting
-open Archie.Base.Combinatorics_Types
 open BenchmarkDotNet.Attributes
 open Archie.Base.SortersFromData
 
 
+//| Method |      Mean |    Error |   StdDev | Ratio | RatioSD |
+//|------- |----------:|---------:|---------:|------:|--------:|
+//|   S16x |  47.20 ms | 0.919 ms | 1.022 ms |  1.00 |    0.00 |
+//|   S16c |  53.37 ms | 1.033 ms | 1.189 ms |  1.13 |    0.03 |
+//|   S16t | 111.61 ms | 2.126 ms | 2.183 ms |  2.36 |    0.08 |
+type SorterFullTestCvsXvsT() =
 
-type RunSorterRef() =
+    let sorter16 = RefSorter.CreateRefSorter RefSorter.End16 |> Result.ExtractOrThrow
+    let sorterTrim = result {
+                            let! fullLen = RefSorter.CreateRefSorter RefSorter.Degree18
+                            let! trimLen = SwitchCount.create "" 76
+                            return! SorterDef.TrimLength fullLen trimLen
+                        } |> Result.ExtractOrThrow
 
-    let sorterGreen16 = RefSorter.CreateRefSorter RefSorter.Green16
-    let sorterEnd16 = RefSorter.CreateRefSorter RefSorter.End16
-    let sorter15 = RefSorter.CreateRefSorter RefSorter.Degree15
-
-    [<Benchmark(Baseline = true)>]
-    member this.S16() =
-        Sorter.EvalSorter sorterEnd16
+    member this.S16x() =
+        SorterX.SorterFullTestPassFail sorter16 |> ignore
 
     [<Benchmark>]
-    member this.S16C() =
-        SorterC.EvalSorter sorterEnd16
+    member this.S16c() =
+        SorterC.CollectFails sorter16 |> ignore
+        
+    [<Benchmark>]
+    member this.S16t() =
+        SorterT.CollectFailsAndTracker sorter16 |> ignore
+
+
+type SorterReactionTest() =
+
+    let sorterTrim = result {
+                            let! fullLen = RefSorter.CreateRefSorter RefSorter.End16
+                            let! trimLen = SwitchCount.create "" 59
+                            return! SorterDef.TrimLength fullLen trimLen
+                        } |> Result.ExtractOrThrow
+
+    [<Benchmark(Baseline = true)>]
+    member this.S16c() =
+        SorterC.CollectFails sorterTrim
+    
+    [<Benchmark>]
+    member this.S16t() =
+        SorterT.CollectFailsAndTracker sorterTrim
+        
+
+type PrivateTrackerTest() =
+
+    let sorter16 = RefSorter.CreateRefSorter RefSorter.End16 |> Result.ExtractOrThrow
+    
+    [<Benchmark(Baseline = true)>]
+    member this.S16t() =
+        SorterT.CollectFailsAndTracker sorter16 None None
+    
+    [<Benchmark>]
+    member this.S16t2() =
+        SorterT2.CollectFailsAndTracker sorter16 None None
 
 
 type SorterGen() =
-    let degree = Degree.create "" 16 |> Result.toOption
-    let shortLength = SwitchCount.create "" 100 |> Result.toOption
-    let longLength = SwitchCount.create "" 500 |> Result.toOption
-    let seed = RandomSeed.create "" 424 |> Result.toOption
-    let randoLcg = new RandomLcg(seed.Value)
+    let degree = Degree.create "" 16 |> Result.ExtractOrThrow
+    let shortLength = SwitchCount.create "" 100 |> Result.ExtractOrThrow
+    let longLength = SwitchCount.create "" 500 |> Result.ExtractOrThrow
+    let seed = RandomSeed.create "" 424 |> Result.ExtractOrThrow
+    let randoLcg = new RandomLcg(seed)
 
     [<Benchmark(Baseline = true)>]
     member this.Short() =
-        SorterDef.CreateRandom degree.Value longLength.Value randoLcg
+        SorterDef.CreateRandom degree longLength randoLcg
 
     [<Benchmark>]
     member this.Long() =
-        SorterDef.CreateRandom degree.Value longLength.Value randoLcg
+        SorterDef.CreateRandom degree longLength randoLcg
 
 
-type RunSorterDef() =
-    let degree = 12 |> Degree.create "" |> Result.toOption
-    let sorterLen = 500 |> SwitchCount.create "" |> Result.toOption
-    let sortableCount = 4000
-    let seed = 123 |> RandomSeed.create "" |> Result.toOption
-    let rnd = new RandomLcg(seed.Value)
-
-    let SortableGen (degree:Degree) (rnd : IRando) (count:int) =
-        Permutation.CreateRandom rnd (Degree.value degree)
-        |> Seq.map(fun i -> Permutation.value i )
-        |> Seq.take count
-
-    let sorterDef = SorterDef.CreateRandom degree.Value sorterLen.Value rnd
-    let startPos = 0
-    let switchTracker = SwitchTracker.Make sorterLen.Value
-
-    [<Benchmark(Baseline = true)>]
-    member this.Standard() =
-        SorterT.EvalSortableSeqT
-            sorterDef
-            switchTracker
-            (SortableGen degree.Value rnd sortableCount)
-
-    [<Benchmark>]
-    member this.Inline() =
-        Sorter2.UpdateSwitchTracker
-            sorterDef
-            switchTracker 
-            startPos 
-            (SortableGen degree.Value rnd sortableCount)
 
 
 [<TestClass>]
@@ -77,8 +86,9 @@ type BenchmarkFixture () =
 
     [<TestMethod>]
     member this.RunSorterDefBaseline() =
-        let sd = new RunSorterDef()
-        sd.Standard() |> ignore
-        sd.Inline() |> ignore
+        
+        let sorter16 = RefSorter.CreateRefSorter RefSorter.End16 |> Result.ExtractOrThrow
+        let res = SorterT2.CollectFailsAndTracker sorter16 None None
+        let g = snd res
+        //sd.Inline() |> ignore
         Assert.IsTrue (true)
-
