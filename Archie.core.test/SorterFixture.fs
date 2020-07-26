@@ -2,7 +2,6 @@
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open Archie.Base
 open Archie.Base.Sorting
-open Archie.Base.Combinatorics_Types
 open Archie.Base.SortersFromData
 
 [<TestClass>]
@@ -27,17 +26,13 @@ type SorterFixture () =
         let seed = 123 |> RandomSeed.create "" |> Result.ExtractOrThrow
         let rnd = new RandomLcg(seed)
 
-        let SortableGen (degree:Degree) (rnd:IRando) (count:int) =
-            SortableIntArray.CreateRandom degree rnd
-            |> Seq.take count
-
         let sorterDef = SorterDef.CreateRandom degree sorterLen rnd
         let startPos = 0
         let switchTracker = SwitchTracker.create sorterDef.switchCount
         let (res, switchTrack) = SorterT.CollectFailsAndTracker sorterDef None None 
-  
+        //let weights = 
         Assert.IsTrue(res.Length > 0)
-        Assert.IsTrue (switchTrack.weights |> Array.sum > 0)
+        Assert.IsTrue ((SwitchTracker.weights switchTrack) |> Array.sum > 0)
 
 
 

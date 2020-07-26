@@ -10,10 +10,10 @@
   <ItemGroup>
     <Compile Include="Benchmark.fs" />
     <Compile Include="CombinatoricsFixture.fs" />
+    <Compile Include="CombinatoricsTypesFixture.fs" />
     <Compile Include="RandoFixture.fs" />
     <Compile Include="SortingFixture.fs" />
     <Compile Include="SorterFixture.fs" />
-    <Compile Include="Tests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

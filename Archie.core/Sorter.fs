@@ -1,7 +1,6 @@
 ﻿namespace Archie.Base
 open Microsoft.FSharp.Collections
 open Sorting
-open Combinatorics_Types
 
  module SorterX =
     let SwitchSeqOnSortable (sorterDef:SorterDef) (switchIndexes:seq<int>)

@@ -60,7 +60,13 @@ type RandomLcg(seed:RandomSeed) =
         member this.RngType = RngType.Lcg
 
         
-module Rando = 
+module Rando =
+
+    let LcgFromSeed seed =
+        let seed = RandomSeed.create "" 424 |> Result.ExtractOrThrow
+        new RandomLcg(seed) :> IRando
+
+
     let NextGuid (curr:IRando) : System.Guid =
         let pc0 = System.BitConverter.GetBytes(curr.NextULong)
         let pc1 = System.BitConverter.GetBytes(curr.NextULong)

@@ -1,5 +1,4 @@
 ﻿namespace Archie.Base
-open Archie.Base.Combinatorics_Types
 
 module Sorting =
 
@@ -21,10 +20,10 @@ module Sorting =
                          yield {Switch.low=i; Switch.hi=j} }
 
         let SwitchSeqFromPermutation (p:Permutation) =
-            SwitchSeqFromIntArray (Permutation.value p)
+            SwitchSeqFromIntArray (Permutation.arrayValues p)
      
-        let SwitchSeqFromPolyCycle (p:TwoCycleIntArray) =
-            SwitchSeqFromIntArray (TwoCycleIntArray.value p)
+        let SwitchSeqFromPolyCycle (p:TwoCyclePerm) =
+            SwitchSeqFromIntArray (TwoCyclePerm.arrayValues p)
     
         let ToString (sw:Switch) =
             sprintf "(%d, %d)" sw.low sw.hi
@@ -54,19 +53,22 @@ module Sorting =
             {degree=sIntArray.degree; values= apply Array.copy sIntArray}
 
         let fromPermutation (p:Permutation) = 
-            {degree=(Permutation.degree p); values=(Permutation.value p) }
+            {degree=(Permutation.degree p); values=(Permutation.arrayValues p) }
+
+        let CreateRandoms (degree:Degree) (rnd:IRando) =
+            Permutation.CreateRandoms degree rnd 
+            |> Seq.map(fun i -> fromPermutation i)
 
         let CreateRandom (degree:Degree) (rnd:IRando) =
             Permutation.CreateRandom degree rnd 
-            |> Seq.map(fun i -> fromPermutation i)
+            |> fromPermutation
 
         let WeightedSortableSeq (sortables:int[][]) =
-            sortables
-                |> Seq.map(fun a -> (Array.copy a, 1))
+            sortables |> Seq.map(fun a -> (Array.copy a, 1))
 
         let AllBinary (degree:Degree) =
-                IntBits.AllBinaryTestCases (Degree.value degree)
-                |> Seq.map(fun s -> {degree=degree; values=s})
+            IntBits.AllBinaryTestCases (Degree.value degree)
+            |> Seq.map(fun s -> {degree=degree; values=s})
                 
 
 
@@ -104,12 +106,12 @@ module Sorting =
 
         let MakeStagePackedSwitchSeq (rnd:IRando) (degree:Degree) =
             let aa (rnd:IRando)  = 
-                (TwoCycleIntArray.MakeRandomPolyCycle rnd (Degree.value degree))
+                (TwoCyclePerm.MakeRandomPolyCycle degree rnd )
                         |> Switch.SwitchSeqFromPolyCycle
             seq { while true do yield! (aa rnd) }
 
 
-    type SorterDef = {degree:Degree; switches: array<Switch>; switchCount:SwitchCount}
+    type SorterDef = {degree:Degree; switches:array<Switch>; switchCount:SwitchCount}
      module SorterDef =
 
          let CreateRandom (degree:Degree) (switchCount:SwitchCount) (rnd:IRando) =
@@ -121,14 +123,14 @@ module Sorting =
                                  |> Seq.toArray
              }
 
-         let CreateRandomPackedStages (degree:Degree) (switchCount:SwitchCount) (rando:IRando) =
-             {
-                 SorterDef.degree=degree;
-                 switchCount=switchCount;
-                 switches = (Stage.MakeStagePackedSwitchSeq rando degree)
-                                 |> Seq.take (SwitchCount.value switchCount)
-                                 |> Seq.toArray
-             }
+         //let CreateRandomPackedStages (degree:Degree) (switchCount:SwitchCount) (rando:IRando) =
+         //    {
+         //        SorterDef.degree=degree;
+         //        switchCount=switchCount;
+         //        switches = (Stage.MakeStagePackedSwitchSeq rando degree)
+         //                        |> Seq.take (SwitchCount.value switchCount)
+         //                        |> Seq.toArray
+         //    }
 
          let AppendSwitches (switches:seq<Switch>) (sorterDef:SorterDef) =
              let newSwitches = (switches |> Seq.toArray) |> Array.append sorterDef.switches
@@ -151,10 +153,10 @@ module Sorting =
                 } |> Ok
              
 
-    type SwitchTracker = private {switchCount: SwitchCount; weights:int[]}
+    type SwitchTracker = private {switchCount:SwitchCount; weights:int[]}
     module SwitchTracker =
 
-        let create (switchCount: SwitchCount) =
+        let create (switchCount:SwitchCount) =
             {switchCount=switchCount; weights=Array.init (SwitchCount.value switchCount) (fun i -> 0)}
 
         let weights tracker = tracker.weights

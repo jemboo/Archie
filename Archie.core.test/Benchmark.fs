@@ -50,18 +50,6 @@ type SorterReactionTest() =
         SorterT.CollectFailsAndTracker sorterTrim
         
 
-type PrivateTrackerTest() =
-
-    let sorter16 = RefSorter.CreateRefSorter RefSorter.End16 |> Result.ExtractOrThrow
-    
-    [<Benchmark(Baseline = true)>]
-    member this.S16t() =
-        SorterT.CollectFailsAndTracker sorter16 None None
-    
-    [<Benchmark>]
-    member this.S16t2() =
-        SorterT2.CollectFailsAndTracker sorter16 None None
-
 
 type SorterGen() =
     let degree = Degree.create "" 16 |> Result.ExtractOrThrow
@@ -87,8 +75,4 @@ type BenchmarkFixture () =
     [<TestMethod>]
     member this.RunSorterDefBaseline() =
         
-        let sorter16 = RefSorter.CreateRefSorter RefSorter.End16 |> Result.ExtractOrThrow
-        let res = SorterT2.CollectFailsAndTracker sorter16 None None
-        let g = snd res
-        //sd.Inline() |> ignore
         Assert.IsTrue (true)

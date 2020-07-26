@@ -1,11 +1,7 @@
 ﻿namespace Archie.console
-open System
 open Archie.Base
 open BenchmarkDotNet.Attributes
-open BenchmarkDotNet.Running
 open System.Security.Cryptography
-open Archie.Base.Sorting
-open Archie.Base.Combinatorics_Types
 
 //module Benchmarks
 

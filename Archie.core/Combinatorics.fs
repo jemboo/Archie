@@ -13,7 +13,9 @@ module Combinatorics =
         |> Seq.map(fun i -> sourceArray.[segBounds.[i - 1] .. (segBounds.[i] - 1)])
         |> Seq.toArray
 
-    let FisherYatesShuffle (rnd:IRando) (initialList : array<'a>) =
+    // returns a sequence of draws from initialList without replacement. 
+    // Does not change initialList
+    let FisherYatesShuffle (rnd:IRando) (initialList:array<'a>) =
         let rndmx max = rnd.NextUInt % max
         let availableFlags = Array.init initialList.Length (fun i -> (i, true))
                                                           // Which items are available and their indices
@@ -29,6 +31,10 @@ module Combinatorics =
         seq {(initialList.Length) .. -1 .. 1}             // Going from the length of the list down to 1
         |> Seq.map (fun i -> nextItem (uint32 i))         // yield the next item
 
+    let RandomSns (rnd:IRando) (degree:int) =
+         let initialList = [|0 .. degree-1|]
+         let permuter = (FisherYatesShuffle rnd)
+         Seq.initInfinite (fun n -> (permuter initialList) |> Seq.toArray)
 
     let IsSorted (values:int[]) =
         seq{for i=1 to values.Length - 1 do
@@ -50,9 +56,6 @@ module Combinatorics =
 
         {1 .. len} |> Seq.iter(fun i -> bump i)
         intRet
-
-    let RandomIntPermutations (rnd :IRando) (len: int) (count:int) =
-         FisherYatesShuffle rnd [|0 .. len-1|] |> Seq.toArray
 
 
     let CompareArrays (a: array<int>) (b: array<int>) =
@@ -120,92 +123,7 @@ module Combinatorics =
             arrayRet.[rndTupes.[i].[1]] <- rndTupes.[i].[0]
         arrayRet
 
-    let MakeRandomFullTwoCycleIntArray2 (rnd : IRando) (arraysize:int) =
-        let initialList = [|0 .. arraysize-1|]
-        let arrayRet = Array.init arraysize (fun i -> i)
-        let rndTupes = (FisherYatesShuffle rnd initialList) |> (Seq.chunkBySize 2) |> Seq.toArray
-        for i = 0 to (arraysize / 2) - 1 do
-            arrayRet.[rndTupes.[i].[0]] <- rndTupes.[i].[1]
-            arrayRet.[rndTupes.[i].[1]] <- rndTupes.[i].[0]
-        arrayRet
-
     let MakeRandomFullTwoCycleIntArrays (rnd : IRando) (arraysize:int) (count:int) =
         seq {1 .. count} |> Seq.map (fun i -> MakeRandomFullTwoCycleIntArray rnd arraysize)
 
-
-module Combinatorics_Types =
-
-    type Permutation = private {degree:Degree; values:int[] }
-    module Permutation =
-        let create (degree:Degree) (vals:int[]) =
-            if vals.Length <> (Degree.value degree) then
-                Error (sprintf "array length %d <> degree %d:" 
-                        vals.Length (Degree.value degree))
-            else
-                {Permutation.degree=degree; values=vals } |> Ok
-
-        let Identity (degree:Degree) = 
-            {degree=degree; values=[|0 .. (Degree.value degree)-1|] }
-
-        let value perm = perm.values
-        let degree perm = perm.degree
-
-        let CreateRandom (degree:Degree) (rnd:IRando) =
-            let initialList = (Identity degree) |> value                             
-            seq { while true do 
-                    yield { degree=degree;
-                            values=(Combinatorics.FisherYatesShuffle rnd initialList |> Seq.toArray)}}
-
-        let Inverse (p:Permutation) =
-            create p.degree (Combinatorics.InverseMapArray (p |> value))
- 
-        let Product (pA:Permutation) (pB:Permutation) =
-            if (Degree.value pA.degree) <> (Degree.value pB.degree) then
-                    Error (sprintf "degree %d <> degree %d:" 
-                            (Degree.value pA.degree) (Degree.value pB.degree))
-            else
-                create pA.degree  (Combinatorics.ComposeMapIntArrays (pA |> value) (pB |> value))
- 
-
-    type TwoCycleIntArray = private TwoCycleIntArray of int[]
-    module TwoCycleIntArray =
-
-        let Identity (order: int) = TwoCycleIntArray [|0 .. order-1|]
-        let apply f (TwoCycleIntArray p) = f p
-        let value p = apply id p
-
-        let MakeMonoCycleFromHiLow (order:int) (hi:int) (low:int) =
-            TwoCycleIntArray (Combinatorics.MakeTwoCycleIntArray order low hi)
-
-        let MakeAllMonoCycleOfLength (order:int) =
-            (Combinatorics.MakeAllTwoCycleIntArrays order) 
-            |> Seq.map (fun s -> TwoCycleIntArray s)
-         
-        let MakeRandomPolyCycle (rnd:IRando) (order: int) =
-            TwoCycleIntArray (Combinatorics.MakeRandomFullTwoCycleIntArray rnd order)
-
-        let MakeRandomPolyCycle2 (rnd:IRando) (order: int) =
-            TwoCycleIntArray (Combinatorics.MakeRandomFullTwoCycleIntArray2 rnd order)
-
-
-    type BitArray = {order:int; items: array<bool>}
-    module BitArray =
-        let Zero (order: int) =  { order=order; items=Array.init order (fun i -> false) }
-        let Next (bits: BitArray) =  { order=bits.order; items=bits.items }
-
-
-    module IntBits =
-        let Sorted_O_1_Sequence (blockLen:int) (onesCount:int) =
-            seq {for i = 1 to blockLen - onesCount do yield 0; 
-                 for i = 1 to onesCount do yield 1 }
-
-        //Returns a bloclLen + 1 length array of all possible sorted 0-1 sequences of length blockLen
-        let Sorted_0_1_Sequences (blockLen:int) =
-            seq {for i = 0 to blockLen 
-                    do yield (Sorted_O_1_Sequence blockLen i) |> Seq.toArray }
-                |> Seq.toArray
-
-        let AllBinaryTestCases (order:int) =
-            {0 .. (1 <<< order) - 1}
-            |> Seq.map (fun i -> Combinatorics.Int_To_IntArray01 order i)
         
