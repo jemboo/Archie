@@ -50,39 +50,15 @@ type CombinatoricsFixture () =
         Assert.IsTrue (Combinatorics.CompareArrays orig prodL)
     
     
-    //[<TestMethod>]
-    //member this.TestIsSorted() =
-    //    Assert.IsFalse (Combinatorics.IsSorted [|0; 1; 1; 0; 1; 0|])
-    //    Assert.IsTrue (Combinatorics.IsSorted [|0; 0; 0; 0; 1; 1|])
+    [<TestMethod>]
+    member this.TestIsSorted() =
+        Assert.IsFalse (Combinatorics.IsSorted [|0; 1; 1; 0; 1; 0|])
+        Assert.IsTrue (Combinatorics.IsSorted [|0; 0; 0; 0; 1; 1|])
 
-
-    //[<TestMethod>]
-    //member this.TestMakeTwoCycleIntArray() =
-    //    let length = 19
-    //    let lowBit = 1
-    //    let hiBit = 11
-
-    //    let id = Permutation.Identity length |> Permutation.value
-    //    let tc = Combinatorics.MakeTwoCycleIntArray length lowBit hiBit
-    //    let prod = Combinatorics.ComposeMapIntArrays tc tc
-    //    Assert.IsTrue (Combinatorics.CompareArrays id prod)
-
-
-    //[<TestMethod>]
-    //member this.TestMakeAllTwoCycleIntArrays() =
-    //    let length = 19
-    //    let tc = Combinatorics.MakeAllTwoCycleIntArrays length
-    //    Assert.AreEqual ((length * (length - 1)) / 2, tc |> Seq.length)
-    
-
-    //[<TestMethod>]
-    //member this.TestMakeRandomFullTwoCycleIntArray() =
-    //    let length = 19
-    //    let tc = Combinatorics.MakeRandomFullTwoCycleIntArray (Rando.LcgFromSeed 424) length
-    //    let id = Permutation.Identity length |> Permutation.value
-    //    let prod = Combinatorics.ComposeMapIntArrays tc tc
-    //    Assert.IsTrue (Combinatorics.CompareArrays id prod)
- 
+    [<TestMethod>]
+    member this.TestIsSortedOffset() =
+        Assert.IsFalse (Combinatorics.IsSortedOffset [|0; 1; 1; 0; 1; 0; 1; 1 |] 1 5)
+        Assert.IsTrue (Combinatorics.IsSortedOffset [|0; 0; 0; 0; 1; 1; 0; 0|] 1 5)
 
     //[<TestMethod>]
     //member this.TestSortIntArray() =
@@ -100,33 +76,33 @@ type CombinatoricsFixture () =
     //    Assert.IsTrue (sortableScore >  sortableResultScore)
 
 
-    //[<TestMethod>]
-    //member this.TestConjugateIntArrays() =
-    //    let a = [|0; 2; 1; 3; 4; 5|]
-    //    let b = [|0; 5; 4; 3; 1; 2|]
-    //    let c = [|0; 1; 2; 3; 5; 4|]
+    [<TestMethod>]
+    member this.TestConjugateIntArrays() =
+        let a = [|0; 2; 1; 3; 4; 5|]
+        let b = [|0; 5; 4; 3; 1; 2|]
+        let c = [|0; 1; 2; 3; 5; 4|]
 
-    //    let conj = Combinatorics.ConjugateIntArrays a b
-    //    Assert.IsTrue (Combinatorics.CompareArrays conj c)
+        let conj = Combinatorics.ConjugateIntArrays a b
+        Assert.IsTrue (Combinatorics.CompareArrays conj c)
 
-    //[<TestMethod>]
-    //member this.TestSorted_0_1_Sequence() =
-    //    let blockLen = 10
-    //    let block = Combinatorics_Types.IntBits.Sorted_O_1_Sequence blockLen 7 |> Seq.toArray
-    //    Assert.IsTrue (block.Length = blockLen)
+    [<TestMethod>]
+    member this.TestSorted_0_1_Sequence() =
+        let blockLen = 10
+        let block = IntBits.Sorted_O_1_Sequence blockLen 7 |> Seq.toArray
+        Assert.IsTrue (block.Length = blockLen)
 
-    //[<TestMethod>]
-    //member this.TestSorted_0_1_Sequences() =
-    //    let blockLen = 10
-    //    let block = Combinatorics_Types.IntBits.Sorted_0_1_Sequences blockLen
-    //    Assert.IsTrue (block.Length = blockLen + 1)
+    [<TestMethod>]
+    member this.TestSorted_0_1_Sequences() =
+        let blockLen = 10
+        let block = IntBits.Sorted_0_1_Sequences blockLen
+        Assert.IsTrue (block.Length = blockLen + 1)
 
 
-    //[<TestMethod>]
-    //member this.TestBreakIntoSegments() =
-    //    let testArray = [|1; 2; 3; 4; 5; 6; 7; 8; 9|] 
-    //    let testBreaks = [|0; 2; 5; 9|] 
+    [<TestMethod>]
+    member this.TestBreakIntoSegments() =
+        let testArray = [|1; 2; 3; 4; 5; 6; 7; 8; 9|] 
+        let testBreaks = [|0; 2; 5; 9|] 
 
-    //    let yak = BreakArrayIntoSegments testArray testBreaks
-    //    Assert.AreEqual (yak.Length, 3)
+        let yak = Combinatorics.BreakArrayIntoSegments testArray testBreaks
+        Assert.AreEqual (yak.Length, 3)
 

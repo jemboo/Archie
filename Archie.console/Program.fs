@@ -8,7 +8,7 @@ module Consolo =
 
     [<EntryPoint>]
     let main argv =
-        let summary = BenchmarkRunner.Run<SorterReactionTest>()
+        let summary = BenchmarkRunner.Run<SorterFullTestSlice>()
         printfn "%A" summary
         Console.ReadKey() |> ignore
         0 // return an integer exit code

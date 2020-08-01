@@ -53,6 +53,14 @@ type CombinatoricsTypesFixture () =
        let rnd = Rando.LcgFromSeed 424
        let id = TwoCyclePerm.Identity degree
        for i in {0 .. 20} do
-                let tcp = TwoCyclePerm.MakeRandomPolyCycle degree rnd
+                let tcp = TwoCyclePerm.MakeRandomFullTwoCycle degree rnd
                 let tSq = TwoCyclePerm.Product tcp tcp |> Result.ExtractOrThrow
                 Assert.AreEqual(tSq, id)
+
+
+    [<TestMethod>]
+    member this.TestB() =
+       let aa = IntBits.AllBinaryTestCasesArray 5
+       //let b0 = Array2D.length1 aa
+
+       Assert.IsTrue(true)

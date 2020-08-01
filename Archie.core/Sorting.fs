@@ -1,5 +1,7 @@
 ﻿namespace Archie.Base
 
+open System
+
 module Sorting =
 
     [<Struct>]
@@ -34,12 +36,10 @@ module Sorting =
                      let p = (int (rnd.NextUInt % mDex))
                      yield SwitchMap.[p] }
 
-
-
-    type SortableIntArray = {degree:Degree; values:int[]}
-    module SortableIntArray =
+    type Sortable = {degree:Degree; values:int[]}
+    module Sortable =
         let Identity (degree:Degree) = { degree=degree; values=[|0 .. (Degree.value degree)-1|] }
-        let apply f (p:SortableIntArray) = f p.values
+        let apply f (p:Sortable) = f p.values
         let value p = apply id p
 
         let create (degree:Degree) (vals:int[]) =
@@ -47,9 +47,9 @@ module Sorting =
                 Error (sprintf "array length %d <> degree %d:" 
                         vals.Length (Degree.value degree))
             else
-                {SortableIntArray.degree=degree; values=vals } |> Ok
+                {Sortable.degree=degree; values=vals } |> Ok
 
-        let copy (sIntArray:SortableIntArray) =
+        let copy (sIntArray:Sortable) =
             {degree=sIntArray.degree; values= apply Array.copy sIntArray}
 
         let fromPermutation (p:Permutation) = 
@@ -63,14 +63,44 @@ module Sorting =
             Permutation.CreateRandom degree rnd 
             |> fromPermutation
 
-        let WeightedSortableSeq (sortables:int[][]) =
-            sortables |> Seq.map(fun a -> (Array.copy a, 1))
+        let FromIntArrayOfIntArrays (degree:Degree) (sortables:int[]) =
+            let mutable ct=0
+            let incr = (Degree.value degree)
+            seq {  
+                    while ct < sortables.Length do
+                        yield {degree=degree; values=[|1|]}
+                        ct<-ct+incr
+                    }
 
         let AllBinary (degree:Degree) =
-            IntBits.AllBinaryTestCases (Degree.value degree)
-            |> Seq.map(fun s -> {degree=degree; values=s})
-                
+            IntBits.AllBinaryTestCasesArray (Degree.value degree)
+            |> Array.map(fun s -> {degree=degree; values=s})
 
+    type Sortable2 = {degree:Degree; baseArray:int[]; offset:int}
+    module Sortable2 =
+        let Identity (degree:Degree) = { degree=degree; baseArray=[|0 .. (Degree.value degree)-1|]; offset=0 }
+        let apply f (p:Sortable) = f p.values
+        let value p = apply id p
+
+        let create (degree:Degree) (baseArray:int[]) (offset:int) =
+            if baseArray.Length < offset + (Degree.value degree) then
+                Error (sprintf "baseArray length %d too short for offset %d:" 
+                        baseArray.Length offset)
+            else
+                {Sortable2.degree=degree; baseArray=baseArray; offset=offset } |> Ok
+
+        let FromIntArray (degree:Degree) (baseArray:int[]) =
+            seq {0..(Degree.value degree)..(baseArray.Length - (Degree.value degree))}
+            |> Seq.map(fun ofst->{ degree=degree; baseArray=baseArray; offset=ofst })
+                
+        let AllBinary (degree:Degree) =
+            let baseArray = IntBits.AllBinaryTestCasesArray (Degree.value degree)
+                            |> Array.collect(fun a -> a)
+            baseArray,
+            seq {0..(Degree.value degree)..(baseArray.Length - (Degree.value degree))}
+             |> Seq.map(fun ofst->{ degree=degree; baseArray=baseArray; offset=ofst })
+
+                
 
     type Stage = {switches:Switch list; degree:Degree}
     module Stage =
@@ -106,7 +136,7 @@ module Sorting =
 
         let MakeStagePackedSwitchSeq (rnd:IRando) (degree:Degree) =
             let aa (rnd:IRando)  = 
-                (TwoCyclePerm.MakeRandomPolyCycle degree rnd )
+                (TwoCyclePerm.MakeRandomFullTwoCycle degree rnd )
                         |> Switch.SwitchSeqFromPolyCycle
             seq { while true do yield! (aa rnd) }
 

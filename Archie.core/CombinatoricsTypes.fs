@@ -67,7 +67,7 @@ module TwoCyclePerm =
         (Combinatorics.MakeAllTwoCycleIntArrays (Degree.value degree)) 
         |> Seq.map (fun s -> {degree=degree; values= s})
      
-    let MakeRandomPolyCycle (degree:Degree) (rnd:IRando) =
+    let MakeRandomFullTwoCycle (degree:Degree) (rnd:IRando) =
         { degree=degree; 
           values=Combinatorics.MakeRandomFullTwoCycleIntArray rnd (Degree.value degree)}
 
@@ -89,6 +89,9 @@ module IntBits =
                 do yield (Sorted_O_1_Sequence blockLen i) |> Seq.toArray }
             |> Seq.toArray
 
-    let AllBinaryTestCases (order:int) =
+    let AllBinaryTestCasesSeq (order:int) =
         {0 .. (1 <<< order) - 1}
         |> Seq.map (fun i -> Combinatorics.Int_To_IntArray01 order i)
+
+    let AllBinaryTestCasesArray (order:int) =
+        Array.init (1 <<< order) (fun i -> Combinatorics.Int_To_IntArray01 order i)

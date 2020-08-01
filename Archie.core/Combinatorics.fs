@@ -7,8 +7,7 @@ module Combinatorics =
         Seq.init len (fun n -> if (rnd.NextFloat > pctOnes) then 0 else 1)
 
     // Splits the sourceArray into segments using segBounds
-    let BreakArrayIntoSegments (sourceArray : array<'a>) 
-                               (segBounds : array<int>) =
+    let BreakArrayIntoSegments (sourceArray : array<'a>) (segBounds : array<int>) =
         seq {1 .. (segBounds.Length - 1) }
         |> Seq.map(fun i -> sourceArray.[segBounds.[i - 1] .. (segBounds.[i] - 1)])
         |> Seq.toArray
@@ -37,9 +36,20 @@ module Combinatorics =
          Seq.initInfinite (fun n -> (permuter initialList) |> Seq.toArray)
 
     let IsSorted (values:int[]) =
-        seq{for i=1 to values.Length - 1 do
-                if values.[i-1] > values.[i] then
-                    yield false} |> Seq.forall id
+        let mutable i=1
+        let mutable looP = true
+        while ((i < values.Length) && looP) do
+             looP <- (values.[i-1] <= values.[i])
+             i<-i+1
+        looP
+
+    let IsSortedOffset (baseValues:int[]) (offset:int) (length:int) =
+        let mutable i=1
+        let mutable looP = true
+        while ((i < length) && looP) do
+             looP <- (baseValues.[i+offset-1] <= baseValues.[i+offset])
+             i<-i+1
+        looP
 
 
     let Int_To_IntArray01 (len:int) (intVers:int) =
