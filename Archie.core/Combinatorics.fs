@@ -43,6 +43,15 @@ module Combinatorics =
              i<-i+1
         looP
 
+
+    let SpanIsSorted (values:Span<int>) =
+        let mutable i=1
+        let mutable looP = true
+        while ((i < values.Length) && looP) do
+             looP <- (values.[i-1] <= values.[i])
+             i<-i+1
+        looP
+
     let IsSortedOffset (baseValues:int[]) (offset:int) (length:int) =
         let mutable i=1
         let mutable looP = true

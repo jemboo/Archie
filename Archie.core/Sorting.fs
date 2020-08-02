@@ -36,69 +36,44 @@ module Sorting =
                      let p = (int (rnd.NextUInt % mDex))
                      yield SwitchMap.[p] }
 
-    type Sortable = {degree:Degree; values:int[]}
+
+    type Sortable = {degree:Degree; baseArray:int[]; offset:int}
     module Sortable =
-        let Identity (degree:Degree) = { degree=degree; values=[|0 .. (Degree.value degree)-1|] }
-        let apply f (p:Sortable) = f p.values
-        let value p = apply id p
-
-        let create (degree:Degree) (vals:int[]) =
-            if vals.Length <> (Degree.value degree) then
-                Error (sprintf "array length %d <> degree %d:" 
-                        vals.Length (Degree.value degree))
-            else
-                {Sortable.degree=degree; values=vals } |> Ok
-
-        let copy (sIntArray:Sortable) =
-            {degree=sIntArray.degree; values= apply Array.copy sIntArray}
-
-        let fromPermutation (p:Permutation) = 
-            {degree=(Permutation.degree p); values=(Permutation.arrayValues p) }
-
-        let CreateRandoms (degree:Degree) (rnd:IRando) =
-            Permutation.CreateRandoms degree rnd 
-            |> Seq.map(fun i -> fromPermutation i)
-
-        let CreateRandom (degree:Degree) (rnd:IRando) =
-            Permutation.CreateRandom degree rnd 
-            |> fromPermutation
-
-        let FromIntArrayOfIntArrays (degree:Degree) (sortables:int[]) =
-            let mutable ct=0
-            let incr = (Degree.value degree)
-            seq {  
-                    while ct < sortables.Length do
-                        yield {degree=degree; values=[|1|]}
-                        ct<-ct+incr
-                    }
-
-        let AllBinary (degree:Degree) =
-            IntBits.AllBinaryTestCasesArray (Degree.value degree)
-            |> Array.map(fun s -> {degree=degree; values=s})
-
-    type Sortable2 = {degree:Degree; baseArray:int[]; offset:int}
-    module Sortable2 =
         let Identity (degree:Degree) = { degree=degree; baseArray=[|0 .. (Degree.value degree)-1|]; offset=0 }
-        let apply f (p:Sortable) = f p.values
-        let value p = apply id p
 
         let create (degree:Degree) (baseArray:int[]) (offset:int) =
             if baseArray.Length < offset + (Degree.value degree) then
                 Error (sprintf "baseArray length %d too short for offset %d:" 
                         baseArray.Length offset)
             else
-                {Sortable2.degree=degree; baseArray=baseArray; offset=offset } |> Ok
+                {Sortable.degree=degree; baseArray=baseArray; offset=offset } |> Ok
 
         let FromIntArray (degree:Degree) (baseArray:int[]) =
             seq {0..(Degree.value degree)..(baseArray.Length - (Degree.value degree))}
             |> Seq.map(fun ofst->{ degree=degree; baseArray=baseArray; offset=ofst })
                 
+
+    type SortableSet = {degree:Degree; baseArray:int[]; backArray:int[]; sortables:Sortable[]}
+    module SortableSet =
+        let Identity (degree:Degree) = { degree=degree; baseArray=[|0 .. (Degree.value degree)-1|]; offset=0 }
+
+        let create (degree:Degree) (baseArray:int[]) =
+            if baseArray.Length < 0 + (Degree.value degree) then
+                Error (sprintf "baseArray length %d is not a multiple of degree: %d:" 
+                        baseArray.Length (Degree.value degree))
+            else
+                let backArray = Array.zeroCreate baseArray.Length
+                Array.Copy(baseArray, backArray, baseArray.Length)
+                let sortables = Sortable.FromIntArray degree baseArray |> Seq.toArray
+                {degree=degree; baseArray=baseArray; backArray=backArray; sortables=sortables } |> Ok
+
+        let Reset (sortableSet:SortableSet) =
+            Array.Copy(sortableSet.backArray, sortableSet.baseArray, sortableSet.baseArray.Length)
+
         let AllBinary (degree:Degree) =
             let baseArray = IntBits.AllBinaryTestCasesArray (Degree.value degree)
                             |> Array.collect(fun a -> a)
-            baseArray,
-            seq {0..(Degree.value degree)..(baseArray.Length - (Degree.value degree))}
-             |> Seq.map(fun ofst->{ degree=degree; baseArray=baseArray; offset=ofst })
+            create degree baseArray
 
                 
 

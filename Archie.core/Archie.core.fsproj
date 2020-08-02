@@ -15,7 +15,6 @@
     <Compile Include="CombinatoricsTypes.fs" />
     <Compile Include="Sorting.fs" />
     <Compile Include="Sorter.fs" />
-    <Compile Include="SorterB.fs" />
     <Compile Include="SortersFromData.fs" />
   </ItemGroup>
 

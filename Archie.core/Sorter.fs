@@ -1,138 +1,112 @@
 ﻿namespace Archie.Base
-open System
 open Microsoft.FSharp.Collections
 open Sorting
+open System
 
-//These routines mutate the sortable inputs
-module SorterX =
+module Sorter =
 
-   let Sort (sorterDef:SorterDef) (mindex:int) (maxdex:int) (sortable:int[]) =
-       for i=mindex to maxdex-1 do
-           let switch = sorterDef.switches.[i]
-           let lv = sortable.[switch.low]
-           let hv = sortable.[switch.hi]
-           if(lv > hv) then
-               sortable.[switch.hi] <- lv
-               sortable.[switch.low] <- hv
-
-   let SortAndReturn (sorterDef:SorterDef) (mindex:int) (maxdex:int) (sortable:int[]) =
-    for i=mindex to maxdex-1 do
-        let switch = sorterDef.switches.[i]
-        let lv = sortable.[switch.low]
-        let hv = sortable.[switch.hi]
-        if(lv > hv) then
-            sortable.[switch.hi] <- lv
-            sortable.[switch.low] <- hv
-    sortable
-
-   // returns early if a sort fails on any of the sortables
-   let private SortAndQuitOnFail (sorterDef:SorterDef) (testCases:Sortable[]) =
-         let switchCount = (SwitchCount.value sorterDef.switchCount)
-         let mutable i=0
-         let mutable looP = true
-         while ((i < testCases.Length) && looP) do
-              let intsOut = Sortable.value testCases.[i]
-              let res = SortAndReturn sorterDef 0 switchCount intsOut
-              looP <- (Combinatorics.IsSorted res)
-              i<-i+1
-         Some looP
-
-   let private SortAll (sorterDef:SorterDef) (testCases:Sortable[]) =
-          let switchCount = (SwitchCount.value sorterDef.switchCount)
-          let mutable i=0
-          while (i < testCases.Length) do
-               let intsOut = Sortable.value testCases.[i]
-               Sort sorterDef 0 switchCount intsOut
-               i<-i+1
-          None
-
-   // returns early if a sort fails on any of the sortables
-   let SortTheCases (sorterDef:SorterDef) (testCases:Sortable[]) (quitOnFail:bool) =
-        match quitOnFail with
-        | true -> SortAndQuitOnFail sorterDef testCases
-        | false -> SortAll sorterDef testCases
-
-    // returns early if a sort fails on any of the sortables
-   let SortAllBinaries (sorterDef:SorterDef) =
-          SortTheCases sorterDef (Sortable.AllBinary sorterDef.degree) true
-
-
-//These routines work on and return a copy the sortable inputs
-module SorterC =
-
-   let SortTheCases (sorterDef:SorterDef) (testCases:Sortable[]) =
-        let switchCount = (SwitchCount.value sorterDef.switchCount)
-        let mutable i=0
-        seq { while (i < testCases.Length) do
-                 let sir = Sortable.copy testCases.[i]
-                 let intsOut = Sortable.value sir
-                 yield (SorterX.Sort sorterDef 0 switchCount intsOut)
-                 i<-i+1
-            }
-
-   let SortAllBinaries (sorterDef:SorterDef) =
-           SortTheCases sorterDef (Sortable.AllBinary sorterDef.degree)
-
-
-module SorterR =
-    let Sort (sorterDef:SorterDef) (mindex:int) (maxdex:int) 
-             (sortReaction:int->unit) (sortable:int[]) =
+    let Sort (sorterDef:SorterDef) (mindex:int) (maxdex:int) (sortable:Sortable) =
+        let span = new Span<int>(sortable.baseArray)
+        let slice = span.Slice(sortable.offset, Degree.value(sortable.degree))
         for i=mindex to maxdex-1 do
             let switch = sorterDef.switches.[i]
-            let lv = sortable.[switch.low]
-            let hv = sortable.[switch.hi]
+            let lv = slice.[switch.low]
+            let hv = slice.[switch.hi]
             if(lv > hv) then
-                sortable.[switch.hi] <- lv
-                sortable.[switch.low] <- hv
-                sortReaction i
+                slice.[switch.hi] <- lv
+                slice.[switch.low] <- hv
 
-    let SortTheCasesAndTrack (sorterDef:SorterDef) (testCases:Sortable[]) =
+
+    let SortAll (sorterDef:SorterDef) (testCases:Sortable[]) =
+           let switchCount = (SwitchCount.value sorterDef.switchCount)
+           let mutable i=0
+           while (i < testCases.Length) do
+                Sort sorterDef 0 switchCount testCases.[i]
+                i<-i+1
+
+
+    let SortT (sorterDef:SorterDef) (mindex:int) (maxdex:int) 
+              (switchTracker:SwitchTracker) (sortable:Sortable) =
+        let span = new Span<int>(sortable.baseArray)
+        let slice = span.Slice(sortable.offset, Degree.value(sortable.degree))
+        let weights = (SwitchTracker.weights switchTracker)
+        for i=mindex to maxdex-1 do
+            let switch = sorterDef.switches.[i]
+            let lv = slice.[switch.low]
+            let hv = slice.[switch.hi]
+            if(lv > hv) then
+                slice.[switch.hi] <- lv
+                slice.[switch.low] <- hv
+                weights.[i] <- weights.[i] + 1
+
+
+    let SortAllT (sorterDef:SorterDef) (testCases:Sortable[]) =
          let switchCount = (SwitchCount.value sorterDef.switchCount)
          let switchTracker = SwitchTracker.create sorterDef.switchCount
-         let weights = (SwitchTracker.weights switchTracker)
-         let sortReaction = fun i -> weights.[i] <- weights.[i] + 1
          let mutable i=0
          while (i < testCases.Length) do
-                  let intsOut = Sortable.value (testCases.[i])
-                  Sort sorterDef 0 switchCount sortReaction intsOut
+                  SortT sorterDef 0 switchCount switchTracker testCases.[i]
                   i<-i+1
          switchTracker
 
-    let SortAllBinariesAndTrack (sorterDef:SorterDef) =
-            SortTheCasesAndTrack sorterDef (Sortable.AllBinary sorterDef.degree)
+
+    let SortTR (sorterDef:SorterDef) (mindex:int) (maxdex:int) 
+               (switchTracker:SwitchTracker) (sortable:Sortable) =
+        let span = new Span<int>(sortable.baseArray)
+        let slice = span.Slice(sortable.offset, Degree.value(sortable.degree))
+        let weights = (SwitchTracker.weights switchTracker)
+        for i=mindex to maxdex-1 do
+            let switch = sorterDef.switches.[i]
+            let lv = slice.[switch.low]
+            let hv = slice.[switch.hi]
+            if(lv > hv) then
+                slice.[switch.hi] <- lv
+                slice.[switch.low] <- hv
+                weights.[i] <- weights.[i] + 1
+        Combinatorics.SpanIsSorted slice
 
 
+    let SortAllTR (sorterDef:SorterDef) (testCases:Sortable[]) =
+         let switchCount = (SwitchCount.value sorterDef.switchCount)
+         let switchTracker = SwitchTracker.create sorterDef.switchCount
+         let mutable i=0
+         let mutable success = true
+         while (i < testCases.Length) do
+                  success <- (SortTR sorterDef 0 switchCount switchTracker testCases.[i]) &&
+                              success
+                  i<-i+1
+         switchTracker, success
 
-module SorterT2 =
-    let SwitchSeqOnSortable (sorterDef:SorterDef) (switchIndexes:seq<int>)
-                            (sortReaction:int->unit) (sortable:Sortable) =
-        let sir = Sortable.copy sortable
-        let intsOut = Sortable.value sortable
-        switchIndexes
-            |> Seq.iter(fun i ->
-                let switch = sorterDef.switches.[i]
-                let lv = intsOut.[switch.low]
-                let hv = intsOut.[switch.hi]
-                if(lv > hv) then
-                    intsOut.[switch.hi] <- lv
-                    intsOut.[switch.low] <- hv
-                    sortReaction i)
-        sortable, sir
 
-    let CollectFailsAndTracker (sorterDef:SorterDef) (sorterIndexes:int[] option) 
-                               (sortables:Sortable[] option) =
-           let indexes = match sorterIndexes with
-                            | Some indexes -> indexes
-                            | None ->  Array.init(sorterDef.switches.Length) (fun i -> i)
+    let SortTB (sorterDef:SorterDef) (mindex:int) (maxdex:int) 
+               (switchUses:SwitchTracker) (lastSwitch:SwitchTracker) 
+               (sortable:Sortable) =
+        let span = new Span<int>(sortable.baseArray)
+        let slice = span.Slice(sortable.offset, Degree.value(sortable.degree))
+        let useWeights = (SwitchTracker.weights switchUses)
+        let lastWeights = (SwitchTracker.weights lastSwitch)
+        let mutable looP = true
+        let mutable i = mindex
 
-           let sortables = match sortables with
-                              | Some sortables -> sortables
-                              | None ->  (Sortable.AllBinary sorterDef.degree)
+        while ((i < maxdex) && looP) do
+            let switch = sorterDef.switches.[i]
+            let lv = slice.[switch.low]
+            let hv = slice.[switch.hi]
+            if(lv > hv) then
+                slice.[switch.hi] <- lv
+                slice.[switch.low] <- hv
+                useWeights.[i] <- useWeights.[i] + 1
+                looP <- not (Combinatorics.SpanIsSorted slice) 
+            i <- i+1
+        lastWeights.[i-1] <- lastWeights.[i-1] + 1
 
-           let switchTracker = SwitchTracker.create sorterDef.switchCount
-           let weights = (SwitchTracker.weights switchTracker)
-           let sortReaction = fun i -> weights.[i] <- weights.[i] + 1
-           let sortFailsPairs  = sortables |> Seq.map(SwitchSeqOnSortable sorterDef indexes sortReaction)
-                                           |> Seq.filter(fun s -> not (Combinatorics.IsSorted (Sortable.value (snd s))))
-                                           |> Seq.toArray
-           sortFailsPairs, switchTracker
+
+    let SortAllTB (sorterDef:SorterDef) (testCases:Sortable[]) =
+         let switchCount = (SwitchCount.value sorterDef.switchCount)
+         let switchUseTracker = SwitchTracker.create sorterDef.switchCount
+         let lastSwitchTracker = SwitchTracker.create sorterDef.switchCount
+         let mutable i=0
+         while (i < testCases.Length) do
+                  SortTB sorterDef 0 switchCount switchUseTracker lastSwitchTracker testCases.[i]
+                  i<-i+1
+         switchUseTracker, lastSwitchTracker
