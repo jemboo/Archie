@@ -1,8 +1,7 @@
 ﻿namespace Archie.Base
-
 open System
 
-module Sorting =
+module SorterParts =
 
     [<Struct>]
     type Switch = { low: int; hi: int }
@@ -75,7 +74,34 @@ module Sorting =
                             |> Array.collect(fun a -> a)
             create degree baseArray
 
-                
+
+
+    type SortableSet2 = {degree:Degree; baseArray:int[]; offsets:int[]}
+    module SortableSet2 =
+        let create (degree:Degree) (baseArray:int[]) =
+            if baseArray.Length < 0 + (Degree.value degree) then
+                Error (sprintf "baseArray length %d is not a multiple of degree: %d:" 
+                        baseArray.Length (Degree.value degree))
+            else
+                let baseCopy = Array.zeroCreate baseArray.Length
+                Array.Copy(baseArray, baseCopy, baseArray.Length)
+                {degree=degree; 
+                 baseArray=baseCopy; 
+                 offsets=[|0..(Degree.value degree)..(baseCopy.Length - 1)|] } |> Ok
+
+        let copy (sortableSet:SortableSet2) =
+            let baseCopy = Array.zeroCreate sortableSet.baseArray.Length
+            Array.Copy(sortableSet.baseArray, baseCopy, baseCopy.Length)
+            let offsetCopy = Array.zeroCreate sortableSet.offsets.Length
+            Array.Copy(sortableSet.offsets, offsetCopy, offsetCopy.Length)
+            {degree=sortableSet.degree; baseArray=baseCopy; offsets=offsetCopy}
+
+        let allBinary (degree:Degree) =
+            let baseArray = IntBits.AllBinaryTestCasesArray (Degree.value degree)
+                            |> Array.collect(fun a -> a)
+            create degree baseArray
+
+
 
     type Stage = {switches:Switch list; degree:Degree}
     module Stage =
@@ -109,54 +135,119 @@ module Sorting =
                     yield curDex
                  }
 
-        let MakeStagePackedSwitchSeq (rnd:IRando) (degree:Degree) =
+        let MakeStagePackedSwitchSeq (degree:Degree) (rnd:IRando)=
             let aa (rnd:IRando)  = 
                 (TwoCyclePerm.MakeRandomFullTwoCycle degree rnd )
                         |> Switch.SwitchSeqFromPolyCycle
             seq { while true do yield! (aa rnd) }
 
 
-    type SorterDef = {degree:Degree; switches:array<Switch>; switchCount:SwitchCount}
-     module SorterDef =
+    type Sorter = {degree:Degree; switches:array<Switch>; switchCount:SwitchCount}
+     module Sorter =
 
          let CreateRandom (degree:Degree) (switchCount:SwitchCount) (rnd:IRando) =
              {
-                 SorterDef.degree=degree;
+                 Sorter.degree=degree;
                  switchCount=switchCount;
                  switches = Switch.RandomSwitchesOfDegree degree rnd
                                  |> Seq.take (SwitchCount.value switchCount)
                                  |> Seq.toArray
              }
 
-         //let CreateRandomPackedStages (degree:Degree) (switchCount:SwitchCount) (rando:IRando) =
-         //    {
-         //        SorterDef.degree=degree;
-         //        switchCount=switchCount;
-         //        switches = (Stage.MakeStagePackedSwitchSeq rando degree)
-         //                        |> Seq.take (SwitchCount.value switchCount)
-         //                        |> Seq.toArray
-         //    }
+         let CreateRandomPackedStages (degree:Degree) (stageCount:StageCount) (rando:IRando) =
+             let switchCount = StageCount.ToSwitchCount degree stageCount |> Result.ExtractOrThrow
+             {
+                 Sorter.degree=degree;
+                 switchCount = switchCount
+                 switches = (Stage.MakeStagePackedSwitchSeq degree rando )
+                                 |> Seq.take (SwitchCount.value switchCount)
+                                 |> Seq.toArray
+             }
 
-         let AppendSwitches (switches:seq<Switch>) (sorterDef:SorterDef) =
+         let AppendSwitches (switches:seq<Switch>) (sorterDef:Sorter) =
              let newSwitches = (switches |> Seq.toArray) |> Array.append sorterDef.switches
              let newSwitchCount = SwitchCount.create "" newSwitches.Length |> Result.toOption
              {
-                 SorterDef.degree = sorterDef.degree;
+                 Sorter.degree = sorterDef.degree;
                  switchCount=newSwitchCount.Value;
                  switches = (switches |> Seq.toArray) |> Array.append sorterDef.switches
              }
 
-         let TrimLength (sorterDef:SorterDef) (newLength:SwitchCount) =
+         let TrimLength (sorterDef:Sorter) (newLength:SwitchCount) =
              if (SwitchCount.value sorterDef.switchCount) < (SwitchCount.value newLength) then
                 "New length is longer than sorter" |> Error
              else
                 let newSwitches = sorterDef.switches |> Array.take (SwitchCount.value newLength)
                 {
-                    SorterDef.degree = sorterDef.degree;
+                    Sorter.degree = sorterDef.degree;
                     switchCount = newLength;
                     switches = newSwitches
                 } |> Ok
              
+
+    type SorterSet = {degree:Degree; sorterCount:SorterCount; sorters:Sorter[] }
+    module SorterSet =
+        let createRandomStagePacked (degree:Degree) (stageCount:StageCount) 
+                                    (sorterCount:SorterCount) (rando:IRando) =
+         {
+            degree=degree; 
+            sorterCount=sorterCount; 
+            sorters = seq {1 .. (SorterCount.value sorterCount)} 
+                      |> Seq.map(fun i -> (Sorter.CreateRandomPackedStages degree stageCount rando))
+                      |> Seq.toArray
+         }
+
+        let createRandom (degree:Degree) (switchCount:SwitchCount) 
+                         (sorterCount:SorterCount) (rando:IRando) =
+          {
+             degree=degree; 
+             sorterCount=sorterCount; 
+             sorters = seq {1 .. (SorterCount.value sorterCount)} 
+                       |> Seq.map(fun i -> (Sorter.CreateRandom degree switchCount rando))
+                       |> Seq.toArray
+          }
+
+        let fromSorters (degree:Degree) (sorters:seq<Sorter>) =
+            let sorterArray = sorters |> Seq.toArray
+            {
+               degree=degree; 
+               sorterCount= (SorterCount.create "" sorterArray.Length) |> Result.ExtractOrThrow; 
+               sorters = sorterArray
+            }
+
+    type SorterSet2 = {degree:Degree; sorterCount:SorterCount; sorters:Entity<Sorter>[] }
+    module SorterSet2 =
+        let createRandomStagePacked (degree:Degree) (stageCount:StageCount) 
+                                    (sorterCount:SorterCount) (rando1:IRando) (rando2:IRando) =
+         {
+            degree=degree; 
+            sorterCount=sorterCount; 
+            sorters = seq {1 .. (SorterCount.value sorterCount)} 
+                      |> Seq.map(fun i -> (Sorter.CreateRandomPackedStages degree stageCount rando1))
+                      |> Entity.createMany rando1 rando2
+                      |> Seq.toArray
+         }
+
+        let createRandom (degree:Degree) (switchCount:SwitchCount) 
+                         (sorterCount:SorterCount) (rando1:IRando) (rando2:IRando) =
+          {
+             degree=degree; 
+             sorterCount=sorterCount; 
+             sorters = seq {1 .. (SorterCount.value sorterCount)} 
+                       |> Seq.map(fun i -> (Sorter.CreateRandom degree switchCount rando1))
+                       |> Entity.createMany rando1 rando2
+                       |> Seq.toArray
+          }
+
+        let fromSorters (degree:Degree) (sorters:seq<Sorter>)
+                        (rando1:IRando) (rando2:IRando) =
+            let sorterArray = sorters |> Seq.toArray
+            {
+               degree=degree; 
+               sorterCount= (SorterCount.create "" sorterArray.Length) |> Result.ExtractOrThrow; 
+               sorters = sorterArray |> Entity.createMany rando1 rando2 |> Seq.toArray
+            }
+
 
     type SwitchTracker = private {switchCount:SwitchCount; weights:int[]}
     module SwitchTracker =
@@ -177,11 +268,21 @@ module Sorting =
                    weights = weightsSum;
                } |> Ok
 
+        let UseCount (st:SwitchTracker) =
+            (weights st) |> Array.filter(fun i->i>0) |> Array.length
+
+        let UseTotal (st:SwitchTracker) =
+            (weights st) |> Array.sum
+
+        let EntropyBits (sorterSet:SwitchTracker) =
+            (weights sorterSet) |> Combinatorics.EntropyBits
+
+
 
     type SwitchUsage = {switch:Switch; switchIndex:int; useCount:int}
     module SwitchUsage =
 
-        let CollectTheUsedSwitches (sorter:SorterDef) (tracker:SwitchTracker) = 
+        let CollectTheUsedSwitches (sorter:Sorter) (tracker:SwitchTracker) = 
             seq { for i = 0 to tracker.weights.Length - 1 do
                     if (tracker.weights.[i] > 0) then
                         yield {switch=sorter.switches.[i]; switchIndex=i; 
@@ -191,9 +292,3 @@ module Sorting =
         let ToString (sw:SwitchUsage) =
             sprintf "{%s, %d, %d}" (sw.switch |> Switch.ToString)
                                    sw.switchIndex sw.useCount
-
-
-    type SorterGenerator = {weights:int[]}
-    module SorterGenerator =
-        let Make (length: int) =
-            {weights=Array.init length (fun i -> 0)}

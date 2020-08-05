@@ -3,8 +3,9 @@
 open System
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open Archie.Base
-open Archie.Base.Sorting
+open Archie.Base.SorterOps
 open Archie.Base.SortersFromData
+open Archie.Base.SorterParts
 
 [<TestClass>]
 type SortingFixture () =
@@ -56,22 +57,24 @@ type SortingFixture () =
         let seed = RandomSeed.create "" 424 |> Result.ExtractOrThrow
 
         let randoLcg = new RandomNet(seed)
-        let sorter = SorterDef.CreateRandom degree switchCount randoLcg
+        let sorter = Sorter.CreateRandom degree switchCount randoLcg
         Assert.AreEqual(sorter.switches.Length, (SwitchCount.value switchCount))
 
         let randoLcg2 = new RandomNet(seed)
-        let sorter2 = SorterDef.CreateRandom degree switchCount randoLcg2
+        let sorter2 = Sorter.CreateRandom degree switchCount randoLcg2
         Assert.AreEqual(sorter, sorter2)
 
         let seed2 = RandomSeed.create "" 425 |> Result.ExtractOrThrow
         let randoLcg3 = new RandomNet(seed2)
-        let sorter3 = SorterDef.CreateRandom degree switchCount randoLcg3
+        let sorter3 = Sorter.CreateRandom degree switchCount randoLcg3
         Assert.AreNotEqual(sorter, sorter3)
 
         Assert.IsTrue(true);
 
     [<TestMethod>]
     member this.MakeSortable() =
+        let yuo = 7
+        let w = yuo / 2
         //let degree = Degree.create "" 16 |> Result.ExtractOrThrow
         //let baseArray, sortableSeq = Sortable.AllBinary degree
         //let backArray = Array.zeroCreate baseArray.Length

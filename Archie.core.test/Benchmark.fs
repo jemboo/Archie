@@ -2,7 +2,7 @@
 
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open Archie.Base
-open Archie.Base.Sorting
+open Archie.Base.SorterParts
 open BenchmarkDotNet.Attributes
 open Archie.Base.SortersFromData
 open System
@@ -22,26 +22,121 @@ type SorterFullTestSlice() =
 
     [<Benchmark(Baseline = true)>]
     member this.SortAll() =
-        Sorter.SortAll sorter16 sortableSet.sortables
+        SorterOps.SortAll sorter16 sortableSet.sortables
         SortableSet.Reset sortableSet
 
     [<Benchmark>]
     member this.SortAllT() =
-        let res = Sorter.SortAllT sorter16 sortableSet.sortables
+        let res = SorterOps.SortAllT sorter16 sortableSet.sortables
         SortableSet.Reset sortableSet
         res
 
     [<Benchmark>]
     member this.SortAllTR() =
-        let res = Sorter.SortAllTR sorter16 sortableSet.sortables
+        let res = SorterOps.SortAllTR sorter16 sortableSet.sortables
         SortableSet.Reset sortableSet
         res
 
     [<Benchmark>]
     member this.SortAllTB() =
-        let res = Sorter.SortAllTB sorter16 sortableSet.sortables
+        let res = SorterOps.SortAllTB sorter16 sortableSet.sortables
         SortableSet.Reset sortableSet
         res
+
+
+//|   Method |     Mean |    Error |   StdDev | Ratio | RatioSD |
+//|--------- |---------:|---------:|---------:|------:|--------:|
+//| SortSpTB |  2.849 s | 0.0174 s | 0.0163 s |  1.00 |    0.00 |
+//|   SortTB |  3.267 s | 0.0125 s | 0.0104 s |  1.15 |    0.01 |
+//| SortSpTR | 13.992 s | 0.0373 s | 0.0349 s |  4.91 |    0.03 |
+//|   SortTR | 13.979 s | 0.0297 s | 0.0263 s |  4.90 |    0.03 |
+type SorterSetFullTest() =
+    let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
+    let stageCount = (StageCount.create "" 200) |> Result.ExtractOrThrow
+    let sorterCount = (SorterCount.create "" 100) |> Result.ExtractOrThrow
+    let switchCount = (SwitchCount.create "" 1600) |> Result.ExtractOrThrow
+    let seed = RandomSeed.create "" 4124 |> Result.ExtractOrThrow
+    let randoLcg = new RandomLcg(seed) :> IRando
+
+    let stagePackedSet = SorterSet.createRandomStagePacked degree stageCount
+                            sorterCount randoLcg
+    let sorterSet = SorterSet.createRandom degree switchCount  sorterCount randoLcg
+    let sortableSet = SortableSet.AllBinary degree |> Result.ExtractOrThrow
+
+    //[<Benchmark(Baseline = true)>]
+    //member this.SortSpTB() =
+    //    SortingRun.RunSorterSetOnSortableSetTB sortableSet stagePackedSet
+
+    [<Benchmark>]
+    member this.SortTB() =
+        SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet
+
+    //[<Benchmark>]
+    //member this.SortSpTR() =
+    //    SortingRun.RunSorterSetOnSortableSetTR sortableSet stagePackedSet
+
+    //[<Benchmark>]
+    //member this.SortTR() =
+    //    SortingRun.RunSorterSetOnSortableSetTR sortableSet sorterSet
+
+    [<Benchmark(Baseline = true)>]
+    member this.SortTBp() =
+        SortingRun.RunSorterSetOnSortableSetTBp sortableSet sorterSet
+
+
+type w2() =
+
+    member this.ww() =
+        let entroB (dtsp:Dependent<SwitchTracker*SwitchTracker>) =
+            let rr = (Dependent.character dtsp) |> fst |> SwitchTracker.EntropyBits
+            (Dependent.createD dtsp rr)
+
+        let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
+        let switchCount = (SwitchCount.create "" 1600) |> Result.ExtractOrThrow
+        let stageCount = (StageCount.create "" 200) |> Result.ExtractOrThrow
+        let sorterCount = (SorterCount.create "" 100) |> Result.ExtractOrThrow
+        let seed = RandomSeed.create "" 41324 |> Result.ExtractOrThrow
+        let seed2 = RandomSeed.create "" 4124 |> Result.ExtractOrThrow
+        let randoLcg = new RandomLcg(seed) :> IRando
+        let randoLcg2 = new RandomLcg(seed2) :> IRando
+
+        let sorterSet = SorterSet2.createRandomStagePacked degree stageCount
+                                   sorterCount randoLcg randoLcg2
+
+        let sortableSet = SortableSet.AllBinary degree |> Result.ExtractOrThrow
+
+        let res = SortingRun.RunSorterSetOnSortableSetTB2 sortableSet sorterSet
+        let goodies = res |> Array.map(fun r -> entroB r)
+        goodies |> Array.iter(fun v-> Console.WriteLine(sprintf "%A  %f" (EntityId.value (Dependent.id v)) (Dependent.character v) ))
+        //let goodies2 = res |> Array.map(fun r -> (fst r)|> SwitchTracker.UseTotal)
+        //goodies2 |> Array.iter(fun v-> Console.WriteLine(sprintf "%A" v))
+
+
+    member this.wwP() =
+        let entroB (dtsp:Dependent<SwitchTracker*SwitchTracker>) =
+            let rr = (Dependent.character dtsp) |> fst |> SwitchTracker.EntropyBits
+            (Dependent.createD dtsp rr)
+
+        let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
+        let switchCount = (SwitchCount.create "" 1600) |> Result.ExtractOrThrow
+        let stageCount = (StageCount.create "" 200) |> Result.ExtractOrThrow
+        let sorterCount = (SorterCount.create "" 100) |> Result.ExtractOrThrow
+        let seed = RandomSeed.create "" 41324 |> Result.ExtractOrThrow
+        let seed2 = RandomSeed.create "" 4124 |> Result.ExtractOrThrow
+        let randoLcg = new RandomLcg(seed) :> IRando
+        let randoLcg2 = new RandomLcg(seed2) :> IRando
+
+        let sorterSet = SorterSet2.createRandomStagePacked degree stageCount
+                                   sorterCount randoLcg randoLcg2
+
+        let sortableSet = SortableSet.AllBinary degree |> Result.ExtractOrThrow
+
+        let res = SortingRun.RunSorterSetOnSortableSetTB2p sortableSet sorterSet
+        let goodies = res |> Array.map(fun r -> entroB r)
+        goodies |> Array.iter(fun v-> Console.WriteLine(sprintf "%A  %f" (EntityId.value (Dependent.id v)) (Dependent.character v) ))
+        //let goodies2 = res |> Array.map(fun r -> (fst r)|> SwitchTracker.UseTotal)
+        //goodies2 |> Array.iter(fun v-> Console.WriteLine(sprintf "%A" v))
+
 
 
 
@@ -87,7 +182,7 @@ type BenchmarkFixture () =
     let sorterTrim = result {
                             let! fullLen = RefSorter.CreateRefSorter RefSorter.End16
                             let! trimLen = SwitchCount.create "" 59
-                            return! SorterDef.TrimLength fullLen trimLen
+                            return! Sorter.TrimLength fullLen trimLen
                         } |> Result.ExtractOrThrow
 
     let baseArray = IntBits.AllBinaryTestCasesArray (Degree.value degree)
@@ -126,10 +221,10 @@ type BenchmarkFixture () =
 
      [<TestMethod>]
      member this.TR() =
-         let t, s = Sorter.SortAllTR sorterTrim SortableArray
-         let t2, s2 = Sorter.SortAllTR sorterTrim SortableArray
+         let t, s = SorterOps.SortAllTR sorterTrim SortableArray
+         let t2, s2 = SorterOps.SortAllTR sorterTrim SortableArray
          Array.Copy(backArray, baseArray, baseArray.Length)
-         let t3, s3 = Sorter.SortAllTR sorter16 SortableArray
+         let t3, s3 = SorterOps.SortAllTR sorter16 SortableArray
 
          Assert.IsTrue (true)
 

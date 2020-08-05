@@ -2,6 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
@@ -10,11 +19,13 @@
     <Compile Include="ConstrainedType.fs" />
     <Compile Include="CommonTypes.fs" />
     <Compile Include="ElRando.fs" />
+    <Compile Include="Entity.fs" />
     <Compile Include="Utils.fs" />
     <Compile Include="Combinatorics.fs" />
     <Compile Include="CombinatoricsTypes.fs" />
-    <Compile Include="Sorting.fs" />
-    <Compile Include="Sorter.fs" />
+    <Compile Include="SorterParts.fs" />
+    <Compile Include="SorterOps.fs" />
+    <Compile Include="SortingRun.fs" />
     <Compile Include="SortersFromData.fs" />
   </ItemGroup>
 

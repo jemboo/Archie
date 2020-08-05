@@ -103,6 +103,15 @@ module Combinatorics =
         Array.fold2 (fun acc elem1 elem2 ->
         acc + (elem1 - elem2) * (elem1 - elem2)) 0 a b
 
+    // Measured in bits (log base 2)
+    let EntropyBits (a:array<int>) =
+        let f = 1.0 / Math.Log(2.0)
+        let tot = float (a |> Array.sum)
+        let fa = a  |> Array.filter(fun i->i>0)
+                    |> Array.map (fun i->(float i) / tot)
+        let res = Array.fold (fun acc elem -> acc - elem * f * Math.Log(elem)) 0.0 fa
+        res 
+
     let UnsortednessSquared (a:array<int>) =
         DistanceSquared a [|0 .. (a.Length - 1)|]
 

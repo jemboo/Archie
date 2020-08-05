@@ -6,6 +6,7 @@ type Degree = private Degree of int
 type RandomSeed = private RandomSeed of int
 type SorterCount = private SorterCount of int
 type SwitchCount = private SwitchCount of int
+type StageCount = private StageCount of int
 type SortableCount = private SortableCount of int
 type EntityId = private EntityId of Guid
 type JsonString = private JsonString of string
@@ -39,7 +40,14 @@ module RandomSeed =
 module SwitchCount  =
     let value (SwitchCount v) = v
     let create fieldName v = 
-        ConstrainedType.createInt fieldName SwitchCount 1 1000 v
+        ConstrainedType.createInt fieldName SwitchCount 1 10000 v
+
+module StageCount  =
+    let value (StageCount v) = v
+    let create fieldName v = 
+        ConstrainedType.createInt fieldName StageCount 1 1000 v
+    let ToSwitchCount (degree:Degree) (stageCount:StageCount) =
+        SwitchCount.create "" ((Degree.value degree) * (value stageCount) / 2)
 
 module SorterCount  =
     let value (SorterCount v) = v

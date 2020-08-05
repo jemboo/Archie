@@ -5,6 +5,15 @@
 
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,8 +21,9 @@
     <Compile Include="CombinatoricsFixture.fs" />
     <Compile Include="CombinatoricsTypesFixture.fs" />
     <Compile Include="RandoFixture.fs" />
-    <Compile Include="SortingFixture.fs" />
+    <Compile Include="SorterPartsFixture.fs" />
     <Compile Include="SorterFixture.fs" />
+    <Compile Include="SortingRunFixture.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

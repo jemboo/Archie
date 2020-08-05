@@ -1,7 +1,7 @@
 ﻿namespace Archie.Base
 open System
 open Archie.Base
-open Archie.Base.Sorting
+open Archie.Base.SorterParts
 
 module SortersFromData =
 
@@ -34,7 +34,7 @@ module SortersFromData =
            let! switchSeq = ParseToSwitches sorterString degree
            let switches = switchSeq |> Seq.toArray
            let! switchCount = SwitchCount.create "" switches.Length 
-           return { SorterDef.degree = degree; 
+           return { Sorter.degree = degree; 
                     switchCount = switchCount;
                     switches = switches }
         }

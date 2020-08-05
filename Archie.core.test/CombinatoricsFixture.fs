@@ -60,6 +60,13 @@ type CombinatoricsFixture () =
         Assert.IsFalse (Combinatorics.IsSortedOffset [|0; 1; 1; 0; 1; 0; 1; 1 |] 1 5)
         Assert.IsTrue (Combinatorics.IsSortedOffset [|0; 0; 0; 0; 1; 1; 0; 0|] 1 5)
 
+    [<TestMethod>]
+    member this.TestEntropy() =
+        let res1 = Combinatorics.EntropyBits [|1; 1 |]
+        Assert.AreEqual (res1, 1.0)
+        let res2 = Combinatorics.EntropyBits [|1; 1; 1; 1; 0|]
+        Assert.AreEqual (res2, 2.0)
+
     //[<TestMethod>]
     //member this.TestSortIntArray() =
     //    let length = 29

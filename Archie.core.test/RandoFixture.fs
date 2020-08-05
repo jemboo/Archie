@@ -3,7 +3,7 @@
 open System
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open Archie.Base
-open Archie.Base.Sorting
+open Archie.Base.SorterOps
 
 [<TestClass>]
 type RandoFixture () =

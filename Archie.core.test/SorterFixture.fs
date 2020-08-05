@@ -1,7 +1,7 @@
 ﻿namespace Archie.core.test
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open Archie.Base
-open Archie.Base.Sorting
+open Archie.Base.SorterParts
 open Archie.Base.SortersFromData
 open System
 
@@ -15,7 +15,7 @@ type SorterFixture () =
         let sortableCount = 4
         let seed = 123 |> RandomSeed.create "" |> Result.ExtractOrThrow
         let rnd = new RandomLcg(seed)
-        let sorterDef = SorterDef.CreateRandom degree sorterLen rnd
+        let sorterDef = Sorter.CreateRandom degree sorterLen rnd
         Assert.IsTrue (true)
 
 
@@ -36,7 +36,7 @@ type SorterFixture () =
         let sorterTrim = result {
                                 let! fullLen = RefSorter.CreateRefSorter RefSorter.Green16
                                 let! trimLen = SwitchCount.create "" 58
-                                return! SorterDef.TrimLength fullLen trimLen
+                                return! Sorter.TrimLength fullLen trimLen
                             } |> Result.ExtractOrThrow
 
 
