@@ -3,8 +3,6 @@
 open System
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open Archie.Base
-open Archie.Base.SorterOps
-open Archie.Base.SortersFromData
 open Archie.Base.SorterParts
 
 [<TestClass>]
@@ -69,18 +67,4 @@ type SortingFixture () =
         let sorter3 = Sorter.CreateRandom degree switchCount randoLcg3
         Assert.AreNotEqual(sorter, sorter3)
 
-        Assert.IsTrue(true);
-
-    [<TestMethod>]
-    member this.MakeSortable() =
-        let yuo = 7
-        let w = yuo / 2
-        //let degree = Degree.create "" 16 |> Result.ExtractOrThrow
-        //let baseArray, sortableSeq = Sortable.AllBinary degree
-        //let backArray = Array.zeroCreate baseArray.Length
-        //Array.Copy(baseArray, backArray, baseArray.Length)
-
-        //let sortableArray = sortableSeq |> Seq.toArray
-        //let sorter = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
-        //let yab = Sorter.SortAllTB sorter sortableArray
         Assert.IsTrue(true);

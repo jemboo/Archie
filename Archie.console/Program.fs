@@ -8,7 +8,7 @@ module Consolo =
 
     [<EntryPoint>]
     let main argv =
-        let summary = BenchmarkRunner.Run<SorterSetFullTest>()
+        let summary = BenchmarkRunner.Run<SorterSetRandomTest>()
         printfn "%A" summary
 
         //let qua = new w2()

@@ -35,48 +35,8 @@ module SorterParts =
                      let p = (int (rnd.NextUInt % mDex))
                      yield SwitchMap.[p] }
 
-
-    type Sortable = {degree:Degree; baseArray:int[]; offset:int}
-    module Sortable =
-        let Identity (degree:Degree) = { degree=degree; baseArray=[|0 .. (Degree.value degree)-1|]; offset=0 }
-
-        let create (degree:Degree) (baseArray:int[]) (offset:int) =
-            if baseArray.Length < offset + (Degree.value degree) then
-                Error (sprintf "baseArray length %d too short for offset %d:" 
-                        baseArray.Length offset)
-            else
-                {Sortable.degree=degree; baseArray=baseArray; offset=offset } |> Ok
-
-        let FromIntArray (degree:Degree) (baseArray:int[]) =
-            seq {0..(Degree.value degree)..(baseArray.Length - (Degree.value degree))}
-            |> Seq.map(fun ofst->{ degree=degree; baseArray=baseArray; offset=ofst })
-                
-
-    type SortableSet = {degree:Degree; baseArray:int[]; backArray:int[]; sortables:Sortable[]}
+    type SortableSet = {degree:Degree; baseArray:int[]}
     module SortableSet =
-        let Identity (degree:Degree) = { degree=degree; baseArray=[|0 .. (Degree.value degree)-1|]; offset=0 }
-
-        let create (degree:Degree) (baseArray:int[]) =
-            if baseArray.Length < 0 + (Degree.value degree) then
-                Error (sprintf "baseArray length %d is not a multiple of degree: %d:" 
-                        baseArray.Length (Degree.value degree))
-            else
-                let backArray = Array.zeroCreate baseArray.Length
-                Array.Copy(baseArray, backArray, baseArray.Length)
-                let sortables = Sortable.FromIntArray degree baseArray |> Seq.toArray
-                {degree=degree; baseArray=baseArray; backArray=backArray; sortables=sortables } |> Ok
-
-        let Reset (sortableSet:SortableSet) =
-            Array.Copy(sortableSet.backArray, sortableSet.baseArray, sortableSet.baseArray.Length)
-
-        let AllBinary (degree:Degree) =
-            let baseArray = IntBits.AllBinaryTestCasesArray (Degree.value degree)
-                            |> Array.collect(fun a -> a)
-            create degree baseArray
-
-
-    type SortableSet2 = {degree:Degree; baseArray:int[]}
-    module SortableSet2 =
         let create (degree:Degree) (baseArray:int[]) =
             if baseArray.Length < 0 + (Degree.value degree) then
                 Error (sprintf "baseArray length %d is not a multiple of degree: %d:" 
@@ -87,7 +47,7 @@ module SorterParts =
                 {degree=degree; 
                  baseArray=baseCopy} |> Ok
 
-        let copy (sortableSet:SortableSet2) =
+        let copy (sortableSet:SortableSet) =
             let baseCopy = Array.zeroCreate sortableSet.baseArray.Length
             Array.Copy(sortableSet.baseArray, baseCopy, baseCopy.Length)
             {degree=sortableSet.degree; baseArray=baseCopy;}
@@ -233,8 +193,8 @@ module SorterParts =
                sorters = sorterArray
             }
 
-    type SorterSet2 = {degree:Degree; sorterCount:SorterCount; sorters:Entity<Sorter>[] }
-    module SorterSet2 =
+    type SorterSetE = {degree:Degree; sorterCount:SorterCount; sorters:Entity<Sorter>[] }
+    module SorterSetE =
         let createRandomStagePacked (degree:Degree) (stageCount:StageCount) 
                                     (sorterCount:SorterCount) (rando1:IRando) (rando2:IRando) =
          {

@@ -46,6 +46,4 @@ type SorterFixture () =
     [<TestMethod>]
     member this.SliceIt() =
         let sorter = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
-
-
         Assert.IsTrue(true)

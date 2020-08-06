@@ -3,7 +3,6 @@
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open Archie.Base
 open Archie.Base.SorterParts
-open BenchmarkDotNet.Attributes
 open Archie.Base.SortersFromData
 open System
 open System.Diagnostics
@@ -13,26 +12,7 @@ open System.Diagnostics
 type SortingRunFixture() =
 
     [<TestMethod>]
-     member this.Flatten() =
-         let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
-         let stageCount = (StageCount.create "" 110) |> Result.ExtractOrThrow
-         let sorterCount = (SorterCount.create "" 10) |> Result.ExtractOrThrow
-         let seed = RandomSeed.create "" 4124 |> Result.ExtractOrThrow
-         let randoLcg = new RandomLcg(seed) :> IRando
-
-         let sorterSet = SorterSet.createRandomStagePacked degree stageCount
-                                    sorterCount randoLcg
-
-         let sortableSet = SortableSet.AllBinary degree |> Result.ExtractOrThrow
-
-         let res = SortingRun.RunSorterSetOnSortableSetTR sortableSet sorterSet
-         let goodies = res |> Array.filter(fun t -> snd t)
-         let duke = goodies.Length
-         Assert.IsTrue (duke > 0)
-
-
-    [<TestMethod>]
-     member this.Flatten2() =
+     member this.RandomSorterTR() =
          let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
          let switchCount = (SwitchCount.create "" 880) |> Result.ExtractOrThrow
          let sorterCount = (SorterCount.create "" 10) |> Result.ExtractOrThrow
@@ -42,7 +22,7 @@ type SortingRunFixture() =
          let sorterSet = SorterSet.createRandom degree switchCount
                                     sorterCount randoLcg
 
-         let sortableSet = SortableSet.AllBinary degree |> Result.ExtractOrThrow
+         let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
 
          let res = SortingRun.RunSorterSetOnSortableSetTR sortableSet sorterSet
          let goodies = res |> Array.filter(fun t -> snd t)
@@ -50,9 +30,27 @@ type SortingRunFixture() =
          Assert.IsTrue (duke > 0)
 
 
+    [<TestMethod>]
+     member this.RandomStagePackedSorterTR() =
+         let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
+         let stageCount = (StageCount.create "" 110) |> Result.ExtractOrThrow
+         let sorterCount = (SorterCount.create "" 10) |> Result.ExtractOrThrow
+         let seed = RandomSeed.create "" 4124 |> Result.ExtractOrThrow
+         let randoLcg = new RandomLcg(seed) :> IRando
+
+         let sorterSet = SorterSet.createRandomStagePacked degree stageCount
+                                    sorterCount randoLcg
+
+         let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
+
+         let res = SortingRun.RunSorterSetOnSortableSetTR sortableSet sorterSet
+         let goodies = res |> Array.filter(fun t -> snd t)
+         let duke = goodies.Length
+         Assert.IsTrue (duke > 0)
+
 
     [<TestMethod>]
-     member this.Flatten3() =
+     member this.RunSorterSetOnSortableSetTB() =
          let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
          let switchCount = (SwitchCount.create "" 1600) |> Result.ExtractOrThrow
          let sorterCount = (SorterCount.create "" 200) |> Result.ExtractOrThrow
@@ -62,7 +60,7 @@ type SortingRunFixture() =
          let sorterSet = SorterSet.createRandom degree switchCount
                                     sorterCount randoLcg
 
-         let sortableSet = SortableSet.AllBinary degree |> Result.ExtractOrThrow
+         let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
 
          let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet
          let goodies = res |> Array.map(fun r -> (fst r)|> SwitchTracker.EntropyBits )
@@ -74,7 +72,7 @@ type SortingRunFixture() =
 
 
     [<TestMethod>]
-     member this.Flatten4() =
+     member this.GetEntropyBitsForRandom() =
         let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
         let stageCount = (StageCount.create "" 200) |> Result.ExtractOrThrow
         let sorterCount = (SorterCount.create "" 10) |> Result.ExtractOrThrow
@@ -84,7 +82,7 @@ type SortingRunFixture() =
         let sorterSet = SorterSet.createRandomStagePacked degree stageCount
                                 sorterCount randoLcg
 
-        let sortableSet = SortableSet.AllBinary degree |> Result.ExtractOrThrow
+        let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
 
         let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet
         let goodies = res |> Array.map(fun r -> (fst r)|> SwitchTracker.EntropyBits)
@@ -96,12 +94,12 @@ type SortingRunFixture() =
 
 
     [<TestMethod>]
-        member this.Flatten5() =
+        member this.GetEntropyBitsForClassic() =
             let sorter = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
             let sorte2 = RefSorter.CreateRefSorter RefSorter.End16 |> Result.ExtractOrThrow
             let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
             let sorterSet = SorterSet.fromSorters degree (seq {sorter; sorte2})
-            let sortableSet = SortableSet.AllBinary degree |> Result.ExtractOrThrow
+            let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
 
             let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet
             let goodies = res |> Array.map(fun r -> (fst r) |> SwitchTracker.EntropyBits)
