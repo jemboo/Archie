@@ -75,8 +75,7 @@ module SorterParts =
             create degree baseArray
 
 
-
-    type SortableSet2 = {degree:Degree; baseArray:int[]; offsets:int[]}
+    type SortableSet2 = {degree:Degree; baseArray:int[]}
     module SortableSet2 =
         let create (degree:Degree) (baseArray:int[]) =
             if baseArray.Length < 0 + (Degree.value degree) then
@@ -86,21 +85,40 @@ module SorterParts =
                 let baseCopy = Array.zeroCreate baseArray.Length
                 Array.Copy(baseArray, baseCopy, baseArray.Length)
                 {degree=degree; 
-                 baseArray=baseCopy; 
-                 offsets=[|0..(Degree.value degree)..(baseCopy.Length - 1)|] } |> Ok
+                 baseArray=baseCopy} |> Ok
 
         let copy (sortableSet:SortableSet2) =
             let baseCopy = Array.zeroCreate sortableSet.baseArray.Length
             Array.Copy(sortableSet.baseArray, baseCopy, baseCopy.Length)
-            let offsetCopy = Array.zeroCreate sortableSet.offsets.Length
-            Array.Copy(sortableSet.offsets, offsetCopy, offsetCopy.Length)
-            {degree=sortableSet.degree; baseArray=baseCopy; offsets=offsetCopy}
+            {degree=sortableSet.degree; baseArray=baseCopy;}
 
         let allBinary (degree:Degree) =
             let baseArray = IntBits.AllBinaryTestCasesArray (Degree.value degree)
                             |> Array.collect(fun a -> a)
             create degree baseArray
 
+
+    type SortableSet3 = {degree:Degree; baseArray:int[]}
+    module SortableSet3 =
+        let create (degree:Degree) (baseArray:int[]) =
+            if baseArray.Length < 0 + (Degree.value degree) then
+                Error (sprintf "baseArray length %d is not a multiple of degree: %d:" 
+                        baseArray.Length (Degree.value degree))
+            else
+                let baseCopy = Array.zeroCreate baseArray.Length
+                Array.Copy(baseArray, baseCopy, baseArray.Length)
+                {degree=degree; 
+                 baseArray=baseCopy} |> Ok
+
+        let copy (sortableSet:SortableSet3) =
+            let baseCopy = Array.zeroCreate sortableSet.baseArray.Length
+            Array.Copy(sortableSet.baseArray, baseCopy, baseCopy.Length)
+            {degree=sortableSet.degree; baseArray=baseCopy;}
+
+        let allBinary (degree:Degree) =
+            let baseArray = IntBits.AllBinaryTestCasesArray (Degree.value degree)
+                            |> Array.collect(fun a -> a)
+            create degree baseArray
 
 
     type Stage = {switches:Switch list; degree:Degree}
@@ -247,6 +265,8 @@ module SorterParts =
                sorterCount= (SorterCount.create "" sorterArray.Length) |> Result.ExtractOrThrow; 
                sorters = sorterArray |> Entity.createMany rando1 rando2 |> Seq.toArray
             }
+
+
 
 
     type SwitchTracker = private {switchCount:SwitchCount; weights:int[]}
