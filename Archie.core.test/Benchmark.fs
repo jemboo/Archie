@@ -30,32 +30,15 @@ type BenchmarkSorterOps() =
         res
 
 
-
-
-//|   Method |    Mean |    Error |   StdDev | Ratio | RatioSD |
-//|--------- |--------:|---------:|---------:|------:|--------:|
-//|   SortTB | 3.066 s | 0.0098 s | 0.0092 s |  1.00 |    0.00 |
-//|  SortTBp | 1.131 s | 0.0430 s | 0.1269 s |  0.30 |    0.02 |
-//|  SortTB2 | 3.104 s | 0.0162 s | 0.0152 s |  1.01 |    0.01 |
-//| SortTB2p | 1.156 s | 0.0454 s | 0.1338 s |  0.31 |    0.02 |
-
-//|   Method |       Mean |    Error |   StdDev | Ratio | RatioSD |
-//|--------- |-----------:|---------:|---------:|------:|--------:|
-//|   SortTB | 3,753.4 ms | 72.73 ms | 77.82 ms |  1.00 |    0.00 |
-//|  SortTBp |   585.0 ms | 10.70 ms | 19.03 ms |  0.15 |    0.01 |
-//|  SortTB2 | 3,371.9 ms | 50.46 ms | 44.73 ms |  0.90 |    0.03 |
-//| SortTB2p |   560.6 ms | 10.94 ms | 19.72 ms |  0.15 |    0.01 |
-
-
-//|  Method |       Mean |    Error |   StdDev | Ratio |
-//|-------- |-----------:|---------:|---------:|------:|
-//|  SortTR | 1,549.1 ms | 30.91 ms | 67.20 ms |  1.00 |
-//| SortTRp |   238.6 ms |  4.72 ms | 10.94 ms |  0.15 |
-
-//|   Method |     Mean |   Error |   StdDev | Ratio | RatioSD |
-//|--------- |---------:|--------:|---------:|------:|--------:|
-//|  SortTBp | 294.7 ms | 5.83 ms | 13.28 ms |  1.00 |    0.00 |
-//| SortTBEp | 299.0 ms | 5.79 ms |  8.66 ms |  1.01 |    0.05 |
+//|       Method |      Mean |     Error |    StdDev | Ratio | RatioSD |
+//|------------- |----------:|----------:|----------:|------:|--------:|
+//|    Sort16TRp |  59.40 ms |  1.180 ms |  3.128 ms |  1.00 |    0.00 |
+//|   Sort16TREp |  57.11 ms |  1.126 ms |  2.632 ms |  0.96 |    0.07 |
+//|     Sort16TR | 346.41 ms |  6.833 ms | 16.240 ms |  5.83 |    0.42 |
+//|   Sort16TBEp |  71.33 ms |  1.409 ms |  3.094 ms |  1.20 |    0.08 |
+//| SortRandTREp | 666.69 ms |  5.487 ms |  4.582 ms | 11.13 |    0.60 |
+//| SortRandTBEp | 143.85 ms |  2.830 ms |  4.571 ms |  2.41 |    0.14 |
+//|      SortTBE | 855.18 ms | 16.958 ms | 37.224 ms | 14.39 |    1.00 |
 
 type SorterSetRandomTest() =
     let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
