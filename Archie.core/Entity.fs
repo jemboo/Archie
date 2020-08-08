@@ -4,6 +4,8 @@ open System
 
 type Entity<'a> = private { entityId:EntityId; character:'a }
 module Entity =
+    let id entity = entity.entityId
+    let character entity = entity.character
     
     let create (entityId:EntityId) (character:'a) =
             {
@@ -17,9 +19,6 @@ module Entity =
             create id c
         src |> Seq.map(fun c -> wrap rando1 rando2 c)
 
-    let id entity = entity.entityId
-
-    let character entity = entity.character
 
 
 type Dependent<'a> = private { entityId:EntityId; character:'a }

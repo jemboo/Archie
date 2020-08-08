@@ -147,26 +147,6 @@ module SorterParts =
 
     type SorterSet = {degree:Degree; sorterCount:SorterCount; sorters:Sorter[] }
     module SorterSet =
-        let createRandomStagePacked (degree:Degree) (stageCount:StageCount) 
-                                    (sorterCount:SorterCount) (rando:IRando) =
-         {
-            degree=degree; 
-            sorterCount=sorterCount; 
-            sorters = seq {1 .. (SorterCount.value sorterCount)} 
-                      |> Seq.map(fun i -> (Sorter.CreateRandomPackedStages degree stageCount rando))
-                      |> Seq.toArray
-         }
-
-        let createRandom (degree:Degree) (switchCount:SwitchCount) 
-                         (sorterCount:SorterCount) (rando:IRando) =
-          {
-             degree=degree; 
-             sorterCount=sorterCount; 
-             sorters = seq {1 .. (SorterCount.value sorterCount)} 
-                       |> Seq.map(fun i -> (Sorter.CreateRandom degree switchCount rando))
-                       |> Seq.toArray
-          }
-
         let fromSorters (degree:Degree) (sorters:seq<Sorter>) =
             let sorterArray = sorters |> Seq.toArray
             {
@@ -175,41 +155,33 @@ module SorterParts =
                sorters = sorterArray
             }
 
-    type SorterSetE = {degree:Degree; sorterCount:SorterCount; sorters:Entity<Sorter>[] }
-    module SorterSetE =
+        //let fromSorterMaker (degree:Degree) (sorterCount:SorterCount) (maker:Func)
+
         let createRandomStagePacked (degree:Degree) (stageCount:StageCount) 
-                                    (sorterCount:SorterCount) (rando1:IRando) (rando2:IRando) =
-         {
-            degree=degree; 
-            sorterCount=sorterCount; 
-            sorters = seq {1 .. (SorterCount.value sorterCount)} 
-                      |> Seq.map(fun i -> (Sorter.CreateRandomPackedStages degree stageCount rando1))
-                      |> Entity.createMany rando1 rando2
-                      |> Seq.toArray
-         }
+                                    (sorterCount:SorterCount) (rando:IRando) =
+            fromSorters degree (seq {1 .. (SorterCount.value sorterCount)} 
+                                    |> Seq.map(fun _ -> (Sorter.CreateRandomPackedStages degree stageCount rando))
+                                    |> Seq.toArray)
+
 
         let createRandom (degree:Degree) (switchCount:SwitchCount) 
-                         (sorterCount:SorterCount) (rando1:IRando) (rando2:IRando) =
-          {
-             degree=degree; 
-             sorterCount=sorterCount; 
-             sorters = seq {1 .. (SorterCount.value sorterCount)} 
-                       |> Seq.map(fun i -> (Sorter.CreateRandom degree switchCount rando1))
-                       |> Entity.createMany rando1 rando2
-                       |> Seq.toArray
-          }
-
-        let fromSorters (degree:Degree) (sorters:seq<Sorter>)
-                        (rando1:IRando) (rando2:IRando) =
-            let sorterArray = sorters |> Seq.toArray
-            {
-               degree=degree; 
-               sorterCount= (SorterCount.create "" sorterArray.Length) |> Result.ExtractOrThrow; 
-               sorters = sorterArray |> Entity.createMany rando1 rando2 |> Seq.toArray
-            }
+                         (sorterCount:SorterCount) (rando:IRando) =
+            fromSorters degree (seq {1 .. (SorterCount.value sorterCount)} 
+                                    |> Seq.map(fun _ -> (Sorter.CreateRandom degree switchCount rando))
+                                    |> Seq.toArray)
 
 
 
+
+    type SorterSetE = {degree:Degree; sorterCount:SorterCount; sorters:Entity<Sorter>[] }
+    module SorterSetE =
+        let fromSorterSet (sorterSet:SorterSet) (rando1:IRando) (rando2:IRando) =
+             {
+                degree = sorterSet.degree; 
+                sorterCount= sorterSet.sorterCount;
+                sorters = sorterSet.sorters |> (Entity.createMany rando1 rando2) |> Seq.toArray
+             }
+ 
 
     type SwitchTracker = private {switchCount:SwitchCount; weights:int[]}
     module SwitchTracker =

@@ -24,7 +24,7 @@ type SortingRunFixture() =
 
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-         let res = SortingRun.RunSorterSetOnSortableSetTR sortableSet sorterSet
+         let res = SortingRun.RunSorterSetOnSortableSetTR sortableSet sorterSet false
          let goodies = res |> Array.filter(fun t -> snd t)
          let duke = goodies.Length
          Assert.IsTrue (duke > 0)
@@ -43,7 +43,7 @@ type SortingRunFixture() =
 
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-         let res = SortingRun.RunSorterSetOnSortableSetTR sortableSet sorterSet
+         let res = SortingRun.RunSorterSetOnSortableSetTR sortableSet sorterSet false
          let goodies = res |> Array.filter(fun t -> snd t)
          let duke = goodies.Length
          Assert.IsTrue (duke > 0)
@@ -62,7 +62,7 @@ type SortingRunFixture() =
 
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-         let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet
+         let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet false
          let goodies = res |> Array.map(fun r -> (fst r)|> SwitchTracker.EntropyBits )
          goodies |> Array.iter(fun v-> Debug.WriteLine(sprintf "%A" v))
          let goodies2 = res |> Array.map(fun r -> (snd r)|> SwitchTracker.UseCount)
@@ -84,7 +84,7 @@ type SortingRunFixture() =
 
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-        let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet
+        let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet false
         let goodies = res |> Array.map(fun r -> (fst r)|> SwitchTracker.EntropyBits)
         Debug.WriteLine(sprintf "%A" goodies)
         let goodies2 = res |> Array.map(fun r -> (snd r)|> SwitchTracker.UseCount)
@@ -101,7 +101,7 @@ type SortingRunFixture() =
             let sorterSet = SorterSet.fromSorters degree (seq {sorter; sorte2})
             let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-            let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet
+            let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet false
             let goodies = res |> Array.map(fun r -> (fst r) |> SwitchTracker.EntropyBits)
             goodies |> Array.iter(fun a -> Console.WriteLine(sprintf "%A" a))
             Assert.IsTrue (true)
