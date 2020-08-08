@@ -22,7 +22,7 @@ type SortingRunFixture() =
          let sorterSet = SorterSet.createRandom degree switchCount
                                     sorterCount randoLcg
 
-         let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
+         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
          let res = SortingRun.RunSorterSetOnSortableSetTR sortableSet sorterSet
          let goodies = res |> Array.filter(fun t -> snd t)
@@ -41,7 +41,7 @@ type SortingRunFixture() =
          let sorterSet = SorterSet.createRandomStagePacked degree stageCount
                                     sorterCount randoLcg
 
-         let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
+         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
          let res = SortingRun.RunSorterSetOnSortableSetTR sortableSet sorterSet
          let goodies = res |> Array.filter(fun t -> snd t)
@@ -60,7 +60,7 @@ type SortingRunFixture() =
          let sorterSet = SorterSet.createRandom degree switchCount
                                     sorterCount randoLcg
 
-         let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
+         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
          let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet
          let goodies = res |> Array.map(fun r -> (fst r)|> SwitchTracker.EntropyBits )
@@ -82,7 +82,7 @@ type SortingRunFixture() =
         let sorterSet = SorterSet.createRandomStagePacked degree stageCount
                                 sorterCount randoLcg
 
-        let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
+        let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
         let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet
         let goodies = res |> Array.map(fun r -> (fst r)|> SwitchTracker.EntropyBits)
@@ -99,7 +99,7 @@ type SortingRunFixture() =
             let sorte2 = RefSorter.CreateRefSorter RefSorter.End16 |> Result.ExtractOrThrow
             let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
             let sorterSet = SorterSet.fromSorters degree (seq {sorter; sorte2})
-            let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
+            let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
             let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet
             let goodies = res |> Array.map(fun r -> (fst r) |> SwitchTracker.EntropyBits)

@@ -14,96 +14,21 @@ open System
 //| SortAllTR | 14.71 ms | 0.292 ms | 0.860 ms |  1.06 |    0.09 |
 //| SortAllTB | 20.50 ms | 0.416 ms | 1.225 ms |  1.48 |    0.13 |
 
-type SorterFullTestSlice() =
+type BenchmarkSorterOps() =
     let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
     let sorter16 = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
-    let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
-
-    [<Benchmark(Baseline = true)>]
-    member this.SortAll() =
-        SorterOps3.SortAll sorter16 sortableSet
-
-    [<Benchmark>]
-    member this.SortAllT() =
-        let res = SorterOps3.SortAllT sorter16 sortableSet
-        res
+    let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
     [<Benchmark>]
     member this.SortAllTR() =
-        let res = SorterOps3.SortAllTR sorter16 sortableSet
+        let res = SorterOps.SortAllTR sorter16 sortableSet
         res
 
     [<Benchmark>]
     member this.SortAllTB() =
-        let res = SorterOps3.SortAllTB sorter16 sortableSet
+        let res = SorterOps.SortAllTB sorter16 sortableSet
         res
 
-    [<Benchmark>]
-    member this.SortAllTBp() =
-        let res = SorterOps3.SortAllTB sorter16 sortableSet
-        res
-
-    [<Benchmark>]
-    member this.SortAllTBEp() =
-        let res = SorterOps3.SortAllTB sorter16 sortableSet
-        res
-
-
-type SorterFullTestSlice2() =
-    let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
-    let sorter16 = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
-    let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
-
-    //[<Benchmark(Baseline = true)>]
-    //member this.SortAll() =
-    //    SorterOps2.SortAll sorter16 sortableSet
-
-    //[<Benchmark>]
-    //member this.SortAllT() =
-    //    let res = SorterOps2.SortAllT sorter16 sortableSet
-    //    res
-
-    [<Benchmark>]
-    member this.SortAllTR() =
-        let res = SorterOps2.SortAllTR sorter16 sortableSet
-        res
-
-    //[<Benchmark>]
-    //member this.SortAllTB() =
-    //    let res = SorterOps2.SortAllTB sorter16 sortableSet
-    //    res
-
-
-//|    Method |     Mean |    Error |   StdDev | Ratio | RatioSD |
-//|---------- |---------:|---------:|---------:|------:|--------:|
-//|   SortAll | 13.16 ms | 0.263 ms | 0.693 ms |  1.00 |    0.00 |
-//|  SortAllT | 13.39 ms | 0.285 ms | 0.841 ms |  1.02 |    0.08 |
-//| SortAllTR | 14.68 ms | 0.291 ms | 0.827 ms |  1.12 |    0.09 |
-//| SortAllTB | 19.25 ms | 0.394 ms | 1.162 ms |  1.46 |    0.11 |
-
-type SorterFullTestSlice3() =
-    let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
-    let sorter16 = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
-    let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
-
-    [<Benchmark(Baseline = true)>]
-    member this.SortAll() =
-        SorterOps3.SortAll sorter16 sortableSet
-
-    [<Benchmark>]
-    member this.SortAllT() =
-        let res = SorterOps3.SortAllT sorter16 sortableSet
-        res
-
-    [<Benchmark>]
-    member this.SortAllTR() =
-        let res = SorterOps3.SortAllTR sorter16 sortableSet
-        res
-
-    [<Benchmark>]
-    member this.SortAllTB() =
-        let res = SorterOps3.SortAllTB sorter16 sortableSet
-        res
 
 
 
@@ -113,6 +38,14 @@ type SorterFullTestSlice3() =
 //|  SortTBp | 1.131 s | 0.0430 s | 0.1269 s |  0.30 |    0.02 |
 //|  SortTB2 | 3.104 s | 0.0162 s | 0.0152 s |  1.01 |    0.01 |
 //| SortTB2p | 1.156 s | 0.0454 s | 0.1338 s |  0.31 |    0.02 |
+
+//|   Method |       Mean |    Error |   StdDev | Ratio | RatioSD |
+//|--------- |-----------:|---------:|---------:|------:|--------:|
+//|   SortTB | 3,753.4 ms | 72.73 ms | 77.82 ms |  1.00 |    0.00 |
+//|  SortTBp |   585.0 ms | 10.70 ms | 19.03 ms |  0.15 |    0.01 |
+//|  SortTB2 | 3,371.9 ms | 50.46 ms | 44.73 ms |  0.90 |    0.03 |
+//| SortTB2p |   560.6 ms | 10.94 ms | 19.72 ms |  0.15 |    0.01 |
+
 
 type SorterSetRandomTest() =
     let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
@@ -129,13 +62,22 @@ type SorterSetRandomTest() =
     let sorterSet = SorterSet.createRandom degree switchCount sorterCount randoLcg
     let sorterSetE = SorterSetE.createRandom degree switchCount sorterCount randoLcg randoLcg2
 
-    let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
+    let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
     let sorter16s = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
                    |> Seq.replicate 100 
     let sorterSetS = SorterSet.fromSorters degree sorter16s
 
     let sorterSetSE = SorterSetE.fromSorters degree sorter16s randoLcg randoLcg2
+
+    [<Benchmark(Baseline = true)>]
+    member this.SortTR() =
+        SortingRun.RunSorterSetOnSortableSetTR sortableSet sorterSet
+
+    [<Benchmark>]
+    member this.SortTRp() =
+        SortingRun.RunSorterSetOnSortableSetTRp sortableSet sorterSet
+
 
     //[<Benchmark(Baseline = true)>]
     //member this.SortTB() =
@@ -147,19 +89,19 @@ type SorterSetRandomTest() =
 
     //[<Benchmark>]
     //member this.SortTB2() =
-    //    SortingRun.RunSorterSetOnSortableSetTB2 sortableSet sorterSetE
+    //    SortingRun.RunSorterSetOnSortableSetTBE sortableSet sorterSetE
 
     //[<Benchmark>]
     //member this.SortTB2p() =
-    //    SortingRun.RunSorterSetOnSortableSetTB2p sortableSet sorterSetE
+    //    SortingRun.RunSorterSetOnSortableSetTBEp sortableSet sorterSetE
 
-    [<Benchmark>]
-    member this.SortTBpC() =
-        SortingRun.RunSorterSetOnSortableSetTBp sortableSet sorterSetS
+    //[<Benchmark>]
+    //member this.SortTBpC() =
+    //    SortingRun.RunSorterSetOnSortableSetTBp sortableSet sorterSetS
 
-    [<Benchmark>]
-    member this.SortTB2pC() =
-        SortingRun.RunSorterSetOnSortableSetTB2p sortableSet sorterSetSE
+    //[<Benchmark>]
+    //member this.SortTB2pC() =
+    //    SortingRun.RunSorterSetOnSortableSetTBEp sortableSet sorterSetSE
 
 
 
@@ -182,9 +124,9 @@ type w2() =
         let sorterSet = SorterSetE.createRandomStagePacked degree stageCount
                                    sorterCount randoLcg randoLcg2
 
-        let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
+        let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-        let res = SortingRun.RunSorterSetOnSortableSetTB2 sortableSet sorterSet
+        let res = SortingRun.RunSorterSetOnSortableSetTBE sortableSet sorterSet
         let goodies = res |> Array.map(fun r -> entroB r)
         goodies |> Array.iter(fun v-> Console.WriteLine(sprintf "%A  %f" (EntityId.value (Dependent.id v)) (Dependent.character v) ))
         //let goodies2 = res |> Array.map(fun r -> (fst r)|> SwitchTracker.UseTotal)
@@ -208,9 +150,9 @@ type w2() =
         let sorterSet = SorterSetE.createRandomStagePacked degree stageCount
                                    sorterCount randoLcg randoLcg2
 
-        let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
+        let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-        let res = SortingRun.RunSorterSetOnSortableSetTB2p sortableSet sorterSet
+        let res = SortingRun.RunSorterSetOnSortableSetTBEp sortableSet sorterSet
         let goodies = res |> Array.map(fun r -> entroB r)
         goodies |> Array.iter(fun v-> Console.WriteLine(sprintf "%A  %f" (EntityId.value (Dependent.id v)) (Dependent.character v) ))
         //let goodies2 = res |> Array.map(fun r -> (fst r)|> SwitchTracker.UseTotal)
@@ -234,9 +176,9 @@ type w2() =
         let sorterSet = SorterSetE.createRandomStagePacked degree stageCount
                                    sorterCount randoLcg randoLcg2
 
-        let sortableSet = SortableSet3.allBinary degree |> Result.ExtractOrThrow
+        let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-        let res = SortingRun.RunSorterSetOnSortableSetTB2p sortableSet sorterSet
+        let res = SortingRun.RunSorterSetOnSortableSetTBEp sortableSet sorterSet
         let goodies = res |> Array.map(fun r -> entroB r)
         goodies |> Array.iter(fun v-> Console.WriteLine(sprintf "%A  %f" (EntityId.value (Dependent.id v)) (Dependent.character v) ))
         //let goodies2 = res |> Array.map(fun r -> (fst r)|> SwitchTracker.UseTotal)
@@ -249,84 +191,77 @@ type w2() =
 //|------- |----------:|----------:|----------:|------:|--------:|
 //|  Short |  3.306 ms | 0.0496 ms | 0.0440 ms |  1.00 |    0.00 |
 //|   Long | 31.854 ms | 0.5132 ms | 0.4285 ms |  9.65 |    0.15 |
-
 type ArrayCopy() =
+    let sl = (1 <<< 20)
+    let longLen = (1 <<< 25)
+    let shortA = Array.create sl 5
+    let shortB = Array.create sl 6
 
-    let arroyoA = Array.create 6400000 5
-    let arroyoB = Array.create 6400000 6
+    let longA = Array.create longLen 5
+    let longB = Array.create longLen 6
+    //let arroyoA = Array.create 6400000 5
+    //let arroyoB = Array.create 6400000 6
 
-    let arroyoAw = Array.create 64000000 5
-    let arroyoBw = Array.create 64000000 6
+    //let arroyoAw = Array.create 64000000 5
+    //let arroyoBw = Array.create 64000000 6
 
-    member this.OA() =
-        arroyoA
-    member this.OB() =
-        arroyoB
+    //member this.ShortA() =
+    //    shortA
+    //member this.ShortB() =
+    //    shortB
 
-    member this.WA() =
-        arroyoAw
-    member this.WB() =
-        arroyoBw
+    //member this.LongA() =
+    //    longA
+    //member this.LongB() =
+    //    longB
 
     [<Benchmark(Baseline = true)>]
     member this.Short() =
-        Array.Copy(arroyoA, arroyoB, 6400000)
+        Array.Copy(shortA, shortB, sl) |> ignore
+        true
 
     [<Benchmark>]
     member this.Long() =
-        Array.Copy(arroyoAw, arroyoBw, 64000000)
+        Array.Copy(longA, longB, longLen) |> ignore
+        true
 
+//|      Method |         Mean |       Error |      StdDev | Ratio |
+//|------------ |-------------:|------------:|------------:|------:|
+//| CopyArrayZc | 103,051.1 us | 1,869.29 us | 1,748.54 us | 1.000 |
+//|   CopyArray |     427.8 us |     3.83 us |     3.58 us | 0.004 |
+type ZeroCreateTest() =
+    let arrayLen = (1 <<< 20)
+    let arrayZcA = Array.zeroCreate arrayLen
+    let arrayZcB = Array.create arrayLen 123
 
+    let arrayA = Array.create arrayLen 0
+    let arrayB = Array.create arrayLen 123
+
+    [<Benchmark(Baseline = true)>]
+    member this.CopyArray() =
+        Array.Copy(arrayB, arrayA, arrayLen)
+
+    [<Benchmark>]
+    member this.CopyArrayZc() =
+        Array.Copy(arrayZcB, arrayZcA, arrayLen)
+
+    [<Benchmark>]
+    member this.CreateAndCopyArrayZc() =
+        let aZcA = Array.zeroCreate arrayLen
+        let aZcB = Array.create arrayLen 123
+        Array.Copy(aZcB, aZcA, arrayLen)
+
+    [<Benchmark>]
+    member this.CreateAndCopyArray() =
+        let aA = Array.create arrayLen 0
+        let aB = Array.create arrayLen 123
+        Array.Copy(aB, aA, arrayLen)
 
 
 [<TestClass>]
 type BenchmarkFixture () =
 
-    let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
-    let sorter16 = RefSorter.CreateRefSorter RefSorter.End16 |> Result.ExtractOrThrow
-    let sorterTrim = result {
-                            let! fullLen = RefSorter.CreateRefSorter RefSorter.End16
-                            let! trimLen = SwitchCount.create "" 59
-                            return! Sorter.TrimLength fullLen trimLen
-                        } |> Result.ExtractOrThrow
-
-    let baseArray = IntBits.AllBinaryTestCasesArray (Degree.value degree)
-                    |> Array.collect(fun a -> a)
-    let backArray = Array.zeroCreate baseArray.Length
-    let res = Array.Copy(baseArray, backArray, baseArray.Length)
-
-
     [<TestMethod>]
-    member this.Spano() =
-
-        Assert.IsTrue (true)
-
-    [<TestMethod>]
-     member this.Flatten() =
-         let degree = (Degree.create "" 16 ) |>Result.ExtractOrThrow
-         let intCases = IntBits.AllBinaryTestCasesArray (Degree.value degree)
-         let flatto = intCases |> Array.collect(fun a -> a)
-         Assert.IsTrue (true)
-
-    [<TestMethod>]
-     member this.TCUP() =
-         let res = new SorterFullTestSlice()
-         let rS = res.SortAllTR()
-         let rS1 = res.SortAllTR()
-         let rS2 = res.SortAllTR()
-
-         let useTrack, lastTrack = res.SortAllTB()
-         Console.WriteLine (sprintf "useTrack: %A" useTrack)
-         Console.WriteLine (sprintf "lastTrack: %A" lastTrack)
-         Assert.IsTrue (true)
-
-
-    [<TestMethod>]
-    member this.TR2() =
-        let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
-        let sorter16 = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
-        let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
-        SorterOps2.SortAll sorter16 sortableSet
-        SorterOps2.SortAll sorter16 sortableSet
+    member this.ArrayCopy() =
         Assert.IsTrue (true)
 

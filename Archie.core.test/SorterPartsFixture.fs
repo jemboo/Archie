@@ -4,6 +4,7 @@ open System
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open Archie.Base
 open Archie.Base.SorterParts
+open Archie.Base.SortersFromData
 
 [<TestClass>]
 type SortingFixture () =
@@ -67,4 +68,29 @@ type SortingFixture () =
         let sorter3 = Sorter.CreateRandom degree switchCount randoLcg3
         Assert.AreNotEqual(sorter, sorter3)
 
-        Assert.IsTrue(true);
+
+    [<TestMethod>]
+    member this.RandomSorterProperties() =
+        let degree = 6 |> Degree.create "" |> Result.ExtractOrThrow
+        let switchCount = 20 |> SwitchCount.create "" |> Result.ExtractOrThrow
+        let seed = 123 |> RandomSeed.create "" |> Result.ExtractOrThrow
+        let rnd = new RandomLcg(seed)
+        let sorter = Sorter.CreateRandom degree switchCount rnd
+
+        Assert.AreEqual (sorter.switchCount, switchCount)
+        Assert.AreEqual (sorter.degree, degree)
+
+
+    [<TestMethod>]
+    member this.SorterTrimLength() =
+        let sorter = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
+        let trimCount = 58 |> SwitchCount.create "" |> Result.ExtractOrThrow
+        let degree = (Degree.create "" 16) |> Result.ExtractOrThrow
+        let sorterTrim = result {
+                                let! refSorter = RefSorter.CreateRefSorter RefSorter.Green16
+                                return! Sorter.TrimLength refSorter trimCount
+                            } |> Result.ExtractOrThrow
+
+
+        Assert.AreEqual (sorterTrim.switchCount, trimCount)
+        Assert.AreEqual (sorterTrim.degree, degree)

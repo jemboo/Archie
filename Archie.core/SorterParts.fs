@@ -44,34 +44,15 @@ module SorterParts =
             else
                 let baseCopy = Array.zeroCreate baseArray.Length
                 Array.Copy(baseArray, baseCopy, baseArray.Length)
-                {degree=degree; 
-                 baseArray=baseCopy} |> Ok
+                {degree=degree; baseArray=baseCopy} |> Ok
 
         let copy (sortableSet:SortableSet) =
             let baseCopy = Array.zeroCreate sortableSet.baseArray.Length
             Array.Copy(sortableSet.baseArray, baseCopy, baseCopy.Length)
             {degree=sortableSet.degree; baseArray=baseCopy;}
 
-        let allBinary (degree:Degree) =
-            let baseArray = IntBits.AllBinaryTestCasesArray (Degree.value degree)
-                            |> Array.collect(fun a -> a)
-            create degree baseArray
-
-
-    type SortableSet3 = {degree:Degree; baseArray:int[]}
-    module SortableSet3 =
-        let create (degree:Degree) (baseArray:int[]) =
-            if baseArray.Length < 0 + (Degree.value degree) then
-                Error (sprintf "baseArray length %d is not a multiple of degree: %d:" 
-                        baseArray.Length (Degree.value degree))
-            else
-                let baseCopy = Array.zeroCreate baseArray.Length
-                Array.Copy(baseArray, baseCopy, baseArray.Length)
-                {degree=degree; 
-                 baseArray=baseCopy} |> Ok
-
-        let copy (sortableSet:SortableSet3) =
-            let baseCopy = Array.zeroCreate sortableSet.baseArray.Length
+        let copy2 (sortableSet:SortableSet) =
+            let baseCopy = Array.create sortableSet.baseArray.Length 0
             Array.Copy(sortableSet.baseArray, baseCopy, baseCopy.Length)
             {degree=sortableSet.degree; baseArray=baseCopy;}
 
@@ -79,6 +60,7 @@ module SorterParts =
             let baseArray = IntBits.AllBinaryTestCasesArray (Degree.value degree)
                             |> Array.collect(fun a -> a)
             create degree baseArray
+
 
 
     type Stage = {switches:Switch list; degree:Degree}
