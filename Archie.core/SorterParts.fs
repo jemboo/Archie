@@ -61,8 +61,6 @@ module SorterParts =
                             |> Array.collect(fun a -> a)
             create degree baseArray
 
-
-
     type Stage = {switches:Switch list; degree:Degree}
     module Stage =
         let MergeSwitchesIntoStages (degree:Degree) (switches:seq<Switch>) =
@@ -189,27 +187,44 @@ module SorterParts =
         let create (switchCount:SwitchCount) =
             {switchCount=switchCount; weights=Array.init (SwitchCount.value switchCount) (fun i -> 0)}
 
-        let weights tracker = tracker.weights
+        let getWeights tracker = tracker.weights
         let switchCount tracker = (SwitchCount.value tracker.switchCount)
 
         let Add (trackerA:SwitchTracker) (trackerB:SwitchTracker) =
             if ((switchCount trackerA) <> (switchCount trackerB))  then
-               (sprintf "switchCounts: %d, %d are not equal" (switchCount trackerA) (switchCount trackerB))  |> Error
+               (sprintf "switchCounts: %d, %d are not equal" 
+                        (switchCount trackerA) (switchCount trackerB)) |> Error
             else
-               let weightsSum = Array.map2 (+) (weights trackerA) (weights trackerB) 
+               let weightsSum = Array.map2 (+) (getWeights trackerA) (getWeights trackerB) 
                {
                    switchCount = (SwitchCount.create "" weightsSum.Length) |> Result.ExtractOrThrow
                    weights = weightsSum;
                } |> Ok
 
+        let LastUsedIndex (st:SwitchTracker) =
+            let w = (getWeights st)
+            w
+               |> Seq.mapi(fun i x -> (i, x))
+               |> Seq.filter(fun tup -> (snd tup) > 0)
+               |> Seq.maxBy(fst) |> fst
+
+        let LastUsedIndexes (switchCount:SwitchCount) (stseq:seq<SwitchTracker>) =            
+            let stRet = create switchCount
+            let wgts = getWeights stRet
+            let Recordo (stRec:int[]) (stData:SwitchTracker) =
+                let lui = LastUsedIndex stData
+                stRec.[lui]<-stRec.[lui] + 1
+            stseq |> Seq.iter(fun st -> Recordo wgts st)
+            stRet
+
         let UseCount (st:SwitchTracker) =
-            (weights st) |> Array.filter(fun i->i>0) |> Array.length
+            (getWeights st) |> Array.filter(fun i->i>0) |> Array.length
 
         let UseTotal (st:SwitchTracker) =
-            (weights st) |> Array.sum
+            (getWeights st) |> Array.sum
 
         let EntropyBits (sorterSet:SwitchTracker) =
-            (weights sorterSet) |> Combinatorics.EntropyBits
+            (getWeights sorterSet) |> Combinatorics.EntropyBits
 
 
 

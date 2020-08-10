@@ -1,19 +1,16 @@
-﻿namespace Archie.core.test
-
-open Microsoft.VisualStudio.TestTools.UnitTesting
+﻿namespace Archie.Benchmark
 open Archie.Base
-open Archie.Base.SorterParts
 open BenchmarkDotNet.Attributes
+open System.Security.Cryptography
 open Archie.Base.SortersFromData
+open Archie.Base.SorterParts
 open System
 
 
-//|---------- |---------:|---------:|---------:|------:|--------:|
-//|   SortAll | 13.90 ms | 0.290 ms | 0.855 ms |  1.00 |    0.00 |
-//|  SortAllT | 14.38 ms | 0.288 ms | 0.839 ms |  1.04 |    0.09 |
-//| SortAllTR | 14.71 ms | 0.292 ms | 0.860 ms |  1.06 |    0.09 |
-//| SortAllTB | 20.50 ms | 0.416 ms | 1.225 ms |  1.48 |    0.13 |
-
+//|    Method |     Mean |    Error |   StdDev |
+//|---------- |---------:|---------:|---------:|
+//| SortAllTR | 16.09 ms | 0.320 ms | 0.820 ms |
+//| SortAllTB | 20.40 ms | 0.436 ms | 1.286 ms |
 type BenchmarkSorterOps() =
     let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
     let sorter16 = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
@@ -124,10 +121,60 @@ type ZeroCreateTest() =
         Array.Copy(aB, aA, arrayLen)
 
 
-[<TestClass>]
-type BenchmarkFixture () =
 
-    [<TestMethod>]
-    member this.ArrayCopy() =
-        Assert.IsTrue (true)
 
+
+//[<MemoryDiagnoser>]
+type Md5VsSha256() =
+    let N = 100000
+    let data = Array.zeroCreate N
+    let sha256 = SHA256.Create();
+    let md5 = MD5.Create()
+
+    member this.GetData =
+        data
+
+    [<Benchmark(Baseline = true)>]
+    member this.Sha256() =
+        sha256.ComputeHash(data)
+
+    [<Benchmark>]
+    member this.Md5() =
+        md5.ComputeHash(data)
+
+//[<MemoryDiagnoser>]
+type RandoBench() =
+    let seed = RandomSeed.create "" 424 |> Result.toOption
+    let seed2 = RandomSeed.create "" 42 |> Result.toOption
+    let randoNet = new RandomNet(seed.Value) :> IRando
+    let randoLcg = new RandomLcg(seed.Value) :> IRando
+    let randoNet2 = new RandomNet(seed2.Value) :> IRando
+    let randoLcg2 = new RandomLcg(seed2.Value) :> IRando
+
+    [<Benchmark(Baseline = true)>]
+    member this.NetI() =
+        randoNet.NextUInt
+
+    [<Benchmark>]
+    member this.NetL() =
+        randoNet.NextULong
+
+    //[<Benchmark>]
+    //member this.Lcg() =
+    //    Rando.NextGuid randoLcg
+
+    //[<Benchmark>]
+    //member this.Net2() =
+    //    Rando.NextGuid2 randoNet randoNet2
+
+    //[<Benchmark>]
+    //member this.Lcg2() =
+    //    Rando.NextGuid2 randoLcg randoLcg2
+
+    [<Benchmark>]
+    member this.LcgUInt() =
+        randoLcg2.NextUInt
+
+    [<Benchmark>]
+    member this.LcgLong() =
+        randoLcg2.NextULong

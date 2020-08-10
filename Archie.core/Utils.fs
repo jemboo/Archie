@@ -18,6 +18,13 @@ module Utils =
                yield (kv.Key, kv.Value)
        }
 
+    let printIntArray (d:int[]) =
+        let sb = new System.Text.StringBuilder()
+        d |> Seq.map(fun i -> sb.Append(sprintf "%d " i))
+          |> Seq.toArray
+          |> ignore
+        sb.ToString()
+
     let printTupes (d:seq<string*'A>) =
        let sb = new System.Text.StringBuilder()
        d |> Seq.map(fun i -> sb.Append(sprintf "%s=%A, " (fst i) (snd i)))

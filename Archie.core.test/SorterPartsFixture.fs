@@ -94,3 +94,24 @@ type SortingFixture () =
 
         Assert.AreEqual (sorterTrim.switchCount, trimCount)
         Assert.AreEqual (sorterTrim.degree, degree)
+
+
+    [<TestMethod>]
+    member this.LastUsedIndexes() =
+        let switchCount = SwitchCount.create "" 10 |> Result.ExtractOrThrow
+        let dex1 = 2
+        let dex2low = 3
+        let dex2 = 7
+        let st1 = SwitchTracker.create switchCount
+        let st2 = SwitchTracker.create switchCount
+        let st1A = SwitchTracker.getWeights st1
+        let st2A = SwitchTracker.getWeights st2
+        st1A.[dex1] <- 1
+        st2A.[dex2] <- 1
+        st2A.[dex2low] <- 1
+        let sts = seq { st1; st2 }
+        let stLT = SwitchTracker.LastUsedIndexes switchCount sts
+        let stLTA = SwitchTracker.getWeights stLT
+        Assert.AreEqual(stLTA.[dex1], 1)
+        Assert.AreEqual(stLTA.[dex2], 1)
+        Assert.AreEqual(stLTA.[dex2low], 0)
