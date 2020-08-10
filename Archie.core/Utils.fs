@@ -1,6 +1,7 @@
 ﻿namespace Archie.Base
 open System.Collections.Generic
 open Microsoft.FSharp.Core
+open System
 
 module Utils =
 
@@ -20,7 +21,21 @@ module Utils =
 
     let printIntArray (d:int[]) =
         let sb = new System.Text.StringBuilder()
-        d |> Seq.map(fun i -> sb.Append(sprintf "%d " i))
+        d |> Seq.map(fun i -> sb.Append(sprintf "%d%s" i Environment.NewLine))
+          |> Seq.toArray
+          |> ignore
+        sb.ToString()
+
+    let printArray (d:'a[]) =
+        let sb = new System.Text.StringBuilder()
+        d |> Seq.map(fun i -> sb.Append(sprintf "%A%s" i Environment.NewLine))
+          |> Seq.toArray
+          |> ignore
+        sb.ToString()
+
+    let printArrayf f (d:'a[]) =
+        let sb = new System.Text.StringBuilder()
+        d |> Seq.map(fun i -> sb.Append(sprintf "%A%s" (f i) Environment.NewLine))
           |> Seq.toArray
           |> ignore
         sb.ToString()

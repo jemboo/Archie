@@ -2,6 +2,9 @@
 open Microsoft.FSharp.Collections
 open System
 
+//type EntityId2 = {id:}
+   
+
 type Entity<'a> = private { entityId:EntityId; character:'a }
 module Entity =
     let id entity = entity.entityId
@@ -39,3 +42,12 @@ module Dependent =
             }
 
     let character entity = entity.character
+
+    let map f d = 
+        { entityId=(id d); character= f (character d) }
+
+    let format d =
+        sprintf "%s %A" (string (EntityId.value (id d))) (character d)
+
+    let formatf f d =
+        sprintf "%s %A" (string (EntityId.value (id d))) (f (character d))

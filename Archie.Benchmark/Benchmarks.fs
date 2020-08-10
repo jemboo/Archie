@@ -47,14 +47,14 @@ type SorterSetRandomTest() =
     let randoLcg2 = new RandomLcg(seed2) :> IRando
 
     let sorterSetRnd = SorterSet.createRandom degree switchCount sorterCount randoLcg
-    let sorterSetRndE = SorterSetE.fromSorterSet sorterSetRnd randoLcg randoLcg2
+    let sorterSetRndE = SorterSetE.fromSorterSet randoLcg randoLcg2 sorterSetRnd 
 
     let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
     let sorter16s = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
                    |> Seq.replicate (SorterCount.value sorterCount) 
     let sorterSet16 = SorterSet.fromSorters degree sorter16s
-    let sorterSet16E = SorterSetE.fromSorterSet sorterSet16 randoLcg randoLcg2
+    let sorterSet16E = SorterSetE.fromSorterSet randoLcg randoLcg2 sorterSet16 
 
     [<Benchmark(Baseline = true)>]
     member this.Sort16TRp() =

@@ -61,11 +61,10 @@ type SortingRunFixture() =
                                     sorterCount randoLcg
 
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
-
          let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet false
-         let goodies = res |> Array.map(fun r -> (fst r)|> SwitchUses.EntropyBits )
+         let goodies = res |> Array.map(fun r -> r|> SwitchUses.EntropyBits )
          goodies |> Array.iter(fun v-> Debug.WriteLine(sprintf "%A" v))
-         let goodies2 = res |> Array.map(fun r -> (snd r)|> SwitchUses.UseCount)
+         let goodies2 = res |> Array.map(fun r -> r|> SwitchUses.UseCount)
          goodies2 |> Array.iter(fun v-> Debug.WriteLine(sprintf "%A" v))
          Assert.IsTrue (true)
 

@@ -171,7 +171,7 @@ module SorterParts =
 
     type SorterSetE = {degree:Degree; sorterCount:SorterCount; sorters:Entity<Sorter>[] }
     module SorterSetE =
-        let fromSorterSet (sorterSet:SorterSet) (rando1:IRando) (rando2:IRando) =
+        let fromSorterSet (rando1:IRando) (rando2:IRando) (sorterSet:SorterSet) =
              {
                 degree = sorterSet.degree; 
                 sorterCount= sorterSet.sorterCount;
