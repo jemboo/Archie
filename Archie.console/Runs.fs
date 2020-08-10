@@ -37,36 +37,39 @@ module Runs =
                 randGenMode randy.NextUInt)
 
 
-    //let RunSampler =
+    let RunSampler =
+        let seedv = 29977
+        let seed = RandomSeed.create "" seedv |> Result.ExtractOrThrow
+        let degree = Degree.create "" 16 |> Result.ExtractOrThrow
+        let switchCount = SwitchCount.create "" 1000 |> Result.ExtractOrThrow
+        let sorterCount = SorterCount.create "" 250 |> Result.ExtractOrThrow
+        let rndType = RngType.Lcg
+        let log = [sprintf "Degree: %i Seed: %i" (Degree.value degree) seedv]
 
-    //    let seed = 123
-    //    let degree = Degree.create "" 16 |> Result.ExtractOrThrow
-    //    let switchCount = SwitchCount.create "" 1000 |> Result.ExtractOrThrow
-    //    let sorterCount = SorterCount.create "" 100 |> Result.ExtractOrThrow
-    //    let rndType = RngType.Lcg
-    //    let seedGen = Rando.RandoFromSeed rndType seed
-    //    let randGenMode =  RandSorterGenerationMode.MakeSwitchCount 1600
-    //    let mutable step = 0
-    //    while true do
-    //        //None
-    //        DoStep rndType seedGen.NextUInt31 degree switchCount sorterCount randGenMode
+        let randoLcg = new RandomLcg(seed) :> IRando
+        let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
+        let sorterSetRnd = SorterSet.createRandom degree switchCount sorterCount randoLcg
+        let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSetRnd true
+        let lastIndexes = res |> (SwitchUses.LastUsedIndexes switchCount)
+        let log = (Utils.printIntArray (SwitchUses.getWeights lastIndexes))::log
+        log
 
 
 
     let RunSampler2 =
-        printfn "Starting RunSampler2"
         let seedv = 29977
         let seed = RandomSeed.create "" seedv |> Result.ExtractOrThrow
         let degree = Degree.create "" 16 |> Result.ExtractOrThrow
-        let switchCount = SwitchCount.create "" 4000 |> Result.ExtractOrThrow
-        let sorterCount = SorterCount.create "" 2500 |> Result.ExtractOrThrow
+        let switchCount = SwitchCount.create "" 1000 |> Result.ExtractOrThrow
+        let sorterCount = SorterCount.create "" 250 |> Result.ExtractOrThrow
         let rndType = RngType.Lcg
+        let log = [sprintf "Degree: %i Seed: %i" (Degree.value degree) seedv]
+
         let randoLcg = new RandomLcg(seed) :> IRando
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
         let sorterSetRnd = SorterSet.createRandom degree switchCount sorterCount randoLcg
-        printfn "Degree: %i" (Degree.value degree)
         let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSetRnd true
-                  
-        let lastIndexes = res |> Seq.map(snd) |> (SwitchTracker.LastUsedIndexes switchCount)
-        printfn "%s" (Utils.printIntArray (SwitchTracker.getWeights lastIndexes))
-        6
+        let lastIndexes = res |> (SwitchUses.LastUsedIndexes switchCount)
+        let log = (Utils.printIntArray (SwitchUses.getWeights lastIndexes))::log
+        log
+       

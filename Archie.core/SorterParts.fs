@@ -169,8 +169,6 @@ module SorterParts =
                                     |> Seq.toArray)
 
 
-
-
     type SorterSetE = {degree:Degree; sorterCount:SorterCount; sorters:Entity<Sorter>[] }
     module SorterSetE =
         let fromSorterSet (sorterSet:SorterSet) (rando1:IRando) (rando2:IRando) =
@@ -181,8 +179,8 @@ module SorterParts =
              }
  
 
-    type SwitchTracker = private {switchCount:SwitchCount; weights:int[]}
-    module SwitchTracker =
+    type SwitchUses = private {switchCount:SwitchCount; weights:int[]}
+    module SwitchUses =
 
         let create (switchCount:SwitchCount) =
             {switchCount=switchCount; weights=Array.init (SwitchCount.value switchCount) (fun i -> 0)}
@@ -190,54 +188,39 @@ module SorterParts =
         let getWeights tracker = tracker.weights
         let switchCount tracker = (SwitchCount.value tracker.switchCount)
 
-        let Add (trackerA:SwitchTracker) (trackerB:SwitchTracker) =
-            if ((switchCount trackerA) <> (switchCount trackerB))  then
-               (sprintf "switchCounts: %d, %d are not equal" 
-                        (switchCount trackerA) (switchCount trackerB)) |> Error
-            else
-               let weightsSum = Array.map2 (+) (getWeights trackerA) (getWeights trackerB) 
-               {
-                   switchCount = (SwitchCount.create "" weightsSum.Length) |> Result.ExtractOrThrow
-                   weights = weightsSum;
-               } |> Ok
+        //let Add (trackerA:SwitchUses) (trackerB:SwitchUses) =
+        //    if ((switchCount trackerA) <> (switchCount trackerB))  then
+        //       (sprintf "switchCounts: %d, %d are not equal" 
+        //                (switchCount trackerA) (switchCount trackerB)) |> Error
+        //    else
+        //       let weightsSum = Array.map2 (+) (getWeights trackerA) (getWeights trackerB) 
+        //       {
+        //           switchCount = (SwitchCount.create "" weightsSum.Length) |> Result.ExtractOrThrow
+        //           weights = weightsSum;
+        //       } |> Ok
 
-        let LastUsedIndex (st:SwitchTracker) =
+        let LastUsedIndex (st:SwitchUses) =
             let w = (getWeights st)
             w
                |> Seq.mapi(fun i x -> (i, x))
                |> Seq.filter(fun tup -> (snd tup) > 0)
                |> Seq.maxBy(fst) |> fst
 
-        let LastUsedIndexes (switchCount:SwitchCount) (stseq:seq<SwitchTracker>) =            
+        let LastUsedIndexes (switchCount:SwitchCount) (stseq:seq<SwitchUses>) =            
             let stRet = create switchCount
             let wgts = getWeights stRet
-            let Recordo (stRec:int[]) (stData:SwitchTracker) =
+            let Recordo (stRec:int[]) (stData:SwitchUses) =
                 let lui = LastUsedIndex stData
                 stRec.[lui]<-stRec.[lui] + 1
             stseq |> Seq.iter(fun st -> Recordo wgts st)
             stRet
 
-        let UseCount (st:SwitchTracker) =
+        let UseCount (st:SwitchUses) =
             (getWeights st) |> Array.filter(fun i->i>0) |> Array.length
 
-        let UseTotal (st:SwitchTracker) =
+        let UseTotal (st:SwitchUses) =
             (getWeights st) |> Array.sum
 
-        let EntropyBits (sorterSet:SwitchTracker) =
+        let EntropyBits (sorterSet:SwitchUses) =
             (getWeights sorterSet) |> Combinatorics.EntropyBits
 
-
-
-    type SwitchUsage = {switch:Switch; switchIndex:int; useCount:int}
-    module SwitchUsage =
-
-        let CollectTheUsedSwitches (sorter:Sorter) (tracker:SwitchTracker) = 
-            seq { for i = 0 to tracker.weights.Length - 1 do
-                    if (tracker.weights.[i] > 0) then
-                        yield {switch=sorter.switches.[i]; switchIndex=i; 
-                               useCount=tracker.weights.[i] } }
-            |> Seq.toArray
-
-        let ToString (sw:SwitchUsage) =
-            sprintf "{%s, %d, %d}" (sw.switch |> Switch.ToString)
-                                   sw.switchIndex sw.useCount

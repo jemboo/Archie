@@ -102,16 +102,16 @@ type SortingFixture () =
         let dex1 = 2
         let dex2low = 3
         let dex2 = 7
-        let st1 = SwitchTracker.create switchCount
-        let st2 = SwitchTracker.create switchCount
-        let st1A = SwitchTracker.getWeights st1
-        let st2A = SwitchTracker.getWeights st2
+        let st1 = SwitchUses.create switchCount
+        let st2 = SwitchUses.create switchCount
+        let st1A = SwitchUses.getWeights st1
+        let st2A = SwitchUses.getWeights st2
         st1A.[dex1] <- 1
         st2A.[dex2] <- 1
         st2A.[dex2low] <- 1
         let sts = seq { st1; st2 }
-        let stLT = SwitchTracker.LastUsedIndexes switchCount sts
-        let stLTA = SwitchTracker.getWeights stLT
+        let stLT = SwitchUses.LastUsedIndexes switchCount sts
+        let stLTA = SwitchUses.getWeights stLT
         Assert.AreEqual(stLTA.[dex1], 1)
         Assert.AreEqual(stLTA.[dex2], 1)
         Assert.AreEqual(stLTA.[dex2low], 0)

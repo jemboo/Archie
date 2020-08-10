@@ -63,9 +63,9 @@ type SortingRunFixture() =
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
          let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet false
-         let goodies = res |> Array.map(fun r -> (fst r)|> SwitchTracker.EntropyBits )
+         let goodies = res |> Array.map(fun r -> (fst r)|> SwitchUses.EntropyBits )
          goodies |> Array.iter(fun v-> Debug.WriteLine(sprintf "%A" v))
-         let goodies2 = res |> Array.map(fun r -> (snd r)|> SwitchTracker.UseCount)
+         let goodies2 = res |> Array.map(fun r -> (snd r)|> SwitchUses.UseCount)
          goodies2 |> Array.iter(fun v-> Debug.WriteLine(sprintf "%A" v))
          Assert.IsTrue (true)
 
@@ -85,9 +85,9 @@ type SortingRunFixture() =
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
         let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet false
-        let goodies = res |> Array.map(fun r -> (fst r)|> SwitchTracker.EntropyBits)
+        let goodies = res |> Array.map(fun r -> r|> SwitchUses.EntropyBits)
         Debug.WriteLine(sprintf "%A" goodies)
-        let goodies2 = res |> Array.map(fun r -> (snd r)|> SwitchTracker.UseCount)
+        let goodies2 = res |> Array.map(fun r -> r |> SwitchUses.UseCount)
         Debug.WriteLine(sprintf "%A" goodies2)
         Assert.IsTrue (true)
 
@@ -102,6 +102,6 @@ type SortingRunFixture() =
             let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
             let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSet false
-            let goodies = res |> Array.map(fun r -> (fst r) |> SwitchTracker.EntropyBits)
+            let goodies = res |> Array.map(fun r -> r |> SwitchUses.EntropyBits)
             goodies |> Array.iter(fun a -> Console.WriteLine(sprintf "%A" a))
             Assert.IsTrue (true)

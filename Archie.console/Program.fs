@@ -9,9 +9,12 @@ module Consolo =
     let main argv =
         //let summary = BenchmarkRunner.Run<SorterSetRandomTest>()
         //printfn "%A" summary
-        Console.WriteLine("Starting")
-        let res = Runs.RunSampler2
-        printfn "%i" res
+        printfn "Starting"
+        let res = Runs.RunSampler
+        res |> List.iter(fun s -> printfn "%s" s)
+
+        let res2 = Runs.RunSampler2
+        res2 |> List.iter(fun s -> printfn "%s" s)
         Console.ReadKey() |> ignore
         0 // return an integer exit code
 
