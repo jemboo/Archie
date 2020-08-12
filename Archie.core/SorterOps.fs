@@ -23,17 +23,17 @@ module SorterOps =
         Combinatorics.IsSortedOffset testCases.baseArray index (Degree.value(testCases.degree))
 
 
-    let SortAllTR (sorterDef:Sorter) (testCases:SortableSet) =
-         let switchCount = (SwitchCount.value sorterDef.switchCount)
-         let switchTracker = SwitchUses.create sorterDef.switchCount
+    let SortAllTR (sorter:Sorter) (testCases:SortableSet) =
+         let switchCount = (SwitchCount.value sorter.switchCount)
+         let switchTracker = SwitchUses.create sorter.switchCount
          let tcCopy = (SortableSet.copy testCases)
          let mutable i=0
          let mutable success = true
          while (i < testCases.baseArray.Length) do
-                  success <- (SortTR sorterDef 0 switchCount switchTracker tcCopy i) &&
+                  success <- (SortTR sorter 0 switchCount switchTracker tcCopy i) &&
                               success
-                  i <- i + (Degree.value sorterDef.degree)
-         switchTracker, success
+                  i <- i + (Degree.value sorter.degree)
+         sorter, switchTracker, success
 
 
     let SortTB (sorterDef:Sorter) (mindex:int) (maxdex:int) 
@@ -53,15 +53,18 @@ module SorterOps =
                                                             index 
                                                             (Degree.value(testCases.degree))) 
             i <- i+1
+        Combinatorics.IsSortedOffset testCases.baseArray index (Degree.value(testCases.degree))
 
 
-    let SortAllTB (sorterDef:Sorter) (testCases:SortableSet) =
-         let switchCount = (SwitchCount.value sorterDef.switchCount)
-         let switchUseTracker = SwitchUses.create sorterDef.switchCount
+    let SortAllTB (sorter:Sorter) (testCases:SortableSet) =
+         let switchCount = (SwitchCount.value sorter.switchCount)
+         let switchUses = SwitchUses.create sorter.switchCount
          let tcCopy = (SortableSet.copy testCases)
          let mutable i=0
+         let mutable success = true
          while (i < testCases.baseArray.Length) do
-                  SortTB sorterDef 0 switchCount switchUseTracker tcCopy i
-                  i <- i + (Degree.value sorterDef.degree)
-         switchUseTracker
+                  success <- (SortTB sorter 0 switchCount switchUses tcCopy i) &&
+                              success
+                  i <- i + (Degree.value sorter.degree)
+         sorter, switchUses, success
 

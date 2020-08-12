@@ -42,47 +42,54 @@ type SorterSetRandomTest() =
     let sorterCount = (SorterCount.create "" 24) |> Result.ExtractOrThrow
     let switchCount = (SwitchCount.create "" 1600) |> Result.ExtractOrThrow
     let seed = RandomSeed.create "" 41324 |> Result.ExtractOrThrow
-    let seed2 = RandomSeed.create "" 4124 |> Result.ExtractOrThrow
     let randoLcg = new RandomLcg(seed) :> IRando
-    let randoLcg2 = new RandomLcg(seed2) :> IRando
 
     let sorterSetRnd = SorterSet.createRandom degree switchCount sorterCount randoLcg
-    let sorterSetRndE = SorterSetE.fromSorterSet randoLcg randoLcg2 sorterSetRnd 
-
     let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
+    [<Benchmark(Baseline = true)>]
+    member this.CompleteSort() =
+        SortingRun.CompleteSort sortableSet sorterSetRnd false
+
+    [<Benchmark>]
+    member this.StopIfSorted() =
+        SortingRun.StopIfSorted sortableSet sorterSetRnd false
+
+    [<Benchmark>]
+    member this.CompleteSortP() =
+        SortingRun.CompleteSort sortableSet sorterSetRnd true
+
+    [<Benchmark>]
+    member this.StopIfSortedP() =
+        SortingRun.StopIfSorted sortableSet sorterSetRnd true
+
+
+
+type SorterSetGreenTest() =
+    let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
+    let sorterCount = (SorterCount.create "" 24) |> Result.ExtractOrThrow
+    let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
     let sorter16s = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
                    |> Seq.replicate (SorterCount.value sorterCount) 
     let sorterSet16 = SorterSet.fromSorters degree sorter16s
-    let sorterSet16E = SorterSetE.fromSorterSet randoLcg randoLcg2 sorterSet16 
+
 
     [<Benchmark(Baseline = true)>]
-    member this.Sort16TRp() =
-        SortingRun.RunSorterSetOnSortableSetTR sortableSet sorterSet16 true
+    member this.CompleteSort() =
+        SortingRun.CompleteSort sortableSet sorterSet16 false
 
     [<Benchmark>]
-    member this.Sort16TREp() =
-        SortingRun.RunSorterSetOnSortableSetTRE sortableSet sorterSet16E true
+    member this.StopIfSorted() =
+        SortingRun.StopIfSorted sortableSet sorterSet16 false
 
     [<Benchmark>]
-    member this.Sort16TR() =
-        SortingRun.RunSorterSetOnSortableSetTR sortableSet sorterSet16 false
+    member this.CompleteSortP() =
+        SortingRun.CompleteSort sortableSet sorterSet16 true
 
     [<Benchmark>]
-    member this.Sort16TBEp() =
-        SortingRun.RunSorterSetOnSortableSetTBE sortableSet sorterSet16E true
+    member this.StopIfSortedP() =
+        SortingRun.StopIfSorted sortableSet sorterSet16 true
 
-    [<Benchmark>]
-    member this.SortRandTREp() =
-        SortingRun.RunSorterSetOnSortableSetTRE sortableSet sorterSetRndE true
-
-    [<Benchmark>]
-    member this.SortRandTBEp() =
-        SortingRun.RunSorterSetOnSortableSetTBE sortableSet sorterSetRndE true
-
-    [<Benchmark>]
-    member this.SortTBE() =
-        SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSetRnd false
 
 
 

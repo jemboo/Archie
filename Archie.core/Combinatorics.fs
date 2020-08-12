@@ -30,10 +30,12 @@ module Combinatorics =
         seq {(initialList.Length) .. -1 .. 1}             // Going from the length of the list down to 1
         |> Seq.map (fun i -> nextItem (uint32 i))         // yield the next item
 
+
     let RandomSns (rnd:IRando) (degree:int) =
          let initialList = [|0 .. degree-1|]
          let permuter = (FisherYatesShuffle rnd)
          Seq.initInfinite (fun n -> (permuter initialList) |> Seq.toArray)
+
 
     let IsSorted (values:int[]) =
         let mutable i=1
@@ -52,6 +54,7 @@ module Combinatorics =
              i<-i+1
         looP
 
+
     let IsSortedOffset (baseValues:int[]) (offset:int) (length:int) =
         let mutable i=1
         let mutable looP = true
@@ -65,6 +68,7 @@ module Combinatorics =
         let bitLoc (loc:int) (intBits:int) =
             if (((1 <<< loc) &&& intBits) <> 0) then 1 else 0
         Array.init len (fun i -> bitLoc i intVers)
+
 
     let IntArray01_To_Int (len:int) (arrayVers:int[]) =
         let mutable intRet = 0
@@ -126,6 +130,7 @@ module Combinatorics =
                     sortable.[i] <- stbB
                     sortable.[j] <- stbA
                     counter.[i] <- counter.[i] + 1
+
 
     let SortCopyOfIntArray (sortable: array<int>) (stage:array<int>) (counter:array<int>) =
         let stbC = Array.copy sortable

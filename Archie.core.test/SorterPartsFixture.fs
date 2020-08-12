@@ -17,7 +17,7 @@ type SortingFixture () =
         let seed = RandomSeed.create "" 424 |> Result.ExtractOrThrow
         let randoLcg = new RandomNet(seed)
 
-        let swGen = Switch.RandomSwitchesOfDegree degree randoLcg
+        let swGen = Switch.randomSwitchesOfDegree degree randoLcg
 
         let genArray = swGen |> Seq.take 1000 |> Seq.toArray
         let lowMin = genArray |> Seq.map (fun s->s.hi) |> Seq.min
@@ -42,7 +42,7 @@ type SortingFixture () =
         let seed = RandomSeed.create "" 424 |> Result.ExtractOrThrow
         let randoLcg = new RandomNet(seed)
 
-        let swGen = Switch.RandomSwitchesOfDegree degree randoLcg
+        let swGen = Switch.randomSwitchesOfDegree degree randoLcg
         let genArray = swGen |> Seq.take 55000 |> Seq.toArray
         let histo = Utils.histogram (fun i->i) genArray
     
@@ -56,16 +56,16 @@ type SortingFixture () =
         let seed = RandomSeed.create "" 424 |> Result.ExtractOrThrow
 
         let randoLcg = new RandomNet(seed)
-        let sorter = Sorter.CreateRandom degree switchCount randoLcg
+        let sorter = Sorter.createRandom degree switchCount randoLcg
         Assert.AreEqual(sorter.switches.Length, (SwitchCount.value switchCount))
 
         let randoLcg2 = new RandomNet(seed)
-        let sorter2 = Sorter.CreateRandom degree switchCount randoLcg2
+        let sorter2 = Sorter.createRandom degree switchCount randoLcg2
         Assert.AreEqual(sorter, sorter2)
 
         let seed2 = RandomSeed.create "" 425 |> Result.ExtractOrThrow
         let randoLcg3 = new RandomNet(seed2)
-        let sorter3 = Sorter.CreateRandom degree switchCount randoLcg3
+        let sorter3 = Sorter.createRandom degree switchCount randoLcg3
         Assert.AreNotEqual(sorter, sorter3)
 
 
@@ -75,20 +75,47 @@ type SortingFixture () =
         let switchCount = 20 |> SwitchCount.create "" |> Result.ExtractOrThrow
         let seed = 123 |> RandomSeed.create "" |> Result.ExtractOrThrow
         let rnd = new RandomLcg(seed)
-        let sorter = Sorter.CreateRandom degree switchCount rnd
-
+        let sorter = Sorter.createRandom degree switchCount rnd
         Assert.AreEqual (sorter.switchCount, switchCount)
         Assert.AreEqual (sorter.degree, degree)
 
 
     [<TestMethod>]
-    member this.SorterTrimLength() =
+    member this.GetUsedSwitches() =
         let sorter = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
+        let degree = 16 |> Degree.create "" |> Result.ExtractOrThrow
+        let switchCount = sorter.switches.Length |> SwitchCount.create "" |> Result.ExtractOrThrow
+        let switchUses = SwitchUses.create switchCount
+        let weights = SwitchUses.getWeights switchUses
+        weights.[0] <- 1
+        weights.[3] <- 1
+        weights.[weights.Length - 1] <- 1
+        let usedSwitches = SwitchUses.getUsedSwitches switchUses sorter |> Result.ExtractOrThrow
+        Assert.AreEqual(usedSwitches.Length, 3)
+        Assert.IsTrue (true)
+
+    [<TestMethod>]
+    member this.GetRefinedStageCount() =
+        let sorter = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
+        let degree = 16 |> Degree.create "" |> Result.ExtractOrThrow
+        let switchCount = sorter.switches.Length |> SwitchCount.create "" |> Result.ExtractOrThrow
+        let switchUses = SwitchUses.create switchCount
+        let weights = SwitchUses.getWeights switchUses
+        weights.[0] <- 1
+        weights.[3] <- 1
+        weights.[weights.Length - 1] <- 1
+        let stagecount = SwitchUses.getRefinedStageCount switchUses sorter |> Result.ExtractOrThrow
+        Assert.AreEqual(stagecount, 1)
+        Assert.IsTrue (true)
+
+
+    [<TestMethod>]
+    member this.SorterTrimLength() =
         let trimCount = 58 |> SwitchCount.create "" |> Result.ExtractOrThrow
         let degree = (Degree.create "" 16) |> Result.ExtractOrThrow
         let sorterTrim = result {
                                 let! refSorter = RefSorter.CreateRefSorter RefSorter.Green16
-                                return! Sorter.TrimLength refSorter trimCount
+                                return! Sorter.trimLength refSorter trimCount
                             } |> Result.ExtractOrThrow
 
 
@@ -110,7 +137,7 @@ type SortingFixture () =
         st2A.[dex2] <- 1
         st2A.[dex2low] <- 1
         let sts = seq { st1; st2 }
-        let stLT = SwitchUses.LastUsedIndexes switchCount sts
+        let stLT = SwitchUses.lastUsedIndexes switchCount sts
         let stLTA = SwitchUses.getWeights stLT
         Assert.AreEqual(stLTA.[dex1], 1)
         Assert.AreEqual(stLTA.[dex2], 1)

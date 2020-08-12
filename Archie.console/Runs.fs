@@ -18,7 +18,6 @@ module Runs =
         Console.WriteLine(sprintf "%d %s" lineNum a)
 
 
-
     let DoStep rngType seed degree switchCount sorterCount randGenMode =
         let randy = Rando.RandoFromSeed rngType seed
         Threading.Thread.Sleep 100
@@ -29,11 +28,11 @@ module Runs =
                              (SwitchCount.value switchCount) 
                              randGenMode)
         printHeader (sprintf "Degree\tRandGenMode\tSwitches\tPassing")
-        for i=0 to 3 do
+        for i = 0 to 3 do
             printResult (sprintf "%A\t%u\t%d\t%d\t%d\t%A\t%d" 
-                rngType seed (Degree.value degree) 
-                (SwitchCount.value switchCount) 
-                (SorterCount.value sorterCount) 
+                rngType seed (Degree.value degree)
+                (SwitchCount.value switchCount)
+                (SorterCount.value sorterCount)
                 randGenMode randy.NextUInt)
 
 
@@ -49,8 +48,8 @@ module Runs =
         let randoLcg = new RandomLcg(seed) :> IRando
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
         let sorterSetRnd = SorterSet.createRandom degree switchCount sorterCount randoLcg
-        let res = SortingRun.RunSorterSetOnSortableSetTB sortableSet sorterSetRnd true
-        let lastIndexes = res |> (SwitchUses.LastUsedIndexes switchCount)
+        let res = SortingRun.CompleteSort sortableSet sorterSetRnd true
+        let lastIndexes = res |> Seq.map (fun (_, u, _) -> u) |> (SwitchUses.lastUsedIndexes switchCount)
         let log = (Utils.printIntArray (SwitchUses.getWeights lastIndexes))::log
         log
 
@@ -60,9 +59,9 @@ module Runs =
         let seedw = 277
         let rndSeedv = RandomSeed.create "" seedv |> Result.ExtractOrThrow
         let rndSeedw = RandomSeed.create "" seedw |> Result.ExtractOrThrow
-        let degree = Degree.create "" 16 |> Result.ExtractOrThrow
-        let switchCount = SwitchCount.create "" 1000 |> Result.ExtractOrThrow
-        let sorterCount = SorterCount.create "" 250 |> Result.ExtractOrThrow
+        let degree = Degree.create "" 18 |> Result.ExtractOrThrow
+        let switchCount = SwitchCount.create "" 2400 |> Result.ExtractOrThrow
+        let sorterCount = SorterCount.create "" 50000 |> Result.ExtractOrThrow
         let rndType = RngType.Lcg
         let log = [sprintf "Degree: %i Seed: %i" (Degree.value degree) seedv]
 
@@ -71,11 +70,10 @@ module Runs =
 
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
         let sorterSetRnd = (SorterSet.createRandom degree switchCount sorterCount randoLcgV)
-                            |> (SorterSetE.fromSorterSet randoLcgV randoLcgW)
-        let res = SortingRun.RunSorterSetOnSortableSetTBE sortableSet sorterSetRnd true
-        //let useCounts = res |> Array.map(fun d->(Dependent.character d)) 
-        //                    |> Array.map(SwitchUses.UseCount)
-        let useCounts = res |> Array.map(fun d-> Dependent.map SwitchUses.UseCount d)
-        let log = (Utils.printArrayf Dependent.format useCounts)::log
-        log
+
+        let res = SortingRun.StopIfSorted sortableSet sorterSetRnd true
+        //let useCounts = res |> Array.map(fun d-> Dependent.map SwitchUses.getStats (d, None))
+        //let log = (Utils.printArrayf (Dependent.formatf (fun (a,b,c)->sprintf"%A %A %A" a b c)) useCounts)::log
+        //log
+        ""
        

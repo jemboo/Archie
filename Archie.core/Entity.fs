@@ -23,6 +23,16 @@ module Entity =
         src |> Seq.map(fun c -> wrap rando1 rando2 c)
 
 
+type EntitySet<'a> = { map:Map<EntityId, Entity<'a>> }
+module EntitySet =
+    let create (items:seq<Entity<'a>>) =
+            result {
+                    let map = items |> Seq.map(fun e-> (Entity.id e), e)
+                                    |> Map.ofSeq
+                    return { map=map}
+                }
+
+
 
 type Dependent<'a> = private { entityId:EntityId; character:'a }
 module Dependent =
