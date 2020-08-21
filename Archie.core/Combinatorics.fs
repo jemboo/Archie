@@ -17,7 +17,6 @@ module Combinatorics =
     let FisherYatesShuffle (rnd:IRando) (initialList:array<'a>) =
         let rndmx max = rnd.NextUInt % max
         let availableFlags = Array.init initialList.Length (fun i -> (i, true))
-                                                          // Which items are available and their indices
         let nextItem nLeft =
             let nItem = (rndmx nLeft)                     // Index out of available items
             let index =                                   // Index in original deck
@@ -30,12 +29,10 @@ module Combinatorics =
         seq {(initialList.Length) .. -1 .. 1}             // Going from the length of the list down to 1
         |> Seq.map (fun i -> nextItem (uint32 i))         // yield the next item
 
-
     let RandomSns (rnd:IRando) (degree:int) =
          let initialList = [|0 .. degree-1|]
          let permuter = (FisherYatesShuffle rnd)
          Seq.initInfinite (fun n -> (permuter initialList) |> Seq.toArray)
-
 
     let IsSorted (values:int[]) =
         let mutable i=1
@@ -45,7 +42,6 @@ module Combinatorics =
              i<-i+1
         looP
 
-
     let SpanIsSorted (values:Span<int>) =
         let mutable i=1
         let mutable looP = true
@@ -53,7 +49,6 @@ module Combinatorics =
              looP <- (values.[i-1] <= values.[i])
              i<-i+1
         looP
-
 
     let IsSortedOffset (baseValues:int[]) (offset:int) (length:int) =
         let mutable i=1
@@ -63,12 +58,10 @@ module Combinatorics =
              i<-i+1
         looP
 
-
     let Int_To_IntArray01 (len:int) (intVers:int) =
         let bitLoc (loc:int) (intBits:int) =
             if (((1 <<< loc) &&& intBits) <> 0) then 1 else 0
         Array.init len (fun i -> bitLoc i intVers)
-
 
     let IntArray01_To_Int (len:int) (arrayVers:int[]) =
         let mutable intRet = 0
@@ -79,7 +72,6 @@ module Combinatorics =
 
         {1 .. len} |> Seq.iter(fun i -> bump i)
         intRet
-
 
     let CompareArrays (a: array<int>) (b: array<int>) =
         if (a.Length <> b.Length) then false
@@ -131,23 +123,35 @@ module Combinatorics =
                     sortable.[j] <- stbA
                     counter.[i] <- counter.[i] + 1
 
-
     let SortCopyOfIntArray (sortable: array<int>) (stage:array<int>) (counter:array<int>) =
         let stbC = Array.copy sortable
         SortIntArray stbC stage counter
         stbC
 
-    let MakeTwoCycleIntArray (arraysize: int) (lowBit:int) (hiBit:int) =
-        Array.init arraysize (fun i -> if   (i = lowBit) then hiBit
-                                       elif (i = hiBit) then lowBit
-                                       else i)
+    let MakeMonoTwoCycle (degree:Degree) (aDex:int) (bDex:int) =
+        Array.init (Degree.value degree) (fun i -> 
+            if   (i = aDex) then bDex
+            elif (i = bDex) then aDex
+            else i)
 
-    let MakeAllTwoCycleIntArrays (arraysize: int) =
-        seq {for i = 0 to arraysize - 1 do
+    let DrawTwoWoRep (degree:Degree) (rnd:IRando) =
+        let aBit = rnd.NextPositiveInt % Degree.value(degree)
+        let mutable bBit = rnd.NextPositiveInt % Degree.value(degree)
+        while aBit = bBit do
+            bBit <- rnd.NextPositiveInt % Degree.value(degree)
+        if aBit < bBit then aBit, bBit
+        else bBit, aBit
+
+    let MakeRandomMonoTwoCycle (degree:Degree) (rnd:IRando) =
+        let tup = DrawTwoWoRep degree rnd
+        MakeMonoTwoCycle degree (fst tup) (snd tup)
+
+    let MakeAllMonoTwoCycles (degree:Degree) =
+        seq {for i = 0 to (Degree.value(degree) - 1) do
                 for j = 0 to i - 1 do
-                    yield MakeTwoCycleIntArray arraysize i j}
+                    yield MakeMonoTwoCycle degree i j}
 
-    let MakeRandomFullTwoCycleIntArray (rnd : IRando) (arraysize:int) =
+    let MakeRandomFullTwoCycleIntArray (rnd:IRando) (arraysize:int) =
         let initialList = [|0 .. arraysize-1|]
         let arrayRet = Array.init arraysize (fun i -> i)
         let rndTupes = (FisherYatesShuffle rnd initialList) |> (Seq.chunkBySize 2) |> Seq.toArray
@@ -159,4 +163,29 @@ module Combinatorics =
     let MakeRandomFullTwoCycleIntArrays (rnd : IRando) (arraysize:int) (count:int) =
         seq {1 .. count} |> Seq.map (fun i -> MakeRandomFullTwoCycleIntArray rnd arraysize)
 
+    // bins is an increasing set of positive numbers.
+    // returns the index of the first member e>value.
+    let findBin (bins:float[]) (value:float) =
+        bins |> Array.findIndex(fun b -> b>value)
+
+
+    let makeBins (weights:float[]) =
+        let mutable tot = 0.0
+        let cumo w =
+            tot<-tot + w
+            tot
+        weights |> Array.map(fun w -> cumo w)
         
+
+    let drawFromWeightedDistribution (fitnessFunc:'a->SorterFitness) (rnd:IRando) (items:'a[]) =
+        let bins = items |> Array.map(fun it-> (SorterFitness.value (fitnessFunc it)))
+                         |> makeBins
+        let maxVal = bins.[bins.Length - 1]
+        Seq.initInfinite(fun _-> items.[findBin bins (rnd.NextFloat * maxVal)])
+
+
+    let makeHull (seqX:seq<'a>) (seqY:seq<'a>) (x:int) (y:int) =
+        let xa = seqX |> Seq.take(x) |> Seq.toArray
+        let ya = seqY |> Seq.take(y) |> Seq.toArray
+        seq {for i = 0 to x - 1 do yield (xa.[i], ya.[y-1])}
+            |> Seq.append (seq {for i = 0 to y - 2 do yield (xa.[x-1], ya.[i])})

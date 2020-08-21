@@ -14,7 +14,7 @@ type RandomNet(seed:RandomSeed) =
             _count <- _count + 2
             let vv = (uint32 (rnd.Next()))
             vv + (uint32 (rnd.Next()))
-        member this.NextUInt31 =
+        member this.NextPositiveInt =
             rnd.Next()
         member this.NextULong =
             let r = this :> IRando
@@ -54,7 +54,7 @@ type RandomLcg(seed:RandomSeed) =
         member this.Count = _count
         member this.NextUInt =
             this.NextUInt
-        member this.NextUInt31 =
+        member this.NextPositiveInt =
             int (this.NextUInt >>> 1)
         member this.NextULong =
             this.NextULong
@@ -102,3 +102,6 @@ module Rando =
         match rngtype with
         | RngType.Lcg -> LcgFromSeed seed
         | RngType.Net -> NetFromSeed seed
+
+    let GetSeed = 
+        (RandomSeed.create "" (int System.DateTime.Now.Ticks))

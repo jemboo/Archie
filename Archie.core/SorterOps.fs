@@ -6,13 +6,13 @@ open System
 
 module SorterOps =
 
-    let SortTR (sorterDef:Sorter) (mindex:int) (maxdex:int) 
+    let SortTR (sorter:Sorter) (mindex:int) (maxdex:int) 
                (switchTracker:SwitchUses) (testCases:SortableSet) 
                (index:int) =
         let weights = (SwitchUses.getWeights switchTracker)
         let mutable i = mindex
         while (i < maxdex) do
-            let switch = sorterDef.switches.[i]
+            let switch = sorter.switches.[i]
             let lv = testCases.baseArray.[switch.low + index]
             let hv = testCases.baseArray.[switch.hi + index]
             if(lv > hv) then
@@ -21,7 +21,6 @@ module SorterOps =
                 weights.[i] <- weights.[i] + 1
             i <- i+1
         Combinatorics.IsSortedOffset testCases.baseArray index (Degree.value(testCases.degree))
-
 
     let SortAllTR (sorter:Sorter) (testCases:SortableSet) =
          let switchCount = (SwitchCount.value sorter.switchCount)
@@ -35,14 +34,13 @@ module SorterOps =
                   i <- i + (Degree.value sorter.degree)
          sorter, switchTracker, success
 
-
-    let SortTB (sorterDef:Sorter) (mindex:int) (maxdex:int) 
+    let SortTB (sorter:Sorter) (mindex:int) (maxdex:int) 
                (switchUses:SwitchUses) (testCases:SortableSet) (index:int) =
         let useWeights = (SwitchUses.getWeights switchUses)
         let mutable looP = true
         let mutable i = mindex
         while ((i < maxdex) && looP) do
-            let switch = sorterDef.switches.[i]
+            let switch = sorter.switches.[i]
             let lv = testCases.baseArray.[switch.low + index]
             let hv = testCases.baseArray.[switch.hi + index]
             if(lv > hv) then
@@ -55,7 +53,6 @@ module SorterOps =
             i <- i+1
         Combinatorics.IsSortedOffset testCases.baseArray index (Degree.value(testCases.degree))
 
-
     let SortAllTB (sorter:Sorter) (testCases:SortableSet) =
          let switchCount = (SwitchCount.value sorter.switchCount)
          let switchUses = SwitchUses.create sorter.switchCount
@@ -67,4 +64,23 @@ module SorterOps =
                               success
                   i <- i + (Degree.value sorter.degree)
          sorter, switchUses, success
+         
 
+    let private SorterSetOnSortableSet (sortableSet:SortableSet) (sorters:Sorter[]) 
+                                       (_parallel:bool) sorterOnSortableSet =
+        match _parallel with
+        | true -> sorters |> Array.Parallel.map(
+                        fun s-> sorterOnSortableSet s sortableSet)
+        | false -> sorters |> Array.map(
+                        fun s-> sorterOnSortableSet s sortableSet)
+
+
+    let CompleteSort (sortableSet:SortableSet) (sorters:Sorter[])
+                     (_parallel:bool) =
+        SortAllTR |> SorterSetOnSortableSet sortableSet sorters _parallel
+
+
+    let StopIfSorted (sortableSet:SortableSet) (sorters:Sorter[])
+                     (_parallel:bool) =
+        SortAllTB |> SorterSetOnSortableSet sortableSet sorters _parallel
+         

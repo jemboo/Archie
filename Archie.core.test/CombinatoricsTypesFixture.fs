@@ -57,10 +57,22 @@ type CombinatoricsTypesFixture () =
                 let tSq = TwoCyclePerm.Product tcp tcp |> Result.ExtractOrThrow
                 Assert.AreEqual(tSq, id)
 
-
     [<TestMethod>]
     member this.TestB() =
        let aa = IntBits.AllBinaryTestCasesArray 5
        //let b0 = Array2D.length1 aa
 
        Assert.IsTrue(true)
+
+       
+    [<TestMethod>]
+    member this.makeFromTupleSeq() =        
+        let rndy = Rando.LcgFromSeed 44
+        let degree = Degree.create "" 16 |> Result.ExtractOrThrow
+        let stageTupes = SorterParts.Stage.makeStagePackedSwitchSeq degree rndy
+                         |> Seq.map(fun s -> (s.low, s.hi))
+                         |> Seq.take 8
+        let twoCycle = TwoCyclePerm.makeFromTupleSeq degree stageTupes
+        let product = twoCycle |> TwoCyclePerm.Product twoCycle |> Result.ExtractOrThrow
+        Assert.AreEqual(product, TwoCyclePerm.Identity degree)
+        Assert.IsTrue (true)

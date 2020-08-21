@@ -2,6 +2,7 @@
 open System.Collections.Generic
 open Microsoft.FSharp.Core
 open System
+open System.IO
 
 module Utils =
 
@@ -11,6 +12,11 @@ module Utils =
 //       for (k,v) in src do
 //           d.Add(k,v)
 //       d
+
+    let logFile path res (append:bool) =
+        use sw =
+            new StreamWriter(path, append)
+        fprintfn sw "%s" res
 
     let toMap (keyMaker:'a->'b) (src:seq<'a>) =
         src |> Seq.map(fun v -> (keyMaker v), v)
@@ -25,14 +31,6 @@ module Utils =
                 if (m.ContainsKey (fst kv)) then
                         yield (fst kv, (m.[fst kv], snd kv)) }
 
-
-    let sequo (s:seq<'a> ) =
-        seq { for i in s -> i}
-
-        //let d = new Map<'b, 'a>()
-        //for v in src do
-        //    d.Add((keyMaker v), v)
-        //d
 
     // get a seq of key-value pairs for easy iteration with for (k,v) in d do...
     let pairs (d:Dictionary<'a, 'b>) =

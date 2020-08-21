@@ -21,6 +21,31 @@ type CombinatoricsFixture () =
       let converted = Combinatorics.Int_To_IntArray01 len 21
       Assert.IsTrue (Combinatorics.CompareArrays expectedArray converted)
 
+    [<TestMethod>]
+    member this.MakeRandomMonoTwoCycle() =
+      let degree = Degree.create "" 5 |> Result.ExtractOrThrow
+      let rnd = Rando.LcgFromSeed 424 
+      let ts = seq {0 .. 10} 
+                    |> Seq.map(fun _ -> Combinatorics.MakeRandomMonoTwoCycle degree rnd)
+                    |> Seq.toArray
+      Assert.IsTrue (ts.Length = 11)
+
+    [<TestMethod>]
+    member this.MakeTwoCycle() =
+      let degree = Degree.create "" 7 |> Result.ExtractOrThrow
+      let rnd = Rando.LcgFromSeed 4242 
+      let ts = seq {0 .. 1000} 
+                    |> Seq.map(fun _ -> Combinatorics.DrawTwoWoRep degree rnd)
+                    |> Seq.groupBy(id)
+                    |> Seq.map(fun t-> (fst t), (snd t)|>Seq.length)
+                    |> Seq.toArray
+      Assert.IsTrue (ts.Length = 21)
+
+    [<TestMethod>]
+    member this.MakeAllMonoTwoCycles() =
+      let degree = Degree.create "" 5 |> Result.ExtractOrThrow
+      let dd = Combinatorics.MakeAllMonoTwoCycles degree |> Seq.toArray
+      Assert.IsTrue (dd.Length = 10)
       
     [<TestMethod>]
     member this.TestIntArray01_To_Int() =
@@ -92,6 +117,7 @@ type CombinatoricsFixture () =
         let conj = Combinatorics.ConjugateIntArrays a b
         Assert.IsTrue (Combinatorics.CompareArrays conj c)
 
+
     [<TestMethod>]
     member this.TestSorted_0_1_Sequence() =
         let blockLen = 10
@@ -113,3 +139,31 @@ type CombinatoricsFixture () =
         let yak = Combinatorics.BreakArrayIntoSegments testArray testBreaks
         Assert.AreEqual (yak.Length, 3)
 
+
+    [<TestMethod>]
+    member this.drawFromWeightedDistribution() =
+        let testArray = [|2; 3; 4; 5; 6; 7; 8; 9; 10|] 
+        let rndy = Rando.LcgFromSeed 44
+        let mutable log = []
+        let LogRes s =
+            log <- s::log
+        
+        let fitnessFunc (w:int) =
+            (SorterFitness.create "" (1.0 / (float w)))
+                |> Result.ExtractOrThrow
+        testArray |>
+        Combinatorics.drawFromWeightedDistribution fitnessFunc rndy
+            |> Seq.take 100000 |> Seq.toArray
+            |> Array.groupBy(id)
+            |> Array.iter(fun b -> LogRes (sprintf "%d %d" (fst b) (snd b).Length))
+
+        Assert.IsTrue (log.Length > 1)
+
+
+    [<TestMethod>]
+    member this.makeHull() =
+         let seqX = Seq.initInfinite(fun i-> sprintf "x%d" i)
+         let seqY = Seq.initInfinite(fun i-> sprintf "y%d" i)
+         let h1 = Combinatorics.makeHull seqX seqY 1 2
+                  |> Seq.toArray
+         Assert.IsTrue (true)

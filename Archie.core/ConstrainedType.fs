@@ -45,6 +45,18 @@ module ConstrainedType =
         else
             Ok (ctor i)
 
+    /// Create a constrained float using the constructor provided
+    /// Return Error if input is less than minVal or more than maxVal
+    let createFloat fieldName ctor minVal maxVal i = 
+        if i < minVal then
+            let msg = sprintf "%s: Must not be less than %f" fieldName minVal
+            Error msg
+        elif i > maxVal then
+            let msg = sprintf "%s: Must not be greater than %f" fieldName maxVal
+            Error msg
+        else
+            Ok (ctor i)
+
     /// Create a constrained decimal using the constructor provided
     /// Return Error if input is less than minVal or more than maxVal
     let createDecimal fieldName ctor minVal maxVal i = 

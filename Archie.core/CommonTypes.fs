@@ -12,10 +12,15 @@ module ParseUtils =
 
 type String50 = private String50 of string
 type Degree = private Degree of int
+type GenerationCount = private GenerationCount of int
+type MutationRate = private MutationRate of float
+type PoolFraction = private PoolFraction of float
 type RandomSeed = private RandomSeed of int
+type ReplicaCount = private ReplicaCount of int
 type SorterCount = private SorterCount of int
 type SwitchCount = private SwitchCount of int
 type StageCount = private StageCount of int
+type SorterFitness = private SorterFitness of float
 type SortableCount = private SortableCount of int
 type EntityId = private EntityId of Guid
 type JsonString = private JsonString of string
@@ -24,15 +29,18 @@ type IRando =
     abstract member Count: int
     abstract member Seed : RandomSeed
     abstract member NextUInt : uint32
-    abstract member NextUInt31: int32
+    abstract member NextPositiveInt: int32
     abstract member NextULong : uint64
     abstract member NextFloat : float
     abstract member RngType : RngType
 
+type MutationType =
+    | Switch of MutationRate
+    | Stage of MutationRate
+
 type RandSorterGenerationMode =
     | Switch of SwitchCount
     | Stage of StageCount
-
 
 module String50 =
     let value (String50 str) = str
@@ -45,11 +53,37 @@ module Degree  =
     let value (Degree v) = v
     let create fieldName v = 
         ConstrainedType.createInt fieldName Degree 1 1000 v
+    let within (b:Degree) v =
+        (v >= 0) && (v < (value b))
+
+module GenerationCount  =
+    let value (GenerationCount v) = v
+    let create fieldName v = 
+        ConstrainedType.createInt fieldName GenerationCount 1 100000000 v
+
+module MutationRate  =
+    let value (MutationRate v) = v
+    let create fieldName v = 
+        ConstrainedType.createFloat fieldName MutationRate 0.0 1.0 v
+
+module PoolFraction  =
+    let value (PoolFraction v) = v
+    let create fieldName v = 
+        ConstrainedType.createFloat fieldName PoolFraction 0.0 1.0 v
+    let boundedMultiply pf rhs =
+        Math.Max((int ((float rhs) * (value pf))), 1)
 
 module RandomSeed =
     let value (RandomSeed seed) = seed
-    let create fieldName seed =
-        ConstrainedType.createInt fieldName RandomSeed 1 2147483647 seed
+    let create fieldName (seed:int) =
+        let mSeed = Math.Abs(seed) % 2147483647
+        ConstrainedType.createInt fieldName RandomSeed 1 2147483647 mSeed
+
+module ReplicaCount =
+    let value (ReplicaCount seed) = seed
+    let create fieldName (seed:int) =
+        let mSeed = Math.Abs(seed) % 2147483647
+        ConstrainedType.createInt fieldName ReplicaCount 1 10000 mSeed
 
 module SwitchCount  =
     let value (SwitchCount v) = v
@@ -72,6 +106,11 @@ module SortableCount  =
     let value (SortableCount v) = v
     let create fieldName v = 
         ConstrainedType.createInt fieldName SortableCount 1 1000 v
+
+module SorterFitness  =
+    let value (SorterFitness v) = v
+    let create fieldName v = 
+        ConstrainedType.createFloat fieldName SorterFitness 0.0 1.0 v
 
 module EntityId  =
     let value (EntityId v) = v

@@ -5,6 +5,6 @@ open BenchmarkDotNet.Running
 module Consolo =
     [<EntryPoint>]
     let main argv =
-        let summary = BenchmarkRunner.Run<SorterSetRandomTest>()
+        let summary = BenchmarkRunner.Run<SorterSetGreenTest>()
         printfn "%A" summary
         0 // return an integer exit code

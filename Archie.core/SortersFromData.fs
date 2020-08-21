@@ -39,40 +39,73 @@ module SortersFromData =
                     switches = switches }
         }
 
+module SorterWriter =
 
-    type RefSorter =
-        | Degree8 | Degree8Prefix3 | Degree10
-        | Degree11 | Degree12 | Degree13 | Degree14 | Degree15
-        | Green16 | End16 | Degree17  | Degree18
-        | Degree20 | Degree22 | Degree23 | Degree24
-        | Degree25 | Degree26 | Degree28  | Degree32
+    let sb = new System.Text.StringBuilder()
+    let myPrint format = Printf.bprintf sb format 
 
+    let formatSwitch (s:Switch) =
+        myPrint "(%2d,%2d) " s.low s.hi
 
-    module RefSorter =
+    let private _formatStage (st:Stage) =
+        myPrint"["
+        st.switches |> List.iter(formatSwitch)
+        myPrint"]\n"
 
-        let GetStringAndDegree (refSorter:RefSorter) =
-            let d (v:int) =
-               let qua = (Degree.create "" v) |> Result.toOption
-               qua.Value
+    let private _formatSwitches (degree:Degree) (switches:seq<Switch>) =
+        let stages = Stage.mergeSwitchesIntoStages degree switches
+        stages |> Seq.iter(_formatStage)
+        myPrint"\n"
 
-            match refSorter with
-            | Degree8 -> (SorterData.Degree8Str, d 8) | Degree8Prefix3 -> (SorterData.Degree8Prefix3Str, d 8)
-            | Degree10 -> (SorterData.Degree10Str, d 10) | Degree11 -> (SorterData.Degree11Str, d 11)
-            | Degree12 -> (SorterData.Degree12Str , d 12) | Degree13 -> (SorterData.Degree13Str, d 13)
-            | Degree14 -> (SorterData.Degree14Str , d 14) | Degree15 -> (SorterData.Degree15Str, d 15)
-            | Green16 -> (SorterData.Degree16_Green, d 16) | End16 -> (SorterData.Degree16_END, d 16)
-            | Degree17 -> (SorterData.Degree17Str, d 17) | Degree18 -> (SorterData.Degree18Str, d 18)
-            | Degree20 -> (SorterData.Degree20Str, d 20)
-            | Degree22 -> (SorterData.Degree22Str, d 22)
-            | Degree23 -> (SorterData.Degree23Str, d 23)
-            | Degree24 -> (SorterData.Degree24aStr, d 24)
-            | Degree25 -> (SorterData.Degree25Str, d 25)
-            | Degree26 -> (SorterData.Degree26Str, d 26)
-            | Degree28 -> (SorterData.Degree28Str, d 28)
-            | Degree32 -> (SorterData.Degree32Str, d 32)
+    let private _runWriter writeAction =
+        writeAction
+        let strRet = sb.ToString()
+        sb.Clear() |> ignore
+        strRet
+
+    let formatStage (st:Stage) =
+        _runWriter (_formatStage st)
+
+    let formatSwitches (degree:Degree) (switches:seq<Switch>) =
+        _runWriter (_formatSwitches degree switches)
 
 
-        let CreateRefSorter (refSorter:RefSorter) =
-            let (sorterString, degree) = (GetStringAndDegree refSorter)
-            ParseToSorter sorterString degree
+
+type RefSorter =
+    | Degree8 | Degree8Prefix3 | Degree10
+    | Degree11 | Degree12 | Degree13 | Degree14 | Degree15
+    | Green16 | End16 | Degree17  | Degree18
+    | Degree20 | Degree22 | Degree23 | Degree24
+    | Degree25 | Degree26 | Degree28  | Degree32
+    | Green16m | End16m
+
+module RefSorter =
+
+    let GetStringAndDegree (refSorter:RefSorter) =
+        let d (v:int) =
+            let qua = (Degree.create "" v) |> Result.toOption
+            qua.Value
+
+        match refSorter with
+        | Degree8 -> (SorterData.Degree8Str, d 8) | Degree8Prefix3 -> (SorterData.Degree8Prefix3Str, d 8)
+        | Degree10 -> (SorterData.Degree10Str, d 10) | Degree11 -> (SorterData.Degree11Str, d 11)
+        | Degree12 -> (SorterData.Degree12Str , d 12) | Degree13 -> (SorterData.Degree13Str, d 13)
+        | Degree14 -> (SorterData.Degree14Str , d 14) | Degree15 -> (SorterData.Degree15Str, d 15)
+        | Green16 -> (SorterData.Degree16_Green, d 16) | End16 -> (SorterData.Degree16_END, d 16)
+        | Degree17 -> (SorterData.Degree17Str, d 17) | Degree18 -> (SorterData.Degree18Str, d 18)
+        | Degree20 -> (SorterData.Degree20Str, d 20)
+        | Degree22 -> (SorterData.Degree22Str, d 22)
+        | Degree23 -> (SorterData.Degree23Str, d 23)
+        | Degree24 -> (SorterData.Degree24aStr, d 24)
+        | Degree25 -> (SorterData.Degree25Str, d 25)
+        | Degree26 -> (SorterData.Degree26Str, d 26)
+        | Degree28 -> (SorterData.Degree28Str, d 28)
+        | Degree32 -> (SorterData.Degree32Str, d 32)
+        | Green16m -> (SorterData.Degree16_GreenM, d 16)
+        | End16m -> (SorterData.Degree16_ENDM, d 16)
+
+
+    let CreateRefSorter (refSorter:RefSorter) =
+        let (sorterString, degree) = (GetStringAndDegree refSorter)
+        SortersFromData.ParseToSorter sorterString degree
 

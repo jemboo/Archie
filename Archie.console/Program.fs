@@ -9,11 +9,10 @@ module Consolo =
     let main argv =
         //let summary = BenchmarkRunner.Run<SorterSetRandomTest>()
         //printfn "%A" summary
-        printfn "Starting"
-        //let res = Runs.RunSampler
-        //res |> List.iter(fun s -> printfn "%s" s)
+        printfn "Starting RunSorterMpgBatch"
 
-        //let res2 = Runs.RunSampler2
+        let res = Runs.RunSorterMpgBatch "c:\log\RunSorterMpgsBatchI.txt"
+        Console.WriteLine (sprintf "%s" res)
         //res2 |> List.iter(fun s -> printfn "%s" s)
         Console.ReadKey() |> ignore
         0 // return an integer exit code

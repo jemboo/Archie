@@ -13,11 +13,8 @@ type SortingFixture () =
     member this.MakeRandomSwitches() =
         let degree = Degree.create "" 10 |> Result.ExtractOrThrow
         let shortLength = SwitchCount.create "" 100 |> Result.ExtractOrThrow
-        let longLength = SwitchCount.create "" 500 |> Result.ExtractOrThrow
-        let seed = RandomSeed.create "" 424 |> Result.ExtractOrThrow
-        let randoLcg = new RandomNet(seed)
-
-        let swGen = Switch.randomSwitchesOfDegree degree randoLcg
+        let rnd = Rando.LcgFromSeed 424
+        let swGen = Switch.randomSwitchesOfDegree degree rnd
 
         let genArray = swGen |> Seq.take 1000 |> Seq.toArray
         let lowMin = genArray |> Seq.map (fun s->s.hi) |> Seq.min
@@ -31,18 +28,13 @@ type SortingFixture () =
         Assert.AreEqual((Degree.value degree) - 1, hiMax)
         Assert.AreEqual(100, (SwitchCount.value shortLength))
 
-        Assert.IsTrue(true);
-
 
     [<TestMethod>]
     member this.RandSwitchUniformity() =
         let degree = Degree.create "" 10 |> Result.ExtractOrThrow
-        let shortLength = SwitchCount.create "" 100 |> Result.ExtractOrThrow
-        let longLength = SwitchCount.create "" 500 |> Result.ExtractOrThrow
-        let seed = RandomSeed.create "" 424 |> Result.ExtractOrThrow
-        let randoLcg = new RandomNet(seed)
+        let rnd = Rando.LcgFromSeed 424
 
-        let swGen = Switch.randomSwitchesOfDegree degree randoLcg
+        let swGen = Switch.randomSwitchesOfDegree degree rnd
         let genArray = swGen |> Seq.take 55000 |> Seq.toArray
         let histo = Utils.histogram (fun i->i) genArray
     
@@ -51,21 +43,17 @@ type SortingFixture () =
 
     [<TestMethod>]
     member this.MakeRandomSorter() =
+        let rnd = Rando.LcgFromSeed 424
+        let rnd2 = Rando.LcgFromSeed 424
+        let rnd3 = Rando.LcgFromSeed 7721
+
         let degree = Degree.create "" 16 |> Result.ExtractOrThrow
         let switchCount = SwitchCount.create "" 100 |> Result.ExtractOrThrow
-        let seed = RandomSeed.create "" 424 |> Result.ExtractOrThrow
-
-        let randoLcg = new RandomNet(seed)
-        let sorter = Sorter.createRandom degree switchCount randoLcg
+        let sorter = Sorter.createRandom degree switchCount rnd
         Assert.AreEqual(sorter.switches.Length, (SwitchCount.value switchCount))
-
-        let randoLcg2 = new RandomNet(seed)
-        let sorter2 = Sorter.createRandom degree switchCount randoLcg2
+        let sorter2 = Sorter.createRandom degree switchCount rnd2
         Assert.AreEqual(sorter, sorter2)
-
-        let seed2 = RandomSeed.create "" 425 |> Result.ExtractOrThrow
-        let randoLcg3 = new RandomNet(seed2)
-        let sorter3 = Sorter.createRandom degree switchCount randoLcg3
+        let sorter3 = Sorter.createRandom degree switchCount rnd3
         Assert.AreNotEqual(sorter, sorter3)
 
 
@@ -83,7 +71,6 @@ type SortingFixture () =
     [<TestMethod>]
     member this.GetUsedSwitches() =
         let sorter = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
-        let degree = 16 |> Degree.create "" |> Result.ExtractOrThrow
         let switchCount = sorter.switches.Length |> SwitchCount.create "" |> Result.ExtractOrThrow
         let switchUses = SwitchUses.create switchCount
         let weights = SwitchUses.getWeights switchUses
@@ -94,10 +81,10 @@ type SortingFixture () =
         Assert.AreEqual(usedSwitches.Length, 3)
         Assert.IsTrue (true)
 
+
     [<TestMethod>]
     member this.GetRefinedStageCount() =
         let sorter = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
-        let degree = 16 |> Degree.create "" |> Result.ExtractOrThrow
         let switchCount = sorter.switches.Length |> SwitchCount.create "" |> Result.ExtractOrThrow
         let switchUses = SwitchUses.create switchCount
         let weights = SwitchUses.getWeights switchUses
@@ -105,7 +92,7 @@ type SortingFixture () =
         weights.[3] <- 1
         weights.[weights.Length - 1] <- 1
         let stagecount = SwitchUses.getRefinedStageCount switchUses sorter |> Result.ExtractOrThrow
-        Assert.AreEqual(stagecount, 1)
+        Assert.AreEqual((StageCount.value stagecount), 1)
         Assert.IsTrue (true)
 
 
@@ -142,3 +129,53 @@ type SortingFixture () =
         Assert.AreEqual(stLTA.[dex1], 1)
         Assert.AreEqual(stLTA.[dex2], 1)
         Assert.AreEqual(stLTA.[dex2low], 0)
+
+    [<TestMethod>]
+    member this.SortableSetAllBinary() =
+        let degree = 12 |> Degree.create "" |> Result.ExtractOrThrow
+        let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
+        let len = sortableSet.baseArray.Length
+        Assert.IsTrue(true)
+
+
+    [<TestMethod>]
+    member this.mutate() =
+        let rnd = Rando.LcgFromSeed 424
+        let mutationRate = MutationRate.create "" 0.9999 |> Result.ExtractOrThrow
+        let degree = 16 |> Degree.create "" |> Result.ExtractOrThrow
+        let stage = Stage.createRandom degree rnd
+        let mutant = Stage.randomMutate rnd mutationRate stage
+        Assert.AreEqual(stage.degree, mutant.degree)
+        Assert.IsTrue(mutant <> stage)
+
+    [<TestMethod>]
+    member this.switchMutateByStage() =
+        let rnd = Rando.LcgFromSeed 6241
+        let mutationRate = MutationRate.create "" 1.0 |> Result.ExtractOrThrow
+        let degree = 15 |> Degree.create "" |> Result.ExtractOrThrow
+        let stage = Stage.createRandom degree rnd
+        Console.WriteLine (SorterWriter.formatStage stage)
+        seq {0..100} |> Seq.iter(fun i ->
+            let mutant = Stage.randomMutate rnd mutationRate stage
+            if (stage = mutant) then Console.Write("match")
+            Console.Write (SorterWriter.formatStage mutant)
+            Assert.AreEqual(stage.degree, mutant.degree))
+
+    [<TestMethod>]
+    member this.sorterMutateByStage() =
+        let rnd = Rando.LcgFromSeed 424
+        let rnd2 = Rando.LcgFromSeed 424
+        let rnd3 = Rando.LcgFromSeed 7721
+        let mutationRate = MutationRate.create "" 0.15 |> Result.ExtractOrThrow
+
+        let degree = Degree.create "" 16 |> Result.ExtractOrThrow
+        let stageCount = StageCount.create "" 10 |> Result.ExtractOrThrow
+        let sorter = Sorter.createRandomPackedStages degree stageCount rnd
+        Console.WriteLine (SorterWriter.formatSwitches degree sorter.switches)
+        Console.WriteLine("")
+        seq {0..10} |> Seq.iter(fun i ->
+            let mutant = Sorter.mutateByStage mutationRate rnd sorter
+            if (sorter = mutant) then Console.Write("match\n")
+            Console.Write (SorterWriter.formatSwitches degree mutant.switches)
+            Console.WriteLine("")
+            Assert.AreEqual(sorter.degree, mutant.degree))

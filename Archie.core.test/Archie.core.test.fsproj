@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -24,7 +24,7 @@
     <Compile Include="RandoFixture.fs" />
     <Compile Include="SorterPartsFixture.fs" />
     <Compile Include="SorterFixture.fs" />
-    <Compile Include="SortingRunFixture.fs" />
+    <Compile Include="SorterOpsFixture.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

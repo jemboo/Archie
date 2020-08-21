@@ -27,16 +27,12 @@ type BenchmarkSorterOps() =
         res
 
 
-//|       Method |      Mean |     Error |    StdDev | Ratio | RatioSD |
-//|------------- |----------:|----------:|----------:|------:|--------:|
-//|    Sort16TRp |  59.40 ms |  1.180 ms |  3.128 ms |  1.00 |    0.00 |
-//|   Sort16TREp |  57.11 ms |  1.126 ms |  2.632 ms |  0.96 |    0.07 |
-//|     Sort16TR | 346.41 ms |  6.833 ms | 16.240 ms |  5.83 |    0.42 |
-//|   Sort16TBEp |  71.33 ms |  1.409 ms |  3.094 ms |  1.20 |    0.08 |
-//| SortRandTREp | 666.69 ms |  5.487 ms |  4.582 ms | 11.13 |    0.60 |
-//| SortRandTBEp | 143.85 ms |  2.830 ms |  4.571 ms |  2.41 |    0.14 |
-//|      SortTBE | 855.18 ms | 16.958 ms | 37.224 ms | 14.39 |    1.00 |
-
+//|        Method |       Mean |    Error |   StdDev | Ratio |
+//|-------------- |-----------:|---------:|---------:|------:|
+//|  CompleteSort | 3,996.8 ms | 26.94 ms | 25.20 ms |  1.00 |
+//|  StopIfSorted |   857.7 ms | 17.02 ms | 21.53 ms |  0.21 |
+//| CompleteSortP |   663.8 ms |  6.60 ms |  5.51 ms |  0.17 |
+//| StopIfSortedP |   148.9 ms |  2.88 ms |  4.22 ms |  0.04 |
 type SorterSetRandomTest() =
     let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
     let sorterCount = (SorterCount.create "" 24) |> Result.ExtractOrThrow
@@ -49,22 +45,27 @@ type SorterSetRandomTest() =
 
     [<Benchmark(Baseline = true)>]
     member this.CompleteSort() =
-        SortingRun.CompleteSort sortableSet sorterSetRnd false
+        SorterOps.CompleteSort sortableSet sorterSetRnd.sorters false
 
     [<Benchmark>]
     member this.StopIfSorted() =
-        SortingRun.StopIfSorted sortableSet sorterSetRnd false
+        SorterOps.StopIfSorted sortableSet sorterSetRnd.sorters false
 
     [<Benchmark>]
     member this.CompleteSortP() =
-        SortingRun.CompleteSort sortableSet sorterSetRnd true
+        SorterOps.CompleteSort sortableSet sorterSetRnd.sorters true
 
     [<Benchmark>]
     member this.StopIfSortedP() =
-        SortingRun.StopIfSorted sortableSet sorterSetRnd true
+        SorterOps.StopIfSorted sortableSet sorterSetRnd.sorters true
 
 
-
+////|        Method |      Mean |     Error |    StdDev | Ratio | RatioSD |
+////|-------------- |----------:|----------:|----------:|------:|--------:|
+////|  CompleteSort | 361.19 ms | 11.272 ms | 33.235 ms |  1.00 |    0.00 |
+////|  StopIfSorted | 490.56 ms | 10.566 ms | 31.155 ms |  1.37 |    0.17 |
+////| CompleteSortP |  58.75 ms |  1.171 ms |  2.619 ms |  0.17 |    0.02 |
+////| StopIfSortedP |  76.78 ms |  1.458 ms |  2.879 ms |  0.21 |    0.02 |
 type SorterSetGreenTest() =
     let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
     let sorterCount = (SorterCount.create "" 24) |> Result.ExtractOrThrow
@@ -76,20 +77,19 @@ type SorterSetGreenTest() =
 
     [<Benchmark(Baseline = true)>]
     member this.CompleteSort() =
-        SortingRun.CompleteSort sortableSet sorterSet16 false
+        SorterOps.CompleteSort sortableSet sorterSet16.sorters false
 
     [<Benchmark>]
     member this.StopIfSorted() =
-        SortingRun.StopIfSorted sortableSet sorterSet16 false
+        SorterOps.StopIfSorted sortableSet sorterSet16.sorters false
 
     [<Benchmark>]
     member this.CompleteSortP() =
-        SortingRun.CompleteSort sortableSet sorterSet16 true
+        SorterOps.CompleteSort sortableSet sorterSet16.sorters true
 
     [<Benchmark>]
     member this.StopIfSortedP() =
-        SortingRun.StopIfSorted sortableSet sorterSet16 true
-
+        SorterOps.StopIfSorted sortableSet sorterSet16.sorters true
 
 
 
@@ -128,9 +128,6 @@ type ZeroCreateTest() =
         Array.Copy(aB, aA, arrayLen)
 
 
-
-
-
 //[<MemoryDiagnoser>]
 type Md5VsSha256() =
     let N = 100000
@@ -148,6 +145,7 @@ type Md5VsSha256() =
     [<Benchmark>]
     member this.Md5() =
         md5.ComputeHash(data)
+
 
 //[<MemoryDiagnoser>]
 type RandoBench() =

@@ -9,7 +9,7 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Archie.core.test", "Archie.
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Archie.console", "Archie.console\Archie.console.fsproj", "{078931BA-9487-4028-9AF2-44173AD0B7E3}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Archie.Benchmark", "Archie.Benchmark\Archie.Benchmark.fsproj", "{C1454D22-4C59-43BF-9ED4-82681AD8F6F6}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Archie.Benchmark", "Archie.Benchmark\Archie.Benchmark.fsproj", "{C1454D22-4C59-43BF-9ED4-82681AD8F6F6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,8 +49,8 @@ Global
 		{C1454D22-4C59-43BF-9ED4-82681AD8F6F6}.Debug|x64.Build.0 = Debug|Any CPU
 		{C1454D22-4C59-43BF-9ED4-82681AD8F6F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1454D22-4C59-43BF-9ED4-82681AD8F6F6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C1454D22-4C59-43BF-9ED4-82681AD8F6F6}.Release|x64.ActiveCfg = Release|Any CPU
-		{C1454D22-4C59-43BF-9ED4-82681AD8F6F6}.Release|x64.Build.0 = Release|Any CPU
+		{C1454D22-4C59-43BF-9ED4-82681AD8F6F6}.Release|x64.ActiveCfg = Release|x64
+		{C1454D22-4C59-43BF-9ED4-82681AD8F6F6}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

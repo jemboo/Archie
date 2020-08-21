@@ -22,6 +22,16 @@ module Entity =
             create id c
         src |> Seq.map(fun c -> wrap rando1 rando2 c)
 
+    let GuidSeeds (seed:int) =
+        let masterRando = Rando.LcgFromSeed seed
+        Seq.initInfinite(fun i -> (i, 
+                                    Rando.NextGuid masterRando, 
+                                    RandomSeed.create "" masterRando.NextPositiveInt
+                                        |> Result.ExtractOrThrow))
+
+    let GuidSeedsA = GuidSeeds 123
+    let GuidSeedsB = GuidSeeds 987
+
 
 type EntitySet<'a> = { map:Map<EntityId, Entity<'a>> }
 module EntitySet =
@@ -31,7 +41,6 @@ module EntitySet =
                                     |> Map.ofSeq
                     return { map=map}
                 }
-
 
 
 type Dependent<'a> = private { entityId:EntityId; character:'a }

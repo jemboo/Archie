@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -25,7 +25,7 @@
     <Compile Include="CombinatoricsTypes.fs" />
     <Compile Include="SorterParts.fs" />
     <Compile Include="SorterOps.fs" />
-    <Compile Include="SortingRun.fs" />
+    <Compile Include="SorterSetEval.fs" />
     <Compile Include="SortersFromData.fs" />
   </ItemGroup>
 

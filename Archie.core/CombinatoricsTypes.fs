@@ -60,16 +60,37 @@ module TwoCyclePerm =
     let MakeMonoCycle (degree:Degree) (hi:int) (low:int) =
         if ((Permutation.InRange degree hi) && (Permutation.InRange degree low)) then
             {degree=degree; 
-             values=(Combinatorics.MakeTwoCycleIntArray (Degree.value degree) low hi)} |> Ok
+             values=(Combinatorics.MakeMonoTwoCycle degree low hi)} |> Ok
         else Error "low or hi is out of range" 
 
+    let MakeRandomMonoCycle (degree:Degree) (rnd:IRando) =
+        { degree=degree; 
+          values=Combinatorics.MakeRandomMonoTwoCycle degree rnd }
+
     let MakeAllMonoCycles (degree:Degree) =
-        (Combinatorics.MakeAllTwoCycleIntArrays (Degree.value degree)) 
+        (Combinatorics.MakeAllMonoTwoCycles degree) 
         |> Seq.map (fun s -> {degree=degree; values= s})
      
     let MakeRandomFullTwoCycle (degree:Degree) (rnd:IRando) =
         { degree=degree; 
           values=Combinatorics.MakeRandomFullTwoCycleIntArray rnd (Degree.value degree)}
+
+    let makeFromTupleSeq (degree:Degree) (tupes:seq<int*int>) =
+        let curPa = [|0 .. (Degree.value degree)-1|]
+        let validTupe t =
+            ((fst t) <> (snd t)) &&
+            (Degree.within degree (fst t)) &&
+            (Degree.within degree (snd t))
+        let usableTup t =
+            (curPa.[fst(t)] = fst(t)) &&
+            (curPa.[snd(t)] = snd(t))
+        let OpPa tup =
+            if (validTupe tup) && (usableTup tup) then
+                curPa.[fst(tup)] <- snd(tup)
+                curPa.[snd(tup)] <- fst(tup)
+
+        tupes |> Seq.iter(OpPa)
+        { degree=degree; values=curPa }
 
 
 type BitArray = {order:int; items:array<bool>}

@@ -7,14 +7,15 @@ module SorterParts =
     [<Struct>]
     type Switch = { low: int; hi: int }
     module Switch =
-
         let switchMap = 
             [for hi=0 to 64 
                 do for low=0 to hi do yield {Switch.low=low; Switch.hi=hi}]
 
         let zeroSwitches =
             seq { while true do yield {Switch.low=0; Switch.hi=0}}
-
+        
+        // produces switches from only the two cycle components of the 
+        // permutation
         let switchSeqFromIntArray (pArray:int[]) =
              seq { for i = 0 to pArray.Length - 1 do
                     let j = pArray.[i]
@@ -36,6 +37,13 @@ module SorterParts =
                      let p = (int (rnd.NextUInt % mDex))
                      yield switchMap.[p] }
 
+        let mutateSwitches (order:Degree) (mutationRate:MutationRate) (rnd:IRando) (switches:seq<Switch>) =
+            let mDex = uint32 ((Degree.value order)*(Degree.value order + 1) / 2) 
+            let mutateSwitch (switch:Switch) =
+                match rnd.NextFloat with
+                | k when k < (MutationRate.value mutationRate) -> switchMap.[(int (rnd.NextUInt % mDex))] 
+                | _ -> switch
+            switches |> Seq.map(fun sw-> mutateSwitch sw)
 
     type SortableSet = {degree:Degree; baseArray:int[]}
     module SortableSet =
@@ -66,6 +74,13 @@ module SorterParts =
 
     type Stage = {switches:Switch list; degree:Degree}
     module Stage =
+
+        let createRandom (degree:Degree) (rnd:IRando) =
+            let switches = (TwoCyclePerm.MakeRandomFullTwoCycle degree rnd )
+                            |> Switch.switchSeqFromPolyCycle
+            {switches=switches |> Seq.toList; degree=degree}
+
+
         let mergeSwitchesIntoStages (degree:Degree) (switches:seq<Switch>) =
             let mutable stageTracker = Array.init (Degree.value degree) (fun i -> false)
             let switchesForStage = new ResizeArray<Switch>()
@@ -80,6 +95,7 @@ module SorterParts =
                         switchesForStage.Add sw
                     yield { Stage.switches=switchesForStage |> Seq.toList;  degree = degree}
                  }
+
 
         let getStageIndexesFromSwitches (order:int) (switches:seq<Switch>) =
             let mutable stageTracker = Array.init order (fun i -> false)
@@ -96,11 +112,51 @@ module SorterParts =
                     yield curDex
                  }
 
-        let makeStagePackedSwitchSeq (degree:Degree) (rnd:IRando)=
+
+        let makeStagePackedSwitchSeq (degree:Degree) (rnd:IRando) =
             let aa (rnd:IRando)  = 
                 (TwoCyclePerm.MakeRandomFullTwoCycle degree rnd )
                         |> Switch.switchSeqFromPolyCycle
             seq { while true do yield! (aa rnd) }
+
+
+        let convertToTwoCycle (stage:Stage) =
+            stage.switches |> Seq.map(fun s -> (s.low, s.hi))
+                           |> TwoCyclePerm.makeFromTupleSeq stage.degree
+
+
+        let mutateStage (stage:Stage) (pair:int*int) =
+            let tcp = stage |> convertToTwoCycle |> TwoCyclePerm.arrayValues
+            let a, b = pair
+            let c = tcp.[a]
+            let d = tcp.[b]
+            if (a=c) && (b=d) then
+                tcp.[a] <- b
+                tcp.[b] <- a
+            elif (a=c) then
+                tcp.[a] <- b
+                tcp.[b] <- a
+                tcp.[d] <- d
+            elif (b=d) then
+                tcp.[a] <- b
+                tcp.[b] <- a
+                tcp.[c] <- c
+            else
+                tcp.[a] <- b
+                tcp.[c] <- d
+                tcp.[b] <- a
+                tcp.[d] <- c
+            let sA = Switch.switchSeqFromIntArray tcp |> Seq.toList
+            {switches=sA; degree=stage.degree}
+
+
+        let randomMutate (rnd:IRando) (mutationRate:MutationRate) (stage:Stage) = 
+            match rnd.NextFloat with
+                | k when k < (MutationRate.value mutationRate) -> 
+                           let tcp = Combinatorics.DrawTwoWoRep stage.degree rnd
+                           mutateStage stage tcp
+                | _ -> stage
+
 
 
     type Sorter = {degree:Degree; switches:array<Switch>; switchCount:SwitchCount}
@@ -134,25 +190,42 @@ module SorterParts =
                                  |> Seq.toArray
              }
 
-         let appendSwitches (switches:seq<Switch>) (sorterDef:Sorter) =
-             let newSwitches = (switches |> Seq.toArray) |> Array.append sorterDef.switches
+         let appendSwitches (switches:seq<Switch>) (sorter:Sorter) =
+             let newSwitches = (switches |> Seq.toArray) |> Array.append sorter.switches
              let newSwitchCount = SwitchCount.create "" newSwitches.Length |> Result.toOption
              {
-                 Sorter.degree = sorterDef.degree;
+                 Sorter.degree = sorter.degree;
                  switchCount=newSwitchCount.Value;
-                 switches = (switches |> Seq.toArray) |> Array.append sorterDef.switches
+                 switches = (switches |> Seq.toArray) |> Array.append sorter.switches
              }
 
-         let trimLength (sorterDef:Sorter) (newLength:SwitchCount) =
-             if (SwitchCount.value sorterDef.switchCount) < (SwitchCount.value newLength) then
+         let trimLength (sorter:Sorter) (newLength:SwitchCount) =
+             if (SwitchCount.value sorter.switchCount) < (SwitchCount.value newLength) then
                 "New length is longer than sorter" |> Error
              else
-                let newSwitches = sorterDef.switches |> Array.take (SwitchCount.value newLength)
+                let newSwitches = sorter.switches |> Array.take (SwitchCount.value newLength)
                 {
-                    Sorter.degree = sorterDef.degree;
+                    Sorter.degree = sorter.degree;
                     switchCount = newLength;
                     switches = newSwitches
                 } |> Ok
+
+         let mutateBySwitch (mutationRate:MutationRate) (rnd:IRando) (sorter:Sorter) =
+            {
+                Sorter.degree = sorter.degree;
+                Sorter.switchCount = sorter.switchCount;
+                switches = (Switch.mutateSwitches sorter.degree mutationRate rnd sorter.switches) |> Seq.toArray
+            }
+
+         let mutateByStage (mutationRate:MutationRate) (rnd:IRando) (sorter:Sorter) =
+             let stages = Stage.mergeSwitchesIntoStages sorter.degree sorter.switches |> Seq.toArray
+             let newStages = stages |> Array.map(fun st -> st |> Stage.randomMutate rnd mutationRate)
+             let newSwitches = [| for stage in newStages do yield! stage.switches |]
+             {
+                 Sorter.degree=sorter.degree;
+                 switchCount = (SwitchCount.create "" newSwitches.Length) |> Result.ExtractOrThrow;
+                 switches = newSwitches
+             }
              
 
     type SorterSet = {degree:Degree; sorterCount:SorterCount; sorters:Sorter[] }
@@ -202,16 +275,16 @@ module SorterParts =
         let getWeights tracker = tracker.weights
         let switchCount tracker = (SwitchCount.value tracker.switchCount)
 
-        //let Add (trackerA:SwitchUses) (trackerB:SwitchUses) =
-        //    if ((switchCount trackerA) <> (switchCount trackerB))  then
-        //       (sprintf "switchCounts: %d, %d are not equal" 
-        //                (switchCount trackerA) (switchCount trackerB)) |> Error
-        //    else
-        //       let weightsSum = Array.map2 (+) (getWeights trackerA) (getWeights trackerB) 
-        //       {
-        //           switchCount = (SwitchCount.create "" weightsSum.Length) |> Result.ExtractOrThrow
-        //           weights = weightsSum;
-        //       } |> Ok
+        let Add (trackerA:SwitchUses) (trackerB:SwitchUses) =
+            if ((switchCount trackerA) <> (switchCount trackerB))  then
+               (sprintf "switchCounts: %d, %d are not equal" 
+                        (switchCount trackerA) (switchCount trackerB)) |> Error
+            else
+               let weightsSum = Array.map2 (+) (getWeights trackerA) (getWeights trackerB) 
+               {
+                   switchCount = (SwitchCount.create "" weightsSum.Length) |> Result.ExtractOrThrow
+                   weights = weightsSum;
+               } |> Ok
 
         let getUsedSwitches (switchUses:SwitchUses) (sorter:Sorter) =
             let useCount = SwitchCount.value switchUses.switchCount
@@ -244,24 +317,25 @@ module SorterParts =
             stseq |> Seq.iter(fun st -> Recordo wgts st)
             stRet
 
-        let useCount (switchUses:SwitchUses) =
-            (getWeights switchUses) |> Array.filter(fun i->i>0) |> Array.length
+        let getSwitchUseCount (switchUses:SwitchUses) =
+            SwitchCount.create "" 
+                ((getWeights switchUses) |> Array.filter(fun i->i>0) |> Array.length)
 
-        let useTotal (switchUses:SwitchUses) =
+        let getSwitchUseTotal (switchUses:SwitchUses) =
             (getWeights switchUses) |> Array.sum
 
         let entropyBits (switchUses:SwitchUses) =
             (getWeights switchUses) |> Combinatorics.EntropyBits
 
-        let getStageCount (sorter:Sorter) =
-            (Stage.mergeSwitchesIntoStages sorter.degree sorter.switches)
-                    |> Seq.length
+        let getStageCount (degree:Degree) (switches:seq<Switch>) =
+           StageCount.create "" 
+                              ((Stage.mergeSwitchesIntoStages degree switches) |> Seq.length)
 
         let getRefinedStageCount (switchUses:SwitchUses) (sorter:Sorter) =
             result {
                 let! usedSwitches = getUsedSwitches switchUses sorter
                 let degree = sorter.degree
-                return Stage.mergeSwitchesIntoStages degree usedSwitches |> Seq.length
+                return! getStageCount degree usedSwitches
             }
 
         let getRefinedSorter (switchUses:SwitchUses) (sorter:Sorter) =
@@ -273,14 +347,28 @@ module SorterParts =
                 return Sorter.create degree switches
             }
 
-        let getStats (tup) =
-            tup |> fun tup -> entropyBits (fst tup), 
-                                               useCount (fst tup), 
-                                               useTotal (fst tup)
+        let getStats (sorter:Sorter) (switchUses:SwitchUses) =
+            result
+                {
+                    let! refinedStageCount = (getRefinedStageCount switchUses sorter)
+                    let! switchUseCount = (getSwitchUseCount switchUses)
+                    return sorter, switchUseCount, refinedStageCount
+                } 
 
+        let reportResultStats stats =
+            Utils.printArrayf 
+                (fun res ->
+                match res with
+                | Ok (s,a,b,c,d) -> sprintf "%f %d %d %d" a b (SwitchCount.value c) (StageCount.value d)
+                | Error msg -> sprintf "%s" msg ) 
+               stats
 
-        //let getStats (switchUses:SwitchUses) (sorter:Sorter option) =
-        //    (switchUses, sorter) |> fun tup -> entropyBits (fst tup), 
-        //                                       useCount (fst tup), 
-        //                                       useTotal (fst tup)
+        let reportStats stats =
+            Utils.printArrayf 
+                (fun (s,a,b,c,d) -> sprintf "%f %d %d %d" a b (SwitchCount.value c) (StageCount.value d))
+               stats
 
+        let reportEvals stats gen =
+            Utils.printArrayf 
+               (fun ((s,w,t),f) -> sprintf "%d %d %d %f" gen (SwitchCount.value w) (StageCount.value t) (SorterFitness.value f)) 
+               stats
