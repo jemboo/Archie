@@ -16,14 +16,19 @@ module Permutation =
     let arrayValues perm = perm.values
     let degree perm = perm.degree
 
-    let CreateRandoms (degree:Degree) (rnd:IRando) =
-        let idArray = (Identity degree) |> arrayValues                             
-        seq { while true do 
-                yield { degree=degree;
-                        values=(Combinatorics.FisherYatesShuffle rnd idArray |> Seq.toArray)}}
-
     let CreateRandom (degree:Degree) (rnd:IRando) =
-        CreateRandoms degree rnd |> Seq.head
+        let idArray = (Identity degree) |> arrayValues  
+        { degree=degree;
+        values=(Combinatorics.FisherYatesShuffle rnd idArray |> Seq.toArray)}
+
+    let IsTwoCycle (perm:Permutation) =
+        Combinatorics.isTwoCycle perm.values
+
+    let CreateRandoms (degree:Degree) (rnd:IRando) =
+        Seq.initInfinite(fun _ -> CreateRandom degree rnd)
+
+    let InRange (degree:Degree) (value:int) =
+       ((value > -1) && (value < (Degree.value degree)))
 
     let Inverse (p:Permutation) =
         create p.degree (Combinatorics.InverseMapArray (p |> arrayValues))
@@ -34,9 +39,7 @@ module Permutation =
                         (Degree.value pA.degree) (Degree.value pB.degree))
         else
             create pA.degree  (Combinatorics.ComposeMapIntArrays (pA |> arrayValues) (pB |> arrayValues))
- 
-    let InRange (degree:Degree) (value:int) =
-        ((value > -1) && (value < (Degree.value degree)))
+
 
 
  // a permutation of the set {0, 1,.. (degree-1)}, that is it's own inverse
@@ -98,6 +101,26 @@ module BitArray =
     let Zero (order: int) =  { order=order; items=Array.init order (fun i -> false) }
     let Next (bits: BitArray) =  { order=bits.order; items=bits.items }
 
+module ZeroOneSequence =
+
+    let Random (rnd : IRando) (len: int) (pctOnes:float) =
+        Seq.init len (fun n -> if (rnd.NextFloat > pctOnes) then 0 else 1)
+
+    let FromInteger (len:int) (intVers:int) =
+        let bitLoc (loc:int) (intBits:int) =
+            if (((1 <<< loc) &&& intBits) <> 0) then 1 else 0
+        Array.init len (fun i -> bitLoc i intVers)
+
+    let ToInt (len:int) (arrayVers:int[]) =
+        let mutable intRet = 0
+        let bump i =
+            if (arrayVers.[i] = 1) then
+                intRet <- intRet + 1
+            intRet <- intRet * 2
+
+        {1 .. len} |> Seq.iter(fun i -> bump i)
+        intRet
+
 
 module IntBits =
     let Sorted_O_1_Sequence (blockLen:int) (onesCount:int) =
@@ -112,7 +135,7 @@ module IntBits =
 
     let AllBinaryTestCasesSeq (order:int) =
         {0 .. (1 <<< order) - 1}
-        |> Seq.map (fun i -> Combinatorics.Int_To_IntArray01 order i)
+        |> Seq.map (fun i -> ZeroOneSequence.FromInteger  order i)
 
     let AllBinaryTestCasesArray (order:int) =
-        Array.init (1 <<< order) (fun i -> Combinatorics.Int_To_IntArray01 order i)
+        Array.init (1 <<< order) (fun i -> ZeroOneSequence.FromInteger order i)

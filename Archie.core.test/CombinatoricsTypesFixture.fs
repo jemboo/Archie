@@ -76,3 +76,11 @@ type CombinatoricsTypesFixture () =
         let product = twoCycle |> TwoCyclePerm.Product twoCycle |> Result.ExtractOrThrow
         Assert.AreEqual(product, TwoCyclePerm.Identity degree)
         Assert.IsTrue (true)
+
+
+    [<TestMethod>]
+    member this.ZeroOneSequence_FromInteger() =
+     let len = 6
+     let expectedArray = [|1; 0; 1; 0; 1; 0|]
+     let converted = ZeroOneSequence.FromInteger len 21
+     Assert.IsTrue ((expectedArray = converted))

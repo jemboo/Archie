@@ -20,6 +20,7 @@ type RandoFixture () =
         let rv = int (randoLcg.NextUInt % 500u)
         Assert.IsTrue(rv > 0);
 
+
     [<TestMethod>]
     member this.TestPermutations () =        
         let degree = 6 |> Degree.create "" |> Result.ExtractOrThrow
@@ -32,3 +33,11 @@ type RandoFixture () =
                     |> Seq.take sortableCount
 
         Assert.IsTrue(true);
+
+
+    [<TestMethod>]
+    member this.RngGenDto() =
+        let rngGen = {RngGen.rngType=RngType.Lcg; seed = RandomSeed.create "" 123|>Result.ExtractOrThrow}
+        let dto = RngGenF.toDto rngGen
+        let rngGenBack = RngGenF.fromDto dto |> Result.ExtractOrThrow
+        Assert.IsTrue((rngGen=rngGenBack))

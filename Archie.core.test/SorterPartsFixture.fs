@@ -49,11 +49,12 @@ type SortingFixture () =
 
         let degree = Degree.create "" 16 |> Result.ExtractOrThrow
         let switchCount = SwitchCount.create "" 100 |> Result.ExtractOrThrow
-        let sorter = Sorter.createRandom degree switchCount rnd
+        let randSorterGen = RandSorterGeneration.Switch switchCount
+        let sorter = Sorter.createRandom degree randSorterGen rnd
         Assert.AreEqual(sorter.switches.Length, (SwitchCount.value switchCount))
-        let sorter2 = Sorter.createRandom degree switchCount rnd2
+        let sorter2 = Sorter.createRandom degree randSorterGen rnd2
         Assert.AreEqual(sorter, sorter2)
-        let sorter3 = Sorter.createRandom degree switchCount rnd3
+        let sorter3 = Sorter.createRandom degree randSorterGen rnd3
         Assert.AreNotEqual(sorter, sorter3)
 
 
@@ -61,9 +62,10 @@ type SortingFixture () =
     member this.RandomSorterProperties() =
         let degree = 6 |> Degree.create "" |> Result.ExtractOrThrow
         let switchCount = 20 |> SwitchCount.create "" |> Result.ExtractOrThrow
+        let randSorterGen = RandSorterGeneration.Switch switchCount
         let seed = 123 |> RandomSeed.create "" |> Result.ExtractOrThrow
         let rnd = new RandomLcg(seed)
-        let sorter = Sorter.createRandom degree switchCount rnd
+        let sorter = Sorter.createRandom degree randSorterGen rnd
         Assert.AreEqual (sorter.switchCount, switchCount)
         Assert.AreEqual (sorter.degree, degree)
 
@@ -170,7 +172,8 @@ type SortingFixture () =
 
         let degree = Degree.create "" 16 |> Result.ExtractOrThrow
         let stageCount = StageCount.create "" 10 |> Result.ExtractOrThrow
-        let sorter = Sorter.createRandomPackedStages degree stageCount rnd
+        let randSorterGen = RandSorterGeneration.Stage stageCount
+        let sorter = Sorter.createRandom degree randSorterGen rnd
         Console.WriteLine (SorterWriter.formatSwitches degree sorter.switches)
         Console.WriteLine("")
         seq {0..10} |> Seq.iter(fun i ->

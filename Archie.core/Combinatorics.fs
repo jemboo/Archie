@@ -1,16 +1,38 @@
 ﻿namespace Archie.Base
 open System
 
+
 module Combinatorics =
 
-    let Random_0_1 (rnd : IRando) (len: int) (pctOnes:float) =
-        Seq.init len (fun n -> if (rnd.NextFloat > pctOnes) then 0 else 1)
+    let Identity (degree:int) =
+        [|0 .. degree-1|] 
 
     // Splits the sourceArray into segments using segBounds
     let BreakArrayIntoSegments (sourceArray : array<'a>) (segBounds : array<int>) =
         seq {1 .. (segBounds.Length - 1) }
         |> Seq.map(fun i -> sourceArray.[segBounds.[i - 1] .. (segBounds.[i] - 1)])
         |> Seq.toArray
+
+
+    let ComposeMapIntArrays (a:array<int>) (b:array<int>) =
+        let product = Array.init a.Length (fun i -> 0)
+        for i = 0 to a.Length - 1 do
+           /// product.[a.[b.[i]]] <- i
+           product.[i] <- a.[b.[i]]
+        product
+  
+
+    let InverseMapArray (a:array<int>) =
+      let aInv = Array.init a.Length (fun i -> 0)
+      for i = 0 to a.Length - 1 do
+          aInv.[a.[i]] <- i
+      aInv
+
+    // conj * a * conj ^ -1
+    //let ConjugateIntArrays (a:array<int>) (conj:array<int>) =
+    //    conj |> ComposeMapIntArrays a |> ComposeMapIntArrays (InverseMapArray conj)
+    let ConjugateIntArrays (a:array<int>) (conj:array<int>) =
+        ComposeMapIntArrays conj (ComposeMapIntArrays a (InverseMapArray conj) )
 
     // returns a sequence of draws from initialList without replacement. 
     // Does not change initialList
@@ -29,10 +51,14 @@ module Combinatorics =
         seq {(initialList.Length) .. -1 .. 1}             // Going from the length of the list down to 1
         |> Seq.map (fun i -> nextItem (uint32 i))         // yield the next item
 
-    let RandomSns (rnd:IRando) (degree:int) =
-         let initialList = [|0 .. degree-1|]
-         let permuter = (FisherYatesShuffle rnd)
-         Seq.initInfinite (fun n -> (permuter initialList) |> Seq.toArray)
+
+    let RandomPermutation (rnd:IRando) (degree:int) =
+         (FisherYatesShuffle rnd)  [|0 .. degree-1|] |> Seq.toArray
+
+
+    let RandomPermutations (rnd:IRando) (degree:int) =
+         Seq.initInfinite (fun n -> RandomPermutation rnd degree)
+
 
     let IsSorted (values:int[]) =
         let mutable i=1
@@ -50,6 +76,7 @@ module Combinatorics =
              i<-i+1
         looP
 
+
     let IsSortedOffset (baseValues:int[]) (offset:int) (length:int) =
         let mutable i=1
         let mutable looP = true
@@ -58,42 +85,8 @@ module Combinatorics =
              i<-i+1
         looP
 
-    let Int_To_IntArray01 (len:int) (intVers:int) =
-        let bitLoc (loc:int) (intBits:int) =
-            if (((1 <<< loc) &&& intBits) <> 0) then 1 else 0
-        Array.init len (fun i -> bitLoc i intVers)
-
-    let IntArray01_To_Int (len:int) (arrayVers:int[]) =
-        let mutable intRet = 0
-        let bump i =
-            if (arrayVers.[i] = 1) then
-                intRet <- intRet + 1
-            intRet <- intRet * 2
-
-        {1 .. len} |> Seq.iter(fun i -> bump i)
-        intRet
-
-    let CompareArrays (a: array<int>) (b: array<int>) =
-        if (a.Length <> b.Length) then false
-        else seq {for i = 0 to a.Length - 1 do
-                    if (a.[i] <> b.[i]) then yield false}
-                 |> Seq.forall id
-  
-    let InverseMapArray (a:array<int>) =
-        let aInv = Array.init a.Length (fun i -> 0)
-        for i = 0 to a.Length - 1 do
-            aInv.[a.[i]] <- i
-        aInv
-      
-    let ComposeMapIntArrays (a:array<int>) (b:array<int>) =
-        let product = Array.init a.Length (fun i -> 0)
-        for i = 0 to a.Length - 1 do
-            product.[a.[b.[i]]] <- i
-        product
-  
-    // conj * a * conj ^ -1
-    let ConjugateIntArrays (a:array<int>) (conj:array<int>) =
-        conj |> ComposeMapIntArrays a |> ComposeMapIntArrays (InverseMapArray conj)
+    let IsTwoCycle (a:int[]) =
+        (ComposeMapIntArrays a a) = [|0 .. a.Length-1|]
 
     let DistanceSquared (a:array<int>) (b:array<int>) =
         Array.fold2 (fun acc elem1 elem2 ->
@@ -160,8 +153,11 @@ module Combinatorics =
             arrayRet.[rndTupes.[i].[1]] <- rndTupes.[i].[0]
         arrayRet
 
-    let MakeRandomFullTwoCycleIntArrays (rnd : IRando) (arraysize:int) (count:int) =
+    let MakeRandomFullTwoCycleIntArrays (rnd:IRando) (arraysize:int) (count:int) =
         seq {1 .. count} |> Seq.map (fun i -> MakeRandomFullTwoCycleIntArray rnd arraysize)
+
+    let isTwoCycle (tc:int[]) = None
+        
 
     // bins is an increasing set of positive numbers.
     // returns the index of the first member e>value.

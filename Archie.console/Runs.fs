@@ -36,7 +36,7 @@ module Runs =
 
     let SuccessfulSortResults (sortableSet:SortableSet) (sorters:Sorter[]) = 
         let res = SorterOps.StopIfSorted sortableSet sorters true
-        res |> Seq.filter(fun (_, _, r) -> r)
+        res |> Seq.filter(fun (_, _, r) -> r=sortableSet.count)
             |> Seq.map(fun (s, u, _) -> s,u)
 
 
@@ -47,7 +47,7 @@ module Runs =
             |> Seq.map(fun r -> r |> Result.ExtractOrThrow)
 
     let SuccessfulSorterFitness (sorterRes:seq<Sorter*SwitchCount*StageCount>) = 
-        let ff w = SorterSetEval.fitnessInt 4.0 (SwitchCount.value w)
+        let ff w = SorterGa.sorterFitness 4.0 (SwitchCount.value w)
         sorterRes|> Seq.map(fun (s,w,t) -> ((s,w,t), ff w))
 
     //let SuccessfulSorterFitness (sorterRes:seq<Sorter*SwitchCount*StageCount>) = 
@@ -149,6 +149,7 @@ module Runs =
         let rndSeed = Rando.GetSeed |> Result.ExtractOrThrow
         let randoLcg = new RandomLcg(rndSeed) :> IRando
         let stageCount = StageCount.create "" 40 |> Result.ExtractOrThrow
+        let randSorterGen = RandSorterGeneration.Stage stageCount
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
         let poolCount = SorterCount.create "" 25 |> Result.ExtractOrThrow
         let breederFrac = PoolFraction.create "" 0.40 |> Result.ExtractOrThrow
@@ -179,7 +180,7 @@ module Runs =
         let sorterInfo w t = sprintf "%s %d %d" (string (Guid.NewGuid())) 
                                      (SwitchCount.value w) (StageCount.value t)
 
-        let sorterEvals = (SorterSet.createRandomStagePacked degree stageCount sorterCount randoLcg).sorters
+        let sorterEvals = (SorterSet.createRandom degree randSorterGen sorterCount randoLcg).sorters
                             |> (SuccessfulSortResults sortableSet)
                             |> SuccessfulSorterEvals 
                             |> Seq.map(fun (s, w, t) -> (sorterInfo w t), s)

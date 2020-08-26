@@ -18,13 +18,13 @@
 
   <ItemGroup>
     <Compile Include="CommonTypesFixture.fs" />
-    <Compile Include="CombinatoricsFixture.fs" />
-    <Compile Include="CombinatoricsTypesFixture.fs" />
     <Compile Include="UtilsFixture.fs" />
     <Compile Include="RandoFixture.fs" />
+    <Compile Include="CombinatoricsFixture.fs" />
+    <Compile Include="CombinatoricsTypesFixture.fs" />
     <Compile Include="SorterPartsFixture.fs" />
-    <Compile Include="SorterFixture.fs" />
     <Compile Include="SorterOpsFixture.fs" />
+    <Compile Include="SorterGaFixture.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

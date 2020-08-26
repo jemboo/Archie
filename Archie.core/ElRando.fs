@@ -73,8 +73,7 @@ module Rando =
         let seed = RandomSeed.create "" seed |> Result.ExtractOrThrow
         new RandomLcg(seed) :> IRando
 
-
-    let NextGuid (curr:IRando) : System.Guid =
+    let private _NextGuid (curr:IRando) : System.Guid =
         let pc0 = System.BitConverter.GetBytes(curr.NextULong)
         let pc1 = System.BitConverter.GetBytes(curr.NextULong)
         let pc2 = System.BitConverter.GetBytes(curr.NextULong)
@@ -86,7 +85,7 @@ module Rando =
                         pc3.[0]; pc3.[1]; pc3.[2]; pc3.[3]; } |> Seq.toArray
         new System.Guid(woof)
 
-    let NextGuid2 (curr1:IRando) (curr2:IRando) : System.Guid =
+    let private _NextGuid2 (curr1:IRando) (curr2:IRando) : System.Guid =
         let pc0 = System.BitConverter.GetBytes(curr1.NextULong)
         let pc1 = System.BitConverter.GetBytes(curr1.NextULong)
         let pc2 = System.BitConverter.GetBytes(curr2.NextULong)
@@ -98,6 +97,13 @@ module Rando =
                         pc3.[0]; pc3.[1]; pc3.[2]; pc3.[3]; } |> Seq.toArray
         new System.Guid(woof)
 
+
+    let NextGuid (curr1:IRando) (curr2:IRando option) : System.Guid =
+        match curr2 with
+        | Some rando -> _NextGuid2 curr1 rando
+        | None -> _NextGuid curr1
+
+
     let RandoFromSeed rngtype seed =
         match rngtype with
         | RngType.Lcg -> LcgFromSeed seed
@@ -105,3 +111,46 @@ module Rando =
 
     let GetSeed = 
         (RandomSeed.create "" (int System.DateTime.Now.Ticks))
+
+
+module RngGenF =
+
+    let createLcg (seed:int) =
+        let rnd = (RandomSeed.create "" seed) |> Result.ExtractOrThrow
+        {rngType=RngType.Lcg; seed=rnd}
+
+    let createNet (seed:int) =
+        let rnd = (RandomSeed.create "" seed) |> Result.ExtractOrThrow
+        {rngType=RngType.Net; seed=rnd}
+
+    let randoFromRngGen (rngGen:RngGen) =
+        match rngGen.rngType with
+        | RngType.Lcg -> Rando.LcgFromSeed (RandomSeed.value rngGen.seed)
+        | RngType.Net -> Rando.NetFromSeed (RandomSeed.value rngGen.seed)
+        
+    let toDto (rngt:RngGen) =
+        match rngt.rngType with
+        | Lcg -> sprintf "Lcg %d" (RandomSeed.value rngt.seed)
+        | Net -> sprintf "Net %d" (RandomSeed.value rngt.seed)
+
+    let fromDto (str:string) =
+        let finishParse (str:string) =
+            match str with
+            | "Lcg" -> RngType.Lcg |> Ok
+            | "Net" -> RngType.Net |> Ok
+            | _ -> Error (sprintf "no match for RngType: %s" str)
+        let doArgs (pcs:string[]) =
+            if pcs.Length = 2 then
+                result {
+                          let! seed = (ParseUtils.MakeInt32 pcs.[1])
+                          let! rndSeed = RandomSeed.create "" seed
+                          let! rng = finishParse pcs.[0]
+                          return {RngGen.rngType=rng; RngGen.seed=rndSeed;}
+                       }
+              else
+                  Error (sprintf "incorrect string: %s" str)
+        result {
+            let pcs = str.Split(" ", StringSplitOptions.RemoveEmptyEntries)
+            return! doArgs pcs
+        }
+    

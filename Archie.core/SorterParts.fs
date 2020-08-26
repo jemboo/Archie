@@ -45,26 +45,29 @@ module SorterParts =
                 | _ -> switch
             switches |> Seq.map(fun sw-> mutateSwitch sw)
 
-    type SortableSet = {degree:Degree; baseArray:int[]}
+    type SortableSet = {degree:Degree; baseArray:int[]; count:int}
     module SortableSet =
-        let create (degree:Degree) (baseArray:int[]) =
+        let create (degree:Degree) (baseArray:int[] ) =
             if baseArray.Length < 0 + (Degree.value degree) then
                 Error (sprintf "baseArray length %d is not a multiple of degree: %d:" 
                         baseArray.Length (Degree.value degree))
             else
                 let baseCopy = Array.zeroCreate baseArray.Length
                 Array.Copy(baseArray, baseCopy, baseArray.Length)
-                {degree=degree; baseArray=baseCopy} |> Ok
+                {degree=degree; baseArray=baseCopy; 
+                 count=baseCopy.Length / (Degree.value degree) } |> Ok
 
         let copy (sortableSet:SortableSet) =
             let baseCopy = Array.zeroCreate sortableSet.baseArray.Length
             Array.Copy(sortableSet.baseArray, baseCopy, baseCopy.Length)
-            {degree=sortableSet.degree; baseArray=baseCopy;}
+            {degree=sortableSet.degree; baseArray=baseCopy;
+             count=baseCopy.Length / (Degree.value sortableSet.degree) } |> Ok
 
         let copy2 (sortableSet:SortableSet) =
             let baseCopy = Array.create sortableSet.baseArray.Length 0
             Array.Copy(sortableSet.baseArray, baseCopy, baseCopy.Length)
-            {degree=sortableSet.degree; baseArray=baseCopy;}
+            {degree=sortableSet.degree; baseArray=baseCopy;
+            count=baseCopy.Length / (Degree.value sortableSet.degree) } |> Ok
 
         let allBinary (degree:Degree) =
             let baseArray = IntBits.AllBinaryTestCasesArray (Degree.value degree)
@@ -149,14 +152,12 @@ module SorterParts =
             let sA = Switch.switchSeqFromIntArray tcp |> Seq.toList
             {switches=sA; degree=stage.degree}
 
-
         let randomMutate (rnd:IRando) (mutationRate:MutationRate) (stage:Stage) = 
             match rnd.NextFloat with
                 | k when k < (MutationRate.value mutationRate) -> 
                            let tcp = Combinatorics.DrawTwoWoRep stage.degree rnd
                            mutateStage stage tcp
                 | _ -> stage
-
 
 
     type Sorter = {degree:Degree; switches:array<Switch>; switchCount:SwitchCount}
@@ -171,7 +172,7 @@ module SorterParts =
                 switches = switchArray
              }
 
-         let createRandom (degree:Degree) (switchCount:SwitchCount) (rnd:IRando) =
+         let private createWithRandomSwitches (degree:Degree) (switchCount:SwitchCount) (rnd:IRando) =
              {
                  Sorter.degree=degree;
                  switchCount=switchCount;
@@ -180,7 +181,7 @@ module SorterParts =
                                  |> Seq.toArray
              }
 
-         let createRandomPackedStages (degree:Degree) (stageCount:StageCount) (rando:IRando) =
+         let private createWithRandomPackedStages (degree:Degree) (stageCount:StageCount) (rando:IRando) =
              let switchCount = StageCount.ToSwitchCount degree stageCount |> Result.ExtractOrThrow
              {
                  Sorter.degree=degree;
@@ -189,6 +190,12 @@ module SorterParts =
                                  |> Seq.take (SwitchCount.value switchCount)
                                  |> Seq.toArray
              }
+
+         let createRandom (degree:Degree) (randSorterGeneration:RandSorterGeneration) (rnd:IRando) =
+            match randSorterGeneration with
+            | RandSorterGeneration.Switch wc -> createWithRandomSwitches degree wc rnd
+            | RandSorterGeneration.Stage tc -> createWithRandomPackedStages degree tc rnd
+
 
          let appendSwitches (switches:seq<Switch>) (sorter:Sorter) =
              let newSwitches = (switches |> Seq.toArray) |> Array.append sorter.switches
@@ -226,6 +233,11 @@ module SorterParts =
                  switchCount = (SwitchCount.create "" newSwitches.Length) |> Result.ExtractOrThrow;
                  switches = newSwitches
              }
+
+         let mutate (mutationType:MutationType) (rnd:IRando) (sorter:Sorter) =
+            match mutationType with
+            | MutationType.Switch mr -> mutateBySwitch mr rnd sorter
+            | MutationType.Stage mr -> mutateByStage mr rnd sorter
              
 
     type SorterSet = {degree:Degree; sorterCount:SorterCount; sorters:Sorter[] }
@@ -238,18 +250,10 @@ module SorterParts =
                sorters = sorterArray
             }
 
-        let createRandomStagePacked (degree:Degree) (stageCount:StageCount) 
-                                    (sorterCount:SorterCount) (rando:IRando) =
+        let createRandom (degree:Degree) (randSorterGeneration:RandSorterGeneration) (sorterCount:SorterCount) (rnd:IRando) =
             fromSorters degree (seq {1 .. (SorterCount.value sorterCount)} 
-                                    |> Seq.map(fun _ -> (Sorter.createRandomPackedStages degree stageCount rando))
-                                    |> Seq.toArray)
-
-
-        let createRandom (degree:Degree) (switchCount:SwitchCount) 
-                         (sorterCount:SorterCount) (rando:IRando) =
-            fromSorters degree (seq {1 .. (SorterCount.value sorterCount)} 
-                                    |> Seq.map(fun _ -> (Sorter.createRandom degree switchCount rando))
-                                    |> Seq.toArray)
+                                        |> Seq.map(fun _ -> (Sorter.createRandom degree randSorterGeneration rnd))
+                                        |> Seq.toArray)
 
 
     type SorterSetE = {degree:Degree; sorterCount:SorterCount; 
@@ -259,7 +263,7 @@ module SorterParts =
              {
                 degree = sorterSet.degree; 
                 sorterCount= sorterSet.sorterCount;
-                sorters = sorterSet.sorters |> Entity.createMany rando1 rando2
+                sorters = sorterSet.sorters |> Entity.createMany rando1 (Some rando2)
                                             |> Seq.map(fun e-> (Entity.id e), e)
                                             |> Map.ofSeq
              }

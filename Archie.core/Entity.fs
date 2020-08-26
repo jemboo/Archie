@@ -16,9 +16,9 @@ module Entity =
                 character=character;
             }
 
-    let createMany (rando1:IRando) (rando2:IRando) (src:seq<'a>) =
+    let createMany (rando1:IRando) (rando2:IRando option) (src:seq<'a>) =
         let wrap rnd1 rnd2 c =
-            let id = EntityId.create (Rando.NextGuid2 rnd1 rnd2) |> Result.ExtractOrThrow
+            let id = EntityId.create (Rando.NextGuid rnd1 rnd2) |> Result.ExtractOrThrow
             create id c
         src |> Seq.map(fun c -> wrap rando1 rando2 c)
 
