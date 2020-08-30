@@ -9,13 +9,13 @@ type CommonTypesFixture () =
 
     [<TestMethod>]
     member this.TestParseRandGenMode() =
-        let rgmDto = " Switch 11"
-        let res = RandSorterGenerationF.fromDto rgmDto |> Result.ExtractOrThrow
+        let rgmDto = {RndSorterGenDto.cat="Switch"; args= "11"}
+        let res = RndSorterGenDto.fromDto rgmDto |> Result.ExtractOrThrow
         
         let sc = (SwitchCount.create "" 12) |> Result.ExtractOrThrow
-        let mm = RandSorterGeneration.Switch sc
-        let mmDto = RandSorterGenerationF.toDto mm
-        let mmR = RandSorterGenerationF.fromDto mmDto |> Result.ExtractOrThrow
+        let mm = RndSorterGen.Switch sc
+        let mmDto = RndSorterGenDto.toDto mm
+        let mmR = RndSorterGenDto.fromDto mmDto |> Result.ExtractOrThrow
         Assert.AreEqual(1, 1)
 
 

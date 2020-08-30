@@ -5,7 +5,7 @@ open System.Collections.Generic
 module SorterParts =
 
     [<Struct>]
-    type Switch = { low: int; hi: int }
+    type Switch = {low:int; hi:int}
     module Switch =
         let switchMap = 
             [for hi=0 to 64 
@@ -99,7 +99,6 @@ module SorterParts =
                     yield { Stage.switches=switchesForStage |> Seq.toList;  degree = degree}
                  }
 
-
         let getStageIndexesFromSwitches (order:int) (switches:seq<Switch>) =
             let mutable stageTracker = Array.init order (fun i -> false)
             let mutable curDex = 0
@@ -114,7 +113,6 @@ module SorterParts =
                         curDex <- curDex + 1
                     yield curDex
                  }
-
 
         let makeStagePackedSwitchSeq (degree:Degree) (rnd:IRando) =
             let aa (rnd:IRando)  = 
@@ -191,10 +189,10 @@ module SorterParts =
                                  |> Seq.toArray
              }
 
-         let createRandom (degree:Degree) (randSorterGeneration:RandSorterGeneration) (rnd:IRando) =
+         let createRandom (degree:Degree) (randSorterGeneration:RndSorterGen) (rnd:IRando) =
             match randSorterGeneration with
-            | RandSorterGeneration.Switch wc -> createWithRandomSwitches degree wc rnd
-            | RandSorterGeneration.Stage tc -> createWithRandomPackedStages degree tc rnd
+            | RndSorterGen.Switch wc -> createWithRandomSwitches degree wc rnd
+            | RndSorterGen.Stage tc -> createWithRandomPackedStages degree tc rnd
 
 
          let appendSwitches (switches:seq<Switch>) (sorter:Sorter) =
@@ -250,7 +248,7 @@ module SorterParts =
                sorters = sorterArray
             }
 
-        let createRandom (degree:Degree) (randSorterGeneration:RandSorterGeneration) (sorterCount:SorterCount) (rnd:IRando) =
+        let createRandom (degree:Degree) (randSorterGeneration:RndSorterGen) (sorterCount:SorterCount) (rnd:IRando) =
             fromSorters degree (seq {1 .. (SorterCount.value sorterCount)} 
                                         |> Seq.map(fun _ -> (Sorter.createRandom degree randSorterGeneration rnd))
                                         |> Seq.toArray)

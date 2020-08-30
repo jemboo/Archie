@@ -1,14 +1,6 @@
 ﻿namespace Archie.Base
 open System
 
-module ParseUtils =
-    let MakeInt32 (str:string) =
-        let mutable oot = 0
-        let res = Int32.TryParse(str, &oot)
-        if res then
-            oot |> Ok
-        else
-            sprintf "Not an int: %s" str |> Error
 
 type String50 = private String50 of string
 type Degree = private Degree of int
@@ -26,6 +18,7 @@ type SortableCount = private SortableCount of int
 type EntityId = private EntityId of Guid
 type JsonString = private JsonString of string
 type RngType = | Lcg | Net
+type RngGen = {rngType:RngType; seed:RandomSeed}
 type IRando =
     abstract member Count: int
     abstract member Seed : RandomSeed
@@ -35,13 +28,17 @@ type IRando =
     abstract member NextFloat : float
     abstract member RngType : RngType
 
-type MutationType = | Switch of MutationRate | Stage of MutationRate
-type RandSorterGeneration = | Switch of SwitchCount | Stage of StageCount
-type RngGen = {rngType:RngType; seed:RandomSeed}
+type MutationType = | Switch of MutationRate 
+                    | Stage of MutationRate
+
+type RndSorterGen = | Switch of SwitchCount
+                    | Stage of StageCount
+
 
 type SorterFitnessFunc =
 | Switch of SorterFitnessParam
 | Stage of SorterFitnessParam
+
 
 module String50 =
     let value (String50 str) = str
@@ -97,6 +94,15 @@ module ReplicaCount =
         let mSeed = Math.Abs(seed) % 2147483647
         ConstrainedType.createInt fieldName ReplicaCount 1 10000 mSeed
     let fromInt v = create "" v |> Result.ExtractOrThrow
+
+module RngGen =
+    let createLcg (seed:int) =
+        let rnd = (RandomSeed.create "" seed) |> Result.ExtractOrThrow
+        {rngType=RngType.Lcg; seed=rnd}
+
+    let createNet (seed:int) =
+        let rnd = (RandomSeed.create "" seed) |> Result.ExtractOrThrow
+        {rngType=RngType.Net; seed=rnd}
 
 module SwitchCount =
     let value (SwitchCount v) = v
@@ -156,43 +162,15 @@ module RngType =
         match str with
         | "Lcg" -> RngType.Lcg |> Ok
         | "Net" -> RngType.Net |> Ok
-        | _ -> Error [|(sprintf "no match for RngType: %s" str)|]
+        | _ -> Error (sprintf "no match for RngType: %s" str)
 
 
-module RandSorterGenerationF =
-    
-    let toDto (rngt:RandSorterGeneration) =
-        match rngt with
-        | RandSorterGeneration.Switch ct -> sprintf "Switch %d" (SwitchCount.value ct)
-        | RandSorterGeneration.Stage ct -> sprintf "Stage %d" (StageCount.value ct)
+module RndSorterGen =
+    let makeSwitchCount switchCount = 
+        let wc = (SwitchCount.create "" switchCount) |> Result.ExtractOrThrow
+        RndSorterGen.Switch wc
 
-    let fromDto (str:string) =
-        let finishParse (str:string) ct =
-            match str with
-            | "Switch" -> RandSorterGeneration.Switch 
-                                ((SwitchCount.create "" ct)|> Result.ExtractOrThrow) |> Ok
-            | "Stage" -> RandSorterGeneration.Stage 
-                                ((StageCount.create "" ct)|> Result.ExtractOrThrow) |> Ok
-            | _ -> Error (sprintf "no match for RandSorterGenerationMode: %s" str)
+    let makeStageCount stageCount = 
+        let tc = (StageCount.create "" stageCount) |> Result.ExtractOrThrow
+        RndSorterGen.Stage  tc
 
-        let doArgs (pcs:string[]) =
-            if pcs.Length = 2 then
-                result {
-                          let! ct = (ParseUtils.MakeInt32 pcs.[1])
-                          return! (finishParse pcs.[0] ct)
-                       }
-              else
-                  Error (sprintf "incorrect string: %s" str)
-        
-        result {
-            let pcs = str.Split(" ", StringSplitOptions.RemoveEmptyEntries)
-            return! doArgs pcs
-        }
-
-    let MakeSwitchCount len = 
-        let sc = (SwitchCount.create "" len) |> Result.ExtractOrThrow
-        RandSorterGeneration.Switch sc
-
-    let MakeStageCount len = 
-        let sc = (StageCount.create "" len) |> Result.ExtractOrThrow
-        RandSorterGeneration.Stage  sc

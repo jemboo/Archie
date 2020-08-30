@@ -16,19 +16,23 @@
   <ItemGroup>
     <Compile Include="SorterData.fs" />
     <Compile Include="Result.fs" />
+    <Compile Include="Utils.fs" />
     <Compile Include="ConstrainedType.fs" />
     <Compile Include="CommonTypes.fs" />
     <Compile Include="ElRando.fs" />
+    <Compile Include="CommonTypesDto.fs" />
     <Compile Include="Entity.fs" />
-    <Compile Include="Utils.fs" />
     <Compile Include="Combinatorics.fs" />
     <Compile Include="CombinatoricsTypes.fs" />
     <Compile Include="SorterParts.fs" />
     <Compile Include="SorterOps.fs" />
     <Compile Include="SorterGa.fs" />
+    <Compile Include="SorterGaDto.fs" />
     <Compile Include="SortersFromData.fs" />
   </ItemGroup>
 
-  <ItemGroup />
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
 
 </Project>

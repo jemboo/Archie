@@ -112,45 +112,7 @@ module Rando =
     let GetSeed = 
         (RandomSeed.create "" (int System.DateTime.Now.Ticks))
 
-
-module RngGenF =
-
-    let createLcg (seed:int) =
-        let rnd = (RandomSeed.create "" seed) |> Result.ExtractOrThrow
-        {rngType=RngType.Lcg; seed=rnd}
-
-    let createNet (seed:int) =
-        let rnd = (RandomSeed.create "" seed) |> Result.ExtractOrThrow
-        {rngType=RngType.Net; seed=rnd}
-
-    let randoFromRngGen (rngGen:RngGen) =
+    let fromRngGen (rngGen:RngGen) =
         match rngGen.rngType with
-        | RngType.Lcg -> Rando.LcgFromSeed (RandomSeed.value rngGen.seed)
-        | RngType.Net -> Rando.NetFromSeed (RandomSeed.value rngGen.seed)
-        
-    let toDto (rngt:RngGen) =
-        match rngt.rngType with
-        | Lcg -> sprintf "Lcg %d" (RandomSeed.value rngt.seed)
-        | Net -> sprintf "Net %d" (RandomSeed.value rngt.seed)
-
-    let fromDto (str:string) =
-        let finishParse (str:string) =
-            match str with
-            | "Lcg" -> RngType.Lcg |> Ok
-            | "Net" -> RngType.Net |> Ok
-            | _ -> Error (sprintf "no match for RngType: %s" str)
-        let doArgs (pcs:string[]) =
-            if pcs.Length = 2 then
-                result {
-                          let! seed = (ParseUtils.MakeInt32 pcs.[1])
-                          let! rndSeed = RandomSeed.create "" seed
-                          let! rng = finishParse pcs.[0]
-                          return {RngGen.rngType=rng; RngGen.seed=rndSeed;}
-                       }
-              else
-                  Error (sprintf "incorrect string: %s" str)
-        result {
-            let pcs = str.Split(" ", StringSplitOptions.RemoveEmptyEntries)
-            return! doArgs pcs
-        }
-    
+        | RngType.Lcg -> LcgFromSeed (RandomSeed.value rngGen.seed)
+        | RngType.Net -> NetFromSeed (RandomSeed.value rngGen.seed)

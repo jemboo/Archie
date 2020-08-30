@@ -4,6 +4,38 @@ open Microsoft.FSharp.Core
 open System
 open System.IO
 
+module ParseUtils =
+    let MakeInt32 (str:string) =
+        let mutable oot = 0
+        let res = Int32.TryParse(str, &oot)
+        if res then
+            oot |> Ok
+        else
+            sprintf "Not an int: %s" str |> Error
+
+    let MakeFloat (str:string) =
+        let mutable oot = 0.0
+        let res = Double.TryParse(str, &oot)
+        if res then
+            oot |> Ok
+        else
+            sprintf "Not a float: %s" str |> Error
+
+    let StringToOneInt (str:string) =
+        let pcs = str.Split(" ", StringSplitOptions.RemoveEmptyEntries)
+        if pcs.Length <> 1 then
+            sprintf "1 param expected, not %d" pcs.Length |> Error
+        else
+            MakeInt32 pcs.[0]
+
+    let StringToOneFloat (str:string) =
+        let pcs = str.Split(" ", StringSplitOptions.RemoveEmptyEntries)
+        if pcs.Length <> 1 then
+            sprintf "1 param expected, not %d" pcs.Length |> Error
+        else
+            MakeFloat pcs.[0]
+
+
 module Utils =
 
 //// Converts seq of key - value pairs to mutable Dictionary

@@ -38,6 +38,6 @@ type RandoFixture () =
     [<TestMethod>]
     member this.RngGenDto() =
         let rngGen = {RngGen.rngType=RngType.Lcg; seed = RandomSeed.create "" 123|>Result.ExtractOrThrow}
-        let dto = RngGenF.toDto rngGen
-        let rngGenBack = RngGenF.fromDto dto |> Result.ExtractOrThrow
+        let dto = RngGenDto.toDto rngGen
+        let rngGenBack = RngGenDto.fromDto dto |> Result.ExtractOrThrow
         Assert.IsTrue((rngGen=rngGenBack))

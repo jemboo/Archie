@@ -10,7 +10,7 @@ type SorterFixture () =
 
     [<TestMethod>]
     member this.IndexedRandomData() =
-       let rg = RngGenF.createLcg 123
+       let rg = RngGen.createLcg 123
        let seeds = PoolUpdateParams.IndexedSeedGen rg
                    |> Seq.take(10) |> Seq.toArray
 

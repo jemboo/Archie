@@ -47,66 +47,40 @@ module Runs =
             |> Seq.map(fun r -> r |> Result.ExtractOrThrow)
 
     let SuccessfulSorterFitness (sorterRes:seq<Sorter*SwitchCount*StageCount>) = 
-        let ff w = SorterGa.sorterFitness 4.0 (SwitchCount.value w)
+        let ff w = (FitnessFunc.standardSwitch 4.0).fitnessFunc ((SwitchCount.value w) :> obj)
         sorterRes|> Seq.map(fun (s,w,t) -> ((s,w,t), ff w))
 
     //let SuccessfulSorterFitness (sorterRes:seq<Sorter*SwitchCount*StageCount>) = 
     //    let ff w = SorterSetEval.fitnessInt 4.0 (SwitchCount.value w)
     //    sorterRes|> Seq.map(fun (s,w,t) -> ((s,w,t), ff w))
     
-
-    let RunSorterMp (id:Guid) (sorter:Sorter) (switchCount:SwitchCount) (stageCount:StageCount) 
-                    (mutationRate:MutationRate) (randomSeed:RandomSeed) (poolCount:SorterCount)
-                    logToFile =
-        let reportEvalBins (results: (Sorter*SwitchCount*StageCount)[]) =
-            let summary = results|> Array.groupBy(fun (_,w,t) -> (w,t))
-            Utils.printArrayf 
-               (fun ((w,t), b) -> sprintf "%s %d %d %d %d %d" (string id) (SwitchCount.value switchCount) 
-                                    (StageCount.value stageCount) (SwitchCount.value w) (StageCount.value t)
-                                    (b|>Array.length))
-               summary
-
-        let randoLcgV = new RandomLcg(randomSeed) :> IRando
-        let degree = Degree.create "" 16 |> Result.ExtractOrThrow
-        let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
-        let mutator sorter = sorter |> Sorter.mutateBySwitch mutationRate randoLcgV
-
-        let sorterEvals = seq {1.. (SorterCount.value poolCount)}
-                                |> Seq.map(fun _ -> mutator sorter)
-                                |> Seq.toArray
-                                |> SuccessfulSortResults sortableSet |> SuccessfulSorterEvals
-                                |> Seq.toArray
-
-        let binRecords = sorterEvals |> reportEvalBins
-        logToFile binRecords true
-        true
-
+    let checkArray (a:'a[]) =
+        if a.Length < 1 then
+            Console.WriteLine ("Array is empty")
+            false
+        else true
 
     let RunSorterMpG (sorterInfo:string) (sorter:Sorter)
-                     (mutator:IRando->Sorter->Sorter) (randomSeed:RandomSeed) (poolCount:SorterCount)
-                     (breederCount:PoolFraction) (winnerCount:PoolFraction) (generationCount:GenerationCount)
+                     (prams:PoolUpdateParams)
                      logToFile =
-        let reportEvalBins (gen:int) (results: ((Sorter*SwitchCount*StageCount)*SorterFitness)[])  =
-            let summary = results|> Array.groupBy(fun ((_,w,t), f) -> (w,t))
-            Utils.printArrayf 
-               (fun ((w,t), b) -> sprintf "%s %d %d %d %d %d" sorterInfo (SwitchCount.value w) (StageCount.value t)
-                                           (b|>Array.length) gen (RandomSeed.value randomSeed))
-               summary
+        let mutator = Sorter.mutate prams.mutationType
 
-        let reportEvalBinsMin (gen:int) (results: ((Sorter*SwitchCount*StageCount)*SorterFitness)[])  =
+        let reportEvalBinsMin (genPool:int) (results:((Sorter*SwitchCount*StageCount)*SorterFitness)[]) =
             let summary = results|> Array.minBy (fun ((_,w,t), f) -> w)
             let ((s,w,t), b) = summary
-            sprintf "%s %d %d %d %d" sorterInfo (SwitchCount.value w) (StageCount.value t)
-                     gen (RandomSeed.value randomSeed)
-
+            sprintf "%s %d %d %.3f %.3f %s %d %d %d" sorterInfo (SwitchCount.value w) (StageCount.value t)
+                     (PoolFraction.value prams.breederFrac) (PoolFraction.value prams.winnerFrac)
+                     (MutationTypeF.StrF prams.mutationType)
+                     (SorterCount.value prams.poolCount) genPool (RandomSeed.value prams.rngGen.seed)
         let reWrap (wrp:(Sorter*SwitchCount*StageCount)*SorterFitness) (srtr:Sorter) =
             let (s, w, t), f = wrp
             ((srtr, w, t), f)
         
-        let randoLcgV = new RandomLcg(randomSeed) :> IRando
+        let randoLcgV = Rando.fromRngGen prams.rngGen
+
         let nextGenArgs sorterWraps =
             NextGen<(Sorter*SwitchCount*StageCount)*SorterFitness, Sorter>
-                    (mutator randoLcgV) poolCount breederCount winnerCount randoLcgV
+                    (mutator randoLcgV) prams.poolCount prams.breederFrac prams.winnerFrac randoLcgV
                        (fun ((s,w,t), f) -> s) 
                        (fun ((s,w,t), f) -> f)
                        (fun wrap srtr -> srtr)
@@ -114,83 +88,90 @@ module Runs =
 
         let sortableSet = SortableSet.allBinary sorter.degree |> Result.ExtractOrThrow
 
-        let sortersGen0 = seq {1.. (SorterCount.value poolCount)}
+        let sortersGen0 = seq {1.. (SorterCount.value prams.poolCount)}
                                 |> Seq.map(fun _ -> mutator randoLcgV sorter)
                                 |> Seq.toArray
 
-        Console.WriteLine((RandomSeed.value randomSeed))
+        Console.WriteLine(sprintf "%s %d" sorterInfo (RandomSeed.value prams.rngGen.seed))
 
         let mutable currentEvals = Array.copy(sortersGen0)
-        let mutable i = 0
-        while i < (GenerationCount.value generationCount) - 1 do
+
+        let mutable gen = 0
+        let mutable nextRep = 0
+        while (gen < (GenerationCount.value prams.generationCount)) && (checkArray currentEvals) do
             let currentSorterFitness = currentEvals |> (SuccessfulSortResults sortableSet)
                                        |> SuccessfulSorterEvals |> SuccessfulSorterFitness
                                        |> Seq.toArray
-            let binRec = currentSorterFitness |> reportEvalBinsMin i
-            logToFile binRec true
+            if (nextRep = 128) then 
+                let binRec = currentSorterFitness |> reportEvalBinsMin (gen * (SorterCount.value prams.poolCount))
+                logToFile binRec true
+                nextRep <- 0
+
             currentEvals <- nextGenArgs currentSorterFitness
-            i <- i + 1
-            
-        let binRecords = currentEvals |> SuccessfulSortResults sortableSet
-                                      |> SuccessfulSorterEvals |> SuccessfulSorterFitness
-                                      |> Seq.toArray |> reportEvalBinsMin i
-        logToFile binRecords true
+            gen <- gen + 1
+            nextRep <- nextRep + (SorterCount.value prams.poolCount)
+
+        if (checkArray currentEvals) then
+            let binRecords = currentEvals |> SuccessfulSortResults sortableSet
+                                          |> SuccessfulSorterEvals |> SuccessfulSorterFitness
+                                          |> Seq.toArray |> reportEvalBinsMin (gen * (SorterCount.value prams.poolCount))
+            logToFile binRecords true
         true
 
 
-    let RunSorterMpgBatch (logfile:string) =
-        let LogToFile = 
+    let RunSorterMpgBatch (logfile:string) (degree:int) 
+                          (sorterCount:int) (replicaCount:int)
+                          (sorterGenSeed:int)
+                          (switchOrStage:string)
+                          (replicaGenSeed:int) 
+                          (poolCount:int) =
+        let LogToFile =         
             Utils.logFile logfile
         LogToFile "starting RunSorterMpgBatch" false
 
-        let sorterCount = SorterCount.create "" 100 |> Result.ExtractOrThrow
-        let replicaCount = ReplicaCount.create "" 100 |> Result.ExtractOrThrow
-        let degree = Degree.create "" 10 |> Result.ExtractOrThrow
-        let rndSeed = Rando.GetSeed |> Result.ExtractOrThrow
-        let randoLcg = new RandomLcg(rndSeed) :> IRando
-        let stageCount = StageCount.create "" 40 |> Result.ExtractOrThrow
-        let randSorterGen = RandSorterGeneration.Stage stageCount
-        let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
-        let poolCount = SorterCount.create "" 25 |> Result.ExtractOrThrow
-        let breederFrac = PoolFraction.create "" 0.40 |> Result.ExtractOrThrow
-        let winnerFrac = PoolFraction.create "" 0.20 |> Result.ExtractOrThrow
-        let genCount = (GenerationCount.create "" 200) |> Result.ExtractOrThrow
+        let d = Degree.create "" 14 |> Result.ExtractOrThrow
+        let sorterCount = SorterCount.create "" sorterCount |> Result.ExtractOrThrow
+        let rsg = RngGen.createLcg sorterGenSeed
+        let rspp = RndSorterPoolParams.Make d sorterCount rsg switchOrStage |> Option.get
+
+        let rc = ReplicaCount.create "" replicaCount |> Result.ExtractOrThrow
+        let sortableSet = SortableSet.allBinary d |> Result.ExtractOrThrow
+
+
+
+        None
+
+
+    //    let paramRndGen = RngGenF.createLcg paramSeed
+
+    //    let paramReport = sprintf "degree:%d sorterCount:%d replicaCount:%d 
+    //                               sorterSeed:%d switchOrStage:%s paramSeed:%d poolSize:%d"
+    //                               degree sorterCount replicaCount sorterSeed switchOrStage
+    //                               paramSeed poolSize
+
+    //    LogToFile paramReport true
+    //    let reportHeader = "id sw1 st1 sw2 st2 bFrac wFrac mutTy poolCt genPool seed"
+    //    LogToFile reportHeader true
+
+    //    let RunSorterMpgParams (q:string*Sorter) (prams:PoolUpdateParams) =
+    //        let (info,sorter) = q
+    //        RunSorterMpG info sorter prams LogToFile
+
         
-        let mutationRate = MutationRate.create "" 0.01 |> Result.ExtractOrThrow
-        let mutationType = MutationType.Switch mutationRate
+    //    let sorterInfo w t = sprintf "%s %d %d" (string (Guid.NewGuid())) 
+    //                                 (SwitchCount.value w) (StageCount.value t)
 
-        let paramReport =
-            sprintf "degree:%d randomSeed:%d stageCount:%d mutationRate:%f replicaCount:%d
-                     poolCount:%d breederFrac:%.2f winnerFrac:%.2f genCount:%d" 
-                (Degree.value degree) (RandomSeed.value rndSeed)
-                (StageCount.value stageCount) (MutationRate.value mutationRate)
-                (ReplicaCount.value replicaCount)
-                (SorterCount.value poolCount) (PoolFraction.value breederFrac)
-                (PoolFraction.value winnerFrac) (GenerationCount.value genCount)
+    //    let sorterEvals = (SorterSet.createRandom degree randSorterGen sorterCount sorterRando).sorters
+    //                        |> (SuccessfulSortResults sortableSet)
+    //                        |> SuccessfulSorterEvals 
+    //                        |> Seq.map(fun (s, w, t) -> (sorterInfo w t), s)
+    //                        |> Seq.toArray
 
-        LogToFile paramReport true
+    //    let sorterAndPrams = PoolUpdateParams.ParamsM paramRndGen poolSize
+    //                            |> Seq.take (ReplicaCount.value replicaCount)
+    //                            |> Seq.toArray
+    //                            |> Array.allPairs sorterEvals   
+                                    
+    //    let _res = sorterAndPrams |> Array.map(fun q -> RunSorterMpgParams (fst q) (snd q))
 
-        let RunSorterMpgParams (q:string*Sorter) (seed:int) =
-            let (info,sorter) = q
-            let randomSeed = RandomSeed.create "" seed |> Result.ExtractOrThrow
-            let mutator = Sorter.mutateBySwitch mutationRate
-            RunSorterMpG info sorter mutator randomSeed poolCount 
-                         breederFrac winnerFrac genCount LogToFile
-        
-        let sorterInfo w t = sprintf "%s %d %d" (string (Guid.NewGuid())) 
-                                     (SwitchCount.value w) (StageCount.value t)
-
-        let sorterEvals = (SorterSet.createRandom degree randSorterGen sorterCount randoLcg).sorters
-                            |> (SuccessfulSortResults sortableSet)
-                            |> SuccessfulSorterEvals 
-                            |> Seq.map(fun (s, w, t) -> (sorterInfo w t), s)
-                            |> Seq.toArray
-
-        let sortersSeeds = seq {1 .. (ReplicaCount.value replicaCount)}
-                        |> Seq.map(fun _ -> randoLcg.NextPositiveInt)
-                        |> Seq.toArray
-                        |> Array.allPairs sorterEvals
-
-        let _res = sortersSeeds |> Array.map(fun q -> RunSorterMpgParams (fst q) (snd q))
-
-        "RunSorterMpBatch is done"
+    //    "RunSorterMpBatch is done"

@@ -46,19 +46,18 @@ module Runs2 =
             |> Seq.filter(fun r -> r |> Result.isOk)
             |> Seq.map(fun r -> r |> Result.ExtractOrThrow)
 
-    let SuccessfulSorterFitness (sorterRes:seq<Sorter*SwitchCount*StageCount>) = 
-        let ff w = SorterGa.sorterFitness 4.0 (SwitchCount.value w)
-        sorterRes|> Seq.map(fun (s,w,t) -> ((s,w,t), ff w))
 
-    //let SuccessfulSorterFitness (sorterRes:seq<Sorter*SwitchCount*StageCount>) = 
-    //    let ff w = SorterSetEval.fitnessInt 4.0 (SwitchCount.value w)
-    //    sorterRes|> Seq.map(fun (s,w,t) -> ((s,w,t), ff w))
+    let SuccessfulSorterFitness (sorterRes:seq<Sorter*SwitchCount*StageCount>) = 
+        let ff w = (FitnessFunc.standardSwitch 4.0).fitnessFunc ((SwitchCount.value w) :> obj)
+        sorterRes|> Seq.map(fun (s,w,t) -> ((s,w,t), ff w))
     
+
     let checkArray (a:'a[]) =
         if a.Length < 1 then
             Console.WriteLine ("Array is empty")
             false
         else true
+
 
     let RunSorterMpG (sorterInfo:string) (sorter:Sorter)
                      (prams:PoolUpdateParams)
@@ -76,7 +75,7 @@ module Runs2 =
             let (s, w, t), f = wrp
             ((srtr, w, t), f)
         
-        let randoLcgV = RngGenF.randoFromRngGen prams.rngGen
+        let randoLcgV = Rando.fromRngGen prams.rngGen
 
         let nextGenArgs sorterWraps =
             NextGen<(Sorter*SwitchCount*StageCount)*SorterFitness, Sorter>
@@ -126,12 +125,12 @@ module Runs2 =
 
         let sorterCount = SorterCount.create "" 48 |> Result.ExtractOrThrow
         let stageCount = StageCount.create "" 260 |> Result.ExtractOrThrow
-        let randSorterGen = RandSorterGeneration.Stage stageCount
+        let randSorterGen = RndSorterGen.Stage stageCount
         let replicaCount = ReplicaCount.create "" 48 |> Result.ExtractOrThrow
         let degree = Degree.create "" 14 |> Result.ExtractOrThrow
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-        let paramRndGen = RngGenF.createLcg paramSeed
+        let paramRndGen = RngGen.createLcg paramSeed
         let sorterRando = Rando.LcgFromSeed sorterSeed
 
         let paramReport =
