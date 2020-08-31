@@ -61,14 +61,15 @@ module PoolUpdateParamsDto =
           }
 
 
-type RndSorterPoolParamsDto = 
+type RndSorterParamsDto = 
     {degree:int;
      sorterCount:int;
      rngGenDto:RngGenDto;
      rndSorterGenDto:RndSorterGenDto}
 
-module RndSorterPoolParamsDto = 
-    let toDto (rngt:RndSorterPoolParams) =
+module RndSorterParamsDto = 
+
+    let toDto (rngt:RndSorterParams) =
         {
             degree = Degree.value rngt.degree;
             sorterCount = SorterCount.value rngt.sorterCount;
@@ -76,16 +77,16 @@ module RndSorterPoolParamsDto =
             rndSorterGenDto = rngt.rndSorterGen |> RndSorterGenDto.toDto;
         }
 
-    let fromDto (dto:RndSorterPoolParamsDto) =
+    let fromDto (dto:RndSorterParamsDto) =
         result {
             let! d = Degree.create "" dto.degree
             let! sc = SorterCount.create "" dto.sorterCount
             let! rngGen = dto.rngGenDto |> RngGenDto.fromDto
             let! rndSorterGen = dto.rndSorterGenDto |> RndSorterGenDto.fromDto
             return {
-                    RndSorterPoolParams.degree = d;
-                    RndSorterPoolParams.sorterCount = sc;
-                    RndSorterPoolParams.rngGen = rngGen;
-                    RndSorterPoolParams.rndSorterGen = rndSorterGen
+                    RndSorterParams.degree = d;
+                    sorterCount = sc;
+                    rngGen = rngGen;
+                    rndSorterGen = rndSorterGen
             }
         }

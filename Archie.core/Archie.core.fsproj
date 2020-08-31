@@ -29,6 +29,8 @@
     <Compile Include="SorterGa.fs" />
     <Compile Include="SorterGaDto.fs" />
     <Compile Include="SortersFromData.fs" />
+    <Compile Include="GaRun.fs" />
+    <Compile Include="GaRunDto.fs" />
   </ItemGroup>
 
   <ItemGroup>

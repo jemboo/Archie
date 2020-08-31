@@ -11,10 +11,10 @@ type SorterFixture () =
     [<TestMethod>]
     member this.IndexedRandomData() =
        let rg = RngGen.createLcg 123
-       let seeds = PoolUpdateParams.IndexedSeedGen rg
+       let seeds = RandoCollections.IndexedSeedGen rg
                    |> Seq.take(10) |> Seq.toArray
 
-       let guids = PoolUpdateParams.IndexedGuidGen rg None
+       let guids = RandoCollections.IndexedGuidGen rg None
                     |> Seq.take(10) |> Seq.toArray
 
        Assert.IsTrue(seeds.Length = 10)

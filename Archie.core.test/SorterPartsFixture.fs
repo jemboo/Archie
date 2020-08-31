@@ -36,7 +36,7 @@ type SortingFixture () =
 
         let swGen = Switch.randomSwitchesOfDegree degree rnd
         let genArray = swGen |> Seq.take 55000 |> Seq.toArray
-        let histo = Utils.histogram (fun i->i) genArray
+        let histo = CollectionUtils.histogram (fun i->i) genArray
     
         Assert.IsTrue(true);
 

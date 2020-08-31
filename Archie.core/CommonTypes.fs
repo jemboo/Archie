@@ -1,7 +1,6 @@
 ﻿namespace Archie.Base
 open System
 
-
 type String50 = private String50 of string
 type Degree = private Degree of int
 type GenerationCount = private GenerationCount of int

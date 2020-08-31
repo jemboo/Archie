@@ -5,6 +5,7 @@ open System
 open System.IO
 
 module ParseUtils =
+
     let MakeInt32 (str:string) =
         let mutable oot = 0
         let res = Int32.TryParse(str, &oot)
@@ -36,7 +37,14 @@ module ParseUtils =
             MakeFloat pcs.[0]
 
 
-module Utils =
+module LogUtils =
+    let logFile path res (append:bool) =
+        use sw =
+            new StreamWriter(path, append)
+        fprintfn sw "%s" res
+
+
+module CollectionUtils =
 
 //// Converts seq of key - value pairs to mutable Dictionary
 //    let ofSeq (src:seq<'a * 'b>) = 
@@ -45,14 +53,11 @@ module Utils =
 //           d.Add(k,v)
 //       d
 
-    let logFile path res (append:bool) =
-        use sw =
-            new StreamWriter(path, append)
-        fprintfn sw "%s" res
-
-    let toMap (keyMaker:'a->'b) (src:seq<'a>) =
-        src |> Seq.map(fun v -> (keyMaker v), v)
-            |> Map.ofSeq
+    let tuplesToMap (tupes:('a*'b)[]) =
+        let map = tupes |> Map.ofSeq
+        if (map.Count = tupes.Length) then
+            map |> Ok
+        else "key duplicates" |> Error
 
     let mapSubset (m:Map<'a,'v>) (keys:seq<'a>) = 
         keys |> Seq.map(fun k-> k, (m.[k]))
@@ -70,6 +75,19 @@ module Utils =
            for kv in d do
                yield (kv.Key, kv.Value)
        }
+
+    let histogram<'d,'r when 'r:comparison> (keymaker:'d->'r) (qua:seq<'d>) =
+        qua
+        |> Seq.fold (fun acc fv ->
+                let kk = keymaker fv
+                if Map.containsKey kk acc
+                then Map.add kk (acc.[kk] + 1) acc
+                else Map.add kk 1 acc
+            ) Map.empty
+
+
+
+module StringUtils =
 
     let printIntArray (d:int[]) =
         let sb = new System.Text.StringBuilder()
@@ -98,12 +116,3 @@ module Utils =
          |> Seq.toArray
          |> ignore
        sb.ToString()
-
-    let histogram<'d,'r when 'r:comparison> (keymaker:'d->'r) (qua:seq<'d>) =
-        qua
-        |> Seq.fold (fun acc fv ->
-                let kk = keymaker fv
-                if Map.containsKey kk acc
-                then Map.add kk (acc.[kk] + 1) acc
-                else Map.add kk 1 acc
-            ) Map.empty

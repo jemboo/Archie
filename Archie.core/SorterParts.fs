@@ -349,16 +349,16 @@ module SorterParts =
                 return Sorter.create degree switches
             }
 
-        let getStats (sorter:Sorter) (switchUses:SwitchUses) =
+        let getSwitchAndStageUses (sorter:Sorter) (switchUses:SwitchUses) =
             result
                 {
                     let! refinedStageCount = (getRefinedStageCount switchUses sorter)
                     let! switchUseCount = (getSwitchUseCount switchUses)
-                    return sorter, switchUseCount, refinedStageCount
-                } 
+                    return switchUseCount, refinedStageCount
+                } |> Result.ExtractOrThrow
 
         let reportResultStats stats =
-            Utils.printArrayf 
+            StringUtils.printArrayf 
                 (fun res ->
                 match res with
                 | Ok (s,a,b,c,d) -> sprintf "%f %d %d %d" a b (SwitchCount.value c) (StageCount.value d)
@@ -366,11 +366,11 @@ module SorterParts =
                stats
 
         let reportStats stats =
-            Utils.printArrayf 
+            StringUtils.printArrayf 
                 (fun (s,a,b,c,d) -> sprintf "%f %d %d %d" a b (SwitchCount.value c) (StageCount.value d))
                stats
 
         let reportEvals stats gen =
-            Utils.printArrayf 
+            StringUtils.printArrayf 
                (fun ((s,w,t),f) -> sprintf "%d %d %d %f" gen (SwitchCount.value w) (StageCount.value t) (SorterFitness.value f)) 
                stats
