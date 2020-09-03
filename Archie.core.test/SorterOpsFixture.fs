@@ -16,7 +16,7 @@ type SorterOpsFixture() =
          let switchCount = (SwitchCount.create "" 880) |> Result.ExtractOrThrow
          let sorterCount = (SorterCount.create "" 10) |> Result.ExtractOrThrow
          let seed = RandomSeed.create "" 4124 |> Result.ExtractOrThrow
-         let randSorterGen = RndSorterGen.Switch switchCount
+         let randSorterGen = SorterLength.Switch switchCount
          let randoLcg = new RandomLcg(seed) :> IRando
 
          let sorterSet = SorterSet.createRandom degree randSorterGen
@@ -25,7 +25,7 @@ type SorterOpsFixture() =
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
          let res = SorterOps.CompleteSort sortableSet sorterSet.sorters false
-         let goodies = res |> Array.filter(fun (_, _, r) -> r=sortableSet.count)
+         let goodies = res |> Array.filter(fun (_, _, r) -> SortableCount.value r =sortableSet.count)
          let duke = goodies.Length
          Assert.IsTrue (duke > 0)
 
@@ -34,7 +34,7 @@ type SorterOpsFixture() =
      member this.RandomStagePackedSorterTR() =
          let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
          let stageCount = (StageCount.create "" 110) |> Result.ExtractOrThrow
-         let randSorterGen = RndSorterGen.Stage stageCount
+         let randSorterGen = SorterLength.Stage stageCount
          let sorterCount = (SorterCount.create "" 10) |> Result.ExtractOrThrow
          let seed = RandomSeed.create "" 4124 |> Result.ExtractOrThrow
          let randoLcg = new RandomLcg(seed) :> IRando
@@ -45,7 +45,7 @@ type SorterOpsFixture() =
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
          let res = SorterOps.StopIfSorted sortableSet sorterSet.sorters false
-         let goodies = res |> Array.filter(fun (_, _, r) -> r=sortableSet.count)
+         let goodies = res |> Array.filter(fun (_, _, r) -> SortableCount.value r=sortableSet.count)
          let duke = goodies.Length
          Assert.IsTrue (duke > 0)
 
@@ -54,7 +54,7 @@ type SorterOpsFixture() =
      member this.RunSorterSetOnSortableSetTB() =
          let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
          let switchCount = (SwitchCount.create "" 1600) |> Result.ExtractOrThrow
-         let randSorterGen = RndSorterGen.Switch switchCount
+         let randSorterGen = SorterLength.Switch switchCount
          let sorterCount = (SorterCount.create "" 200) |> Result.ExtractOrThrow
          let seed = RandomSeed.create "" 41324 |> Result.ExtractOrThrow
          let randoLcg = new RandomLcg(seed) :> IRando
@@ -75,7 +75,7 @@ type SorterOpsFixture() =
      member this.GetEntropyBitsForRandom() =
         let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
         let stageCount = (StageCount.create "" 200) |> Result.ExtractOrThrow
-        let randSorterGen = RndSorterGen.Stage stageCount
+        let randSorterGen = SorterLength.Stage stageCount
         let sorterCount = (SorterCount.create "" 10) |> Result.ExtractOrThrow
         let seed = RandomSeed.create "" 4124 |> Result.ExtractOrThrow
         let randoLcg = new RandomLcg(seed) :> IRando
@@ -117,4 +117,4 @@ type SorterOpsFixture() =
 
         let srtr, su, res = SorterOps.SortAllTR sorter sortableSet
 
-        Assert.IsTrue (res>0)
+        Assert.IsTrue (SortableCount.value res > 0)

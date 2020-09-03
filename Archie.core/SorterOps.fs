@@ -1,8 +1,6 @@
 ﻿namespace Archie.Base
 open Microsoft.FSharp.Collections
 open SorterParts
-open System
-
 
 module SorterOps =
 
@@ -20,7 +18,7 @@ module SorterOps =
                 testCases.baseArray.[switch.low + index] <- hv
                 useWeights.[i] <- useWeights.[i] + 1
             i <- i+1
-        Combinatorics.IsSortedOffset testCases.baseArray index (Degree.value(testCases.degree))
+        Combinatorics.isSortedOffset testCases.baseArray index (Degree.value(testCases.degree))
 
 
     let SortAllTR (sorter:Sorter) (testCases:SortableSet) =
@@ -33,7 +31,7 @@ module SorterOps =
                   successCount  <- (if (SortTR sorter 0 switchCount switchUses tcCopy i) then 1 else 0) +
                                   successCount
                   i <- i + (Degree.value sorter.degree)
-         sorter, switchUses, successCount
+         sorter, switchUses, SortableCount.fromInt successCount
 
 
     // returns early when the sortable is sorted
@@ -50,10 +48,11 @@ module SorterOps =
                 testCases.baseArray.[switch.hi + index] <- lv
                 testCases.baseArray.[switch.low + index] <- hv
                 useWeights.[i] <- useWeights.[i] + 1
-                looP <- not (Combinatorics.IsSortedOffset testCases.baseArray 
+                looP <- not (Combinatorics.isSortedOffset testCases.baseArray 
                                index (Degree.value(testCases.degree))) 
             i <- i+1
-        Combinatorics.IsSortedOffset testCases.baseArray index (Degree.value(testCases.degree))
+        Combinatorics.isSortedOffset testCases.baseArray index (Degree.value(testCases.degree))
+
 
     let SortAllTB (sorter:Sorter) (testCases:SortableSet) =
          let switchCount = (SwitchCount.value sorter.switchCount)
@@ -65,7 +64,7 @@ module SorterOps =
                   successCount  <- (if (SortTB sorter 0 switchCount switchUses tcCopy i) then 1 else 0) +
                                       successCount
                   i <- i + (Degree.value sorter.degree)
-         sorter, switchUses, successCount
+         sorter, switchUses, SortableCount.fromInt successCount
          
 
     let private SorterSetOnSortableSet (sortableSet:SortableSet) (sorters:Sorter[]) 

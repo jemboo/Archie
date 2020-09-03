@@ -5,78 +5,88 @@ type Permutation = private {degree:Degree; values:int[] }
 module Permutation =
     let create (degree:Degree) (vals:int[]) =
         if vals.Length <> (Degree.value degree) then
-            Error (sprintf "array length %d <> degree %d:" 
-                    vals.Length (Degree.value degree))
+            (sprintf "array length %d <> degree %d:" 
+                      vals.Length (Degree.value degree)) |> Error 
         else
             {Permutation.degree=degree; values=vals } |> Ok
 
-    let Identity (degree:Degree) = 
+    let identity (degree:Degree) = 
         {degree=degree; values=[|0 .. (Degree.value degree)-1|] }
 
     let arrayValues perm = perm.values
     let degree perm = perm.degree
 
-    let CreateRandom (degree:Degree) (rnd:IRando) =
-        let idArray = (Identity degree) |> arrayValues  
+    let createRandom (degree:Degree) (rnd:IRando) =
+        let idArray = (identity degree) |> arrayValues  
         { degree=degree;
-        values=(Combinatorics.FisherYatesShuffle rnd idArray |> Seq.toArray)}
+        values=(Combinatorics.fisherYatesShuffle rnd idArray |> Seq.toArray)}
 
-    let IsTwoCycle (perm:Permutation) =
+    let isTwoCycle (perm:Permutation) =
         Combinatorics.isTwoCycle perm.values
 
-    let CreateRandoms (degree:Degree) (rnd:IRando) =
-        Seq.initInfinite(fun _ -> CreateRandom degree rnd)
+    let createRandoms (degree:Degree) (rnd:IRando) =
+        Seq.initInfinite(fun _ -> createRandom degree rnd)
 
-    let InRange (degree:Degree) (value:int) =
+    let inRange (degree:Degree) (value:int) =
        ((value > -1) && (value < (Degree.value degree)))
 
-    let Inverse (p:Permutation) =
-        create p.degree (Combinatorics.InverseMapArray (p |> arrayValues))
+    let inverse (p:Permutation) =
+        create p.degree (Combinatorics.inverseMapArray (p |> arrayValues))
  
-    let Product (pA:Permutation) (pB:Permutation) =
+    let product (pA:Permutation) (pB:Permutation) =
         if (Degree.value pA.degree) <> (Degree.value pB.degree) then
                 Error (sprintf "degree %d <> degree %d:" 
                         (Degree.value pA.degree) (Degree.value pB.degree))
         else
-            create pA.degree  (Combinatorics.ComposeMapIntArrays (pA |> arrayValues) (pB |> arrayValues))
+            create pA.degree  (Combinatorics.composeMapIntArrays (pA |> arrayValues) (pB |> arrayValues))
 
 
 
  // a permutation of the set {0, 1,.. (degree-1)}, that is it's own inverse
-type TwoCyclePerm = private {degree:Degree; values:int[] }
+type TwoCyclePerm = private { degree:Degree; values:int[] }
 module TwoCyclePerm =
+    let create (degree:Degree) (values:int[]) = 
+        if (Degree.value degree) <> values.Length then
+            sprintf "array length %d <> degree %d:"  (Degree.value degree) 
+                      values.Length |> Error 
+        else { degree=degree; values=values } |> Ok
 
-    let Identity (degree:Degree) = 
+    let identity (degree:Degree) = 
         {degree=degree; values=[|0 .. (Degree.value degree)-1|] }
 
     let arrayValues perm = perm.values
     let degree perm = perm.degree
 
-    let Product (pA:TwoCyclePerm) (pB:TwoCyclePerm) =
+    let product (pA:TwoCyclePerm) (pB:TwoCyclePerm) =
         if (Degree.value pA.degree) <> (Degree.value pB.degree) then
                 Error (sprintf "degree %d <> degree %d:" 
                         (Degree.value pA.degree) (Degree.value pB.degree))
         else
         { degree=pA.degree; 
-          values= Combinatorics.ComposeMapIntArrays (pA |> arrayValues) (pB |> arrayValues)} |> Ok
+          values= Combinatorics.composeMapIntArrays (pA |> arrayValues) (pB |> arrayValues)} |> Ok
 
-    let MakeMonoCycle (degree:Degree) (hi:int) (low:int) =
-        if ((Permutation.InRange degree hi) && (Permutation.InRange degree low)) then
+    let makeMonoCycle (degree:Degree) (hi:int) (low:int) =
+        if ((Permutation.inRange degree hi) && (Permutation.inRange degree low)) then
             {degree=degree; 
-             values=(Combinatorics.MakeMonoTwoCycle degree low hi)} |> Ok
+             values=(Combinatorics.makeMonoTwoCycle degree low hi)} |> Ok
         else Error "low or hi is out of range" 
 
-    let MakeRandomMonoCycle (degree:Degree) (rnd:IRando) =
+    let makeRandomMonoCycle (degree:Degree) (rnd:IRando) =
         { degree=degree; 
-          values=Combinatorics.MakeRandomMonoTwoCycle degree rnd }
+          values=Combinatorics.makeRandomMonoTwoCycle degree rnd }
 
-    let MakeAllMonoCycles (degree:Degree) =
-        (Combinatorics.MakeAllMonoTwoCycles degree) 
+    let makeAllMonoCycles (degree:Degree) =
+        (Combinatorics.makeAllMonoTwoCycles degree) 
         |> Seq.map (fun s -> {degree=degree; values= s})
-     
-    let MakeRandomFullTwoCycle (degree:Degree) (rnd:IRando) =
+    
+    let makeRandomTwoCycle (degree:Degree) (rnd:IRando) (switchFreq:float) =
+        let switchCount = Rando.multiDraw rnd switchFreq ((Degree.value degree) / 2)
         { degree=degree; 
-          values=Combinatorics.MakeRandomFullTwoCycleIntArray rnd (Degree.value degree)}
+          values=Combinatorics.makeRandomTwoCycleIntArray rnd (Degree.value degree) switchCount}
+
+    let makeRandomFullTwoCycle (degree:Degree) (rnd:IRando) =
+        { degree=degree; 
+          values=Combinatorics.makeRandomFullTwoCycleIntArray rnd (Degree.value degree)}
 
     let makeFromTupleSeq (degree:Degree) (tupes:seq<int*int>) =
         let curPa = [|0 .. (Degree.value degree)-1|]

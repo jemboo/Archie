@@ -420,7 +420,7 @@ module AsyncResult =
     // Utilities lifted from Async
 
     let sleep ms = 
-        Async.Sleep ms |> ofAsync
+        Async.Sleep (ms:int) |> ofAsync
 
     
 // ==================================

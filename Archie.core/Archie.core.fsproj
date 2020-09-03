@@ -24,9 +24,10 @@
     <Compile Include="Entity.fs" />
     <Compile Include="Combinatorics.fs" />
     <Compile Include="CombinatoricsTypes.fs" />
+    <Compile Include="CombinatoricsTypesDto.fs" />
     <Compile Include="SorterParts.fs" />
     <Compile Include="SorterOps.fs" />
-    <Compile Include="SorterGa.fs" />
+    <Compile Include="RunParams.fs" />
     <Compile Include="SorterGaDto.fs" />
     <Compile Include="SortersFromData.fs" />
     <Compile Include="GaRun.fs" />
@@ -35,6 +36,10 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="5.0.0-beta.20417.1" />
   </ItemGroup>
 
 </Project>

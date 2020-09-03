@@ -5,17 +5,17 @@ open Archie.Base
 
 
 [<TestClass>]
-type CommonTypesFixture () =
+type CommonTypesFixture() =
 
     [<TestMethod>]
     member this.TestParseRandGenMode() =
-        let rgmDto = {RndSorterGenDto.cat="Switch"; args= "11"}
-        let res = RndSorterGenDto.fromDto rgmDto |> Result.ExtractOrThrow
+        let rgmDto = {SorterLengthDto.wOrT = "Switch"; value = 11}
+        let res = SorterLengthDto.fromDto rgmDto |> Result.ExtractOrThrow
         
         let sc = (SwitchCount.create "" 12) |> Result.ExtractOrThrow
-        let mm = RndSorterGen.Switch sc
-        let mmDto = RndSorterGenDto.toDto mm
-        let mmR = RndSorterGenDto.fromDto mmDto |> Result.ExtractOrThrow
+        let mm = SorterLength.Switch sc
+        let mmDto = SorterLengthDto.toDto mm
+        let mmR = SorterLengthDto.fromDto mmDto |> Result.ExtractOrThrow
         Assert.AreEqual(1, 1)
 
 

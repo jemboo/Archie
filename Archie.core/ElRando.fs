@@ -117,6 +117,17 @@ module Rando =
         | RngType.Lcg -> LcgFromSeed (RandomSeed.value rngGen.seed)
         | RngType.Net -> NetFromSeed (RandomSeed.value rngGen.seed)
 
+    let multiDraw (rnd:IRando) (freq:float) (numDraws:int)  =
+        let draw (randy:IRando) =
+            if randy.NextFloat < freq then 1 else 0
+        let mutable i=0
+        let mutable successCount = 0
+        while (i < numDraws) do
+                 successCount  <- successCount + draw rnd
+                 i <- i + 1
+        successCount
+
+
 module RandoCollections =
 
     let IndexedRandomData (rngGen:RngGen) (f:IRando->'a) = 
@@ -145,7 +156,6 @@ module RandoCollections =
         IndexedRandomData2 
             rngGen rngGen2
             (fun rando rando2 -> Rando.NextGuid rando rando2)
-
 
     let Repeater f (items:'a[]) (count:int) =
         let tt = seq {for i=0 to (items.Length-1) do yield! Seq.replicate count (f items.[i]) }

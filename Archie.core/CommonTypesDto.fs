@@ -21,6 +21,7 @@ module Json =
 
 type LogFileDto = {cat:string; descr:string; header:string; records:string[]}
 
+
 type CustomParamsDto = {parseKey:string; prams:Map<string, string>}
 
 type RngGenDto = {rngType:string; seed:int}
@@ -90,24 +91,25 @@ module  MutationTypeDto =
 
 
 
-type RndSorterGenDto = {cat:string; args:string;}
-
-module RndSorterGenDto =
+type SorterLengthDto = {wOrT:string; value:int;}
+module SorterLengthDto =
     
-    let toDto (rngt:RndSorterGen) =
-        match rngt with
-        | RndSorterGen.Switch ct ->  {cat="Switch"; args=(sprintf "%d" (SwitchCount.value ct));}
-        | RndSorterGen.Stage ct ->  {cat="Stage"; args=(sprintf "%d" (StageCount.value ct));}
+    let toDto (sorterLength:SorterLength) =
+        match sorterLength with
+        | SorterLength.Switch ct -> {wOrT="Switch"; value=(SwitchCount.value ct)}
+        | SorterLength.Stage ct -> {wOrT="Stage"; value=(StageCount.value ct);}
 
-    let fromDto (dto:RndSorterGenDto) =
-        let parseCat cat count = 
+    let toString (sorterLength:SorterLength) =
+        sorterLength |> toDto |> Json.serialize
+
+    let fromDto (dto:SorterLengthDto) =
+        let parseCat cat count =
             match cat with
-            | "Switch" -> RndSorterGen.Switch 
+            | "Switch" -> SorterLength.Switch 
                                     ((SwitchCount.create "" count)|> Result.ExtractOrThrow) |> Ok
-            | "Stage" -> RndSorterGen.Stage 
+            | "Stage" -> SorterLength.Stage 
                                     ((StageCount.create "" count)|> Result.ExtractOrThrow) |> Ok
-            | _ -> Error (sprintf "no match for RndSorterGenerationMode: %s" dto.cat)
+            | _ -> Error (sprintf "no match for SorterLengthDto: %s" cat)
         result {
-            let! ct = ParseUtils.StringToOneInt dto.args
-            return! parseCat dto.cat ct
+            return! parseCat dto.wOrT dto.value
         }

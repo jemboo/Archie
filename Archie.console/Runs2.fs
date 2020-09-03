@@ -39,11 +39,10 @@ module Runs2 =
         |> Seq.map(fun (s, u, r) -> let w, t = (SwitchUses.getSwitchAndStageUses s u)
                                     s, u, r, w, t)
 
-
-    let SuccessfulSorterFitness (sorterRes:seq<Sorter*SwitchUses*int*SwitchCount*StageCount>) = 
+    let SuccessfulSorterFitness (sorterRes:seq<Sorter*SwitchUses*SortableCount*SwitchCount*StageCount>) = 
         let ff w = (FitnessFunc.standardSwitch 4.0).fitnessFunc ((SwitchCount.value w) :> obj)
         sorterRes|> Seq.map(fun (srtr,su,ss,w,t) -> (srtr,su,ss,w,t, ff w))
-    
+  
 
     let checkArray (a:'a[]) =
         if a.Length < 1 then
@@ -53,11 +52,11 @@ module Runs2 =
 
 
     let RunSorterMpG (sorterInfo:string) (sorter:Sorter)
-                     (prams:PoolUpdateParams)
+                     (prams:PoolUpdateParams) (reportingFrequency:ReportingFrequency)
                      logToFile =
         let mutator = Sorter.mutate prams.mutationType
 
-        let reportEvalBinsMin (genPool:int) (results:(Sorter*SwitchUses*int*SwitchCount*StageCount*SorterFitness)[]) =
+        let reportEvalBinsMin (genPool:int) (results:(Sorter*SwitchUses*SortableCount*SwitchCount*StageCount*SorterFitness)[]) =
             let summary = results|> Array.minBy (fun (srtr,su,ss,w,t,f)-> w)
             let (srtr,su,ss,w,t,f) = summary
             sprintf "%s %d %d %.3f %.3f %s %d %d %d" sorterInfo (SwitchCount.value w) (StageCount.value t)
@@ -72,7 +71,7 @@ module Runs2 =
         let randoLcgV = Rando.fromRngGen prams.rngGen
 
         let nextGenArgs sorterWraps =
-            NextGen<Sorter*SwitchUses*int*SwitchCount*StageCount*SorterFitness, Sorter>
+            NextGen<Sorter*SwitchUses*SortableCount*SwitchCount*StageCount*SorterFitness, Sorter>
                     (mutator randoLcgV) prams.poolCount prams.breederFrac prams.winnerFrac randoLcgV
                        (fun (srtr,su,ss,w,t,f) -> srtr) 
                        (fun (srtr,su,ss,w,t,f) -> f)
@@ -95,7 +94,7 @@ module Runs2 =
             let currentSorterFitness = currentEvals |> (getSortingResults sortableSet)
                                        |> SuccessfulSorterFitness
                                        |> Seq.toArray
-            if (nextRep = 128) then 
+            if (nextRep = (ReportingFrequency.value reportingFrequency)) then 
                 let binRec = currentSorterFitness |> reportEvalBinsMin (gen * (SorterCount.value prams.poolCount))
                 logToFile binRec true
                 nextRep <- 0
@@ -113,26 +112,35 @@ module Runs2 =
         true
 
 
-    let RunSorterMpgBatch (logfile:string) (paramSeed:int) (sorterSeed:int) (poolSize:int) =
-        let LogToFile = 
+    let RunSorterMpgBatch (logfile:string)
+                          (reportingFrequency:int)
+                          (paramSeed:int) 
+                          (sorterSeed:int)
+                          (degree:int)
+                          (switchOrStage:string)
+                          (initialConditionCount:int)
+                          (replicaCount:int)
+                          (poolTimesGenCount:int) =
+        let LogToFile =
             LogUtils.logFile logfile
         LogToFile "starting RunSorterMpgBatch" false
+        let repFreq = ReportingFrequency.create "" reportingFrequency |> Result.ExtractOrThrow
+        let icCount = InitialConditionCount.create "" initialConditionCount |> Result.ExtractOrThrow
+        let poolGenCount = PoolGenCount.create "" poolTimesGenCount |> Result.ExtractOrThrow
 
-        let sorterCount = SorterCount.create "" 48 |> Result.ExtractOrThrow
-        let stageCount = StageCount.create "" 260 |> Result.ExtractOrThrow
-        let randSorterGen = RndSorterGen.Stage stageCount
-        let replicaCount = ReplicaCount.create "" 48 |> Result.ExtractOrThrow
-        let degree = Degree.create "" 14 |> Result.ExtractOrThrow
+        let replicaCount = ReplicaCount.create "" replicaCount |> Result.ExtractOrThrow
+        let degree = Degree.create "" degree |> Result.ExtractOrThrow
+        let sorterLength = SorterLength.to999Sucessful degree switchOrStage |> Result.ExtractOrThrow
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
         let paramRndGen = RngGen.createLcg paramSeed
         let sorterRando = Rando.LcgFromSeed sorterSeed
 
         let paramReport =
-            sprintf "degree:%d sorterSeed:%d paramSeed:%d stageCount:%d replicaCount:%d" 
-                (Degree.value degree) sorterSeed paramSeed
-                (StageCount.value stageCount)
-                (ReplicaCount.value replicaCount)
+            sprintf "degree:%d sorterSeed:%d paramSeed:%d sorterLength:%s replicaCount:%d" 
+                    (Degree.value degree) sorterSeed paramSeed
+                    (sorterLength |> SorterLengthDto.toString)
+                    (ReplicaCount.value replicaCount)
 
         LogToFile paramReport true
         let reportHeader = "id sw1 st1 sw2 st2 bFrac wFrac mutTy poolCt genPool seed"
@@ -140,18 +148,18 @@ module Runs2 =
 
         let RunSorterMpgParams (q:string*Sorter) (prams:PoolUpdateParams) =
             let (info,sorter) = q
-            RunSorterMpG info sorter prams LogToFile
-
+            RunSorterMpG info sorter  prams repFreq LogToFile
         
         let sorterInfo w t = sprintf "%s %d %d" (string (Guid.NewGuid())) 
                                      (SwitchCount.value w) (StageCount.value t)
 
-        let sorterEvals = (SorterSet.createRandom degree randSorterGen sorterCount sorterRando).sorters
+        let sorterCount = SorterCount.create "" (InitialConditionCount.value icCount) |> Result.ExtractOrThrow
+        let sorterEvals = (SorterSet.createRandom degree sorterLength sorterCount sorterRando).sorters
                             |> (getSortingResults sortableSet)
                             |> Seq.map(fun (srtr,su,ss,w,t) -> (sorterInfo w t), srtr)
                             |> Seq.toArray
 
-        let sorterAndPrams = PoolUpdateParams.ParamsM paramRndGen poolSize
+        let sorterAndPrams = PoolUpdateParams.ParamsM paramRndGen poolGenCount
                                 |> Seq.take (ReplicaCount.value replicaCount)
                                 |> Seq.toArray
                                 |> Array.allPairs sorterEvals   

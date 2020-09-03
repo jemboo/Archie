@@ -28,7 +28,7 @@ type RandoFixture () =
         let randoLcg = new RandomLcg(seed)
         let sortableCount = 4
 
-        let perms = Permutation.CreateRandoms degree randoLcg
+        let perms = Permutation.createRandoms degree randoLcg
                     |> Seq.map(fun i -> Permutation.arrayValues i )
                     |> Seq.take sortableCount
 
@@ -41,3 +41,16 @@ type RandoFixture () =
         let dto = RngGenDto.toDto rngGen
         let rngGenBack = RngGenDto.fromDto dto |> Result.ExtractOrThrow
         Assert.IsTrue((rngGen=rngGenBack))
+        
+
+    [<TestMethod>]
+    member this.IndexedRandomData() =
+        let rg = RngGen.createLcg 123
+        let seeds = RandoCollections.IndexedSeedGen rg
+                    |> Seq.take(10) |> Seq.toArray
+
+        let guids = RandoCollections.IndexedGuidGen rg None
+                    |> Seq.take(10) |> Seq.toArray
+
+        Assert.IsTrue(seeds.Length = 10)
+

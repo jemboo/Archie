@@ -1,5 +1,8 @@
 ﻿namespace Archie.Base
 
+
+
+
 type GaRunDto = private {parseKey:string; prams:Map<string, string>}
 module GaRunDto =
     let create (parseKey:string) (kvps:(string*string)[]) =

@@ -39,7 +39,7 @@ module Runs =
                                     s, u, r, w, t)
 
 
-    let SuccessfulSorterFitness (sorterRes:seq<Sorter*SwitchUses*int*SwitchCount*StageCount>) = 
+    let SuccessfulSorterFitness (sorterRes:seq<Sorter*SwitchUses*SortableCount*SwitchCount*StageCount>) = 
         let ff w = (FitnessFunc.standardSwitch 4.0).fitnessFunc ((SwitchCount.value w) :> obj)
         sorterRes|> Seq.map(fun (srtr,su,ss,w,t) -> (srtr,su,ss,w,t, ff w))
 
@@ -53,13 +53,14 @@ module Runs =
             false
         else true
 
-    let RunSorterMpG (sorterInfo:string) (sorter:Sorter)
+    let RunSorterMpG (sorterInfo:string) 
+                     (sorter:Sorter)
                      (prams:PoolUpdateParams)
                      logToFile =
 
         let mutator = Sorter.mutate prams.mutationType
 
-        let reportEvalBinsMin (genPool:int) (results:(Sorter*SwitchUses*int*SwitchCount*StageCount*SorterFitness)[]) =
+        let reportEvalBinsMin (genPool:int) (results:(Sorter*SwitchUses*SortableCount*SwitchCount*StageCount*SorterFitness)[]) =
             let summary = results|> Array.minBy (fun (srtr,su,ss,w,t,f)-> w)
             let (srtr,su,ss,w,t,f) = summary
             sprintf "%s %d %d %.3f %.3f %s %d %d %d" sorterInfo (SwitchCount.value w) (StageCount.value t)
@@ -74,7 +75,7 @@ module Runs =
         let randoLcgV = Rando.fromRngGen prams.rngGen
 
         let nextGenArgs sorterWraps =
-            NextGen<Sorter*SwitchUses*int*SwitchCount*StageCount*SorterFitness, Sorter>
+            NextGen<Sorter*SwitchUses*SortableCount*SwitchCount*StageCount*SorterFitness, Sorter>
                     (mutator randoLcgV) prams.poolCount prams.breederFrac prams.winnerFrac randoLcgV
                        (fun (srtr,su,ss,w,t,f) -> srtr) 
                        (fun (srtr,su,ss,w,t,f) -> f)
@@ -116,8 +117,10 @@ module Runs =
         true
 
 
-    let RunSorterMpgBatch (logfile:string) (degree:int) 
-                          (sorterCount:int) (replicaCount:int)
+    let RunSorterMpgBatch (logfile:string) 
+                          (degree:int) 
+                          (sorterCount:int) 
+                          (replicaCount:int)
                           (sorterGenSeed:int)
                           (switchOrStage:string)
                           (replicaGenSeed:int) 
@@ -129,7 +132,7 @@ module Runs =
         let d = Degree.create "" 14 |> Result.ExtractOrThrow
         let sorterCount = SorterCount.create "" sorterCount |> Result.ExtractOrThrow
         let rsg = RngGen.createLcg sorterGenSeed
-        let rspp = RndSorterParams.Make d sorterCount rsg switchOrStage |> Option.get
+        let rspp = RndSorterParams.Make d sorterCount rsg switchOrStage |> Result.ExtractOrThrow
 
         let rc = ReplicaCount.create "" replicaCount |> Result.ExtractOrThrow
         let sortableSet = SortableSet.allBinary d |> Result.ExtractOrThrow
@@ -142,9 +145,9 @@ module Runs =
     //    let paramRndGen = RngGenF.createLcg paramSeed
 
     //    let paramReport = sprintf "degree:%d sorterCount:%d replicaCount:%d 
-    //                               sorterSeed:%d switchOrStage:%s paramSeed:%d poolSize:%d"
+    //                               sorterSeed:%d switchOrStage:%s paramSeed:%d startingConditionCount:%d"
     //                               degree sorterCount replicaCount sorterSeed switchOrStage
-    //                               paramSeed poolSize
+    //                               paramSeed startingConditionCount
 
     //    LogToFile paramReport true
     //    let reportHeader = "id sw1 st1 sw2 st2 bFrac wFrac mutTy poolCt genPool seed"
@@ -164,7 +167,7 @@ module Runs =
     //                        |> Seq.map(fun (s, w, t) -> (sorterInfo w t), s)
     //                        |> Seq.toArray
 
-    //    let sorterAndPrams = PoolUpdateParams.ParamsM paramRndGen poolSize
+    //    let sorterAndPrams = PoolUpdateParams.ParamsM paramRndGen startingConditionCount
     //                            |> Seq.take (ReplicaCount.value replicaCount)
     //                            |> Seq.toArray
     //                            |> Array.allPairs sorterEvals   

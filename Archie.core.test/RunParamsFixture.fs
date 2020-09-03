@@ -6,7 +6,7 @@ open Archie.Base.SortersFromData
 open System
 
 [<TestClass>]
-type SorterFixture () =
+type RunParamsFixture () =
 
     [<TestMethod>]
     member this.IndexedRandomData() =

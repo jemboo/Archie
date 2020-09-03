@@ -79,7 +79,7 @@ module SorterParts =
     module Stage =
 
         let createRandom (degree:Degree) (rnd:IRando) =
-            let switches = (TwoCyclePerm.MakeRandomFullTwoCycle degree rnd )
+            let switches = (TwoCyclePerm.makeRandomFullTwoCycle degree rnd )
                             |> Switch.switchSeqFromPolyCycle
             {switches=switches |> Seq.toList; degree=degree}
 
@@ -116,7 +116,7 @@ module SorterParts =
 
         let makeStagePackedSwitchSeq (degree:Degree) (rnd:IRando) =
             let aa (rnd:IRando)  = 
-                (TwoCyclePerm.MakeRandomFullTwoCycle degree rnd )
+                (TwoCyclePerm.makeRandomFullTwoCycle degree rnd )
                         |> Switch.switchSeqFromPolyCycle
             seq { while true do yield! (aa rnd) }
 
@@ -153,7 +153,7 @@ module SorterParts =
         let randomMutate (rnd:IRando) (mutationRate:MutationRate) (stage:Stage) = 
             match rnd.NextFloat with
                 | k when k < (MutationRate.value mutationRate) -> 
-                           let tcp = Combinatorics.DrawTwoWoRep stage.degree rnd
+                           let tcp = Combinatorics.drawTwoWithoutRep stage.degree rnd
                            mutateStage stage tcp
                 | _ -> stage
 
@@ -189,10 +189,10 @@ module SorterParts =
                                  |> Seq.toArray
              }
 
-         let createRandom (degree:Degree) (randSorterGeneration:RndSorterGen) (rnd:IRando) =
+         let createRandom (degree:Degree) (randSorterGeneration:SorterLength) (rnd:IRando) =
             match randSorterGeneration with
-            | RndSorterGen.Switch wc -> createWithRandomSwitches degree wc rnd
-            | RndSorterGen.Stage tc -> createWithRandomPackedStages degree tc rnd
+            | SorterLength.Switch wc -> createWithRandomSwitches degree wc rnd
+            | SorterLength.Stage tc -> createWithRandomPackedStages degree tc rnd
 
 
          let appendSwitches (switches:seq<Switch>) (sorter:Sorter) =
@@ -248,13 +248,14 @@ module SorterParts =
                sorters = sorterArray
             }
 
-        let createRandom (degree:Degree) (randSorterGeneration:RndSorterGen) (sorterCount:SorterCount) (rnd:IRando) =
+        let createRandom (degree:Degree) (sorterLength:SorterLength) 
+                         (sorterCount:SorterCount) (rnd:IRando) =
             fromSorters degree (seq {1 .. (SorterCount.value sorterCount)} 
-                                        |> Seq.map(fun _ -> (Sorter.createRandom degree randSorterGeneration rnd))
+                                        |> Seq.map(fun _ -> (Sorter.createRandom degree sorterLength rnd))
                                         |> Seq.toArray)
 
 
-    type SorterSetE = {degree:Degree; sorterCount:SorterCount; 
+    type SorterSetE = {degree:Degree; sorterCount:SorterCount;
                        sorters:Map<EntityId, Entity<Sorter>> }
     module SorterSetE =
         let fromSorterSet (rando1:IRando) (rando2:IRando) (sorterSet:SorterSet) =
@@ -327,7 +328,7 @@ module SorterParts =
             (getWeights switchUses) |> Array.sum
 
         let entropyBits (switchUses:SwitchUses) =
-            (getWeights switchUses) |> Combinatorics.EntropyBits
+            (getWeights switchUses) |> Combinatorics.entropyBits
 
         let getStageCount (degree:Degree) (switches:seq<Switch>) =
            StageCount.create "" 

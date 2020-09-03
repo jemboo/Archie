@@ -14,9 +14,20 @@ module Consolo =
         printfn "Starting RunSorterMpgBatch"
         let paramSeed = 72234
         let sorterSeed = 2323
-        let poolSize = 400000
+        let poolTmesGenCount = 40
+        let replicaCount = 48
+        let initialConditionCount = 48
+        let degree = 14
+        let reportingFrequency = 128
+        let switchOrStage = "Switch"
 
-        let res = Runs2.RunSorterMpgBatch filePath paramSeed sorterSeed poolSize
+        let res = Runs2.RunSorterMpgBatch
+                    filePath reportingFrequency
+                    paramSeed sorterSeed
+                    degree switchOrStage
+                    initialConditionCount
+                    replicaCount poolTmesGenCount
+
         Console.WriteLine (sprintf "%s" res)
         //res2 |> List.iter(fun s -> printfn "%s" s)
         Console.ReadKey() |> ignore

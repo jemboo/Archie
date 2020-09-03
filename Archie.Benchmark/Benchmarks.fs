@@ -37,7 +37,7 @@ type SorterSetRandomTest() =
     let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
     let sorterCount = (SorterCount.create "" 24) |> Result.ExtractOrThrow
     let switchCount = (SwitchCount.create "" 1600) |> Result.ExtractOrThrow
-    let randSorterGen = RndSorterGen.Switch switchCount
+    let randSorterGen = SorterLength.Switch switchCount
     let seed = RandomSeed.create "" 41324 |> Result.ExtractOrThrow
     let randoLcg = new RandomLcg(seed) :> IRando
 

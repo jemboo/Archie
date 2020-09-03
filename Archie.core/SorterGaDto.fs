@@ -65,7 +65,7 @@ type RndSorterParamsDto =
     {degree:int;
      sorterCount:int;
      rngGenDto:RngGenDto;
-     rndSorterGenDto:RndSorterGenDto}
+     sorterLengthDto:SorterLengthDto}
 
 module RndSorterParamsDto = 
 
@@ -74,7 +74,7 @@ module RndSorterParamsDto =
             degree = Degree.value rngt.degree;
             sorterCount = SorterCount.value rngt.sorterCount;
             rngGenDto = rngt.rngGen |> RngGenDto.toDto
-            rndSorterGenDto = rngt.rndSorterGen |> RndSorterGenDto.toDto;
+            sorterLengthDto = rngt.sorterLength |> SorterLengthDto.toDto;
         }
 
     let fromDto (dto:RndSorterParamsDto) =
@@ -82,11 +82,11 @@ module RndSorterParamsDto =
             let! d = Degree.create "" dto.degree
             let! sc = SorterCount.create "" dto.sorterCount
             let! rngGen = dto.rngGenDto |> RngGenDto.fromDto
-            let! rndSorterGen = dto.rndSorterGenDto |> RndSorterGenDto.fromDto
+            let! sorterLength = dto.sorterLengthDto |> SorterLengthDto.fromDto
             return {
                     RndSorterParams.degree = d;
                     sorterCount = sc;
                     rngGen = rngGen;
-                    rndSorterGen = rndSorterGen
+                    sorterLength = sorterLength
             }
         }
