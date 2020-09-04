@@ -2,7 +2,6 @@
 
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open Archie.Base
-open Archie.Base.SorterParts
 open System
 open System.Diagnostics
 
@@ -19,7 +18,7 @@ type SorterOpsFixture() =
          let randSorterGen = SorterLength.Switch switchCount
          let randoLcg = new RandomLcg(seed) :> IRando
 
-         let sorterSet = SorterSet.createRandom degree randSorterGen
+         let sorterSet = SorterSet.createRandom degree randSorterGen None
                                     sorterCount randoLcg
 
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
@@ -39,7 +38,7 @@ type SorterOpsFixture() =
          let seed = RandomSeed.create "" 4124 |> Result.ExtractOrThrow
          let randoLcg = new RandomLcg(seed) :> IRando
 
-         let sorterSet = SorterSet.createRandom degree randSorterGen
+         let sorterSet = SorterSet.createRandom degree randSorterGen None
                                     sorterCount randoLcg
 
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
@@ -59,7 +58,7 @@ type SorterOpsFixture() =
          let seed = RandomSeed.create "" 41324 |> Result.ExtractOrThrow
          let randoLcg = new RandomLcg(seed) :> IRando
 
-         let sorterSet = SorterSet.createRandom degree randSorterGen
+         let sorterSet = SorterSet.createRandom degree randSorterGen None
                                     sorterCount randoLcg
 
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
@@ -80,7 +79,7 @@ type SorterOpsFixture() =
         let seed = RandomSeed.create "" 4124 |> Result.ExtractOrThrow
         let randoLcg = new RandomLcg(seed) :> IRando
 
-        let sorterSet = SorterSet.createRandom degree randSorterGen
+        let sorterSet = SorterSet.createRandom degree randSorterGen None
                                 sorterCount randoLcg
 
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow

@@ -160,9 +160,11 @@ type CombinatoricsFixture () =
         let randy = Rando.LcgFromSeed 123
         let arraySize = 16
         let cycleCount = 2
-
         let block = Combinatorics.makeRandomTwoCycleIntArray randy arraySize cycleCount
         Assert.IsTrue (Combinatorics.isTwoCycle block)
+        let cycleCount = 8
+        let block2 = Combinatorics.makeRandomTwoCycleIntArray randy arraySize cycleCount
+        Assert.IsTrue (Combinatorics.isTwoCycle block2)
 
 
     [<TestMethod>]
@@ -176,7 +178,6 @@ type CombinatoricsFixture () =
     member this.TestBreakIntoSegments() =
         let testArray = [|1; 2; 3; 4; 5; 6; 7; 8; 9|] 
         let testBreaks = [|0; 2; 5; 9|] 
-
         let yak = Combinatorics.breakArrayIntoSegments testArray testBreaks
         Assert.AreEqual (yak.Length, 3)
 

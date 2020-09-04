@@ -13,16 +13,16 @@ type GenomeDifference =
 
 
 type SorterGenome =
-| Self of SorterParts.Sorter
+| Self of Sorter
 | TwoCycles of TwoCyclePerm[]
 
 
 module SorterGenome =
 
     let createRandomSorterType (degree:Degree) (sorterLength:SorterLength) 
-                               (rnd:IRando) =
+                               (switchFreq:float option) (rnd:IRando) =
          SorterGenome.Self
-            (SorterParts.Sorter.createRandom degree sorterLength rnd)
+            (Sorter.createRandom degree sorterLength switchFreq rnd)
 
     let createRandomTwoCycleType (degree:Degree) (sorterLength:SorterLength) 
                                  (switchFreq:float) (rnd:IRando) =
@@ -39,13 +39,16 @@ module SorterGenome =
         SorterGenome.TwoCycles twoCycles
 
 
+type SorterPhenotype = 
+| Sorter of Sorter
+
 type SorterPhenotyperDto = {parseKey:string; prams:Map<string, string> option}
 module SorterPhenotyper =
-    let a = None
+    let makeSorterPhenotype (sg:SorterGenome) = 
+        match sg with
+        | Self s -> s
+        | TwoCycles tc -> Sorter.fromTwoCycleArray tc
 
-
-type SorterPhenotype = 
-| Sorter of SorterParts.Sorter * SorterPhenotyperDto
 
 
 type SorterTesterDto = {parseKey:string; prams:Map<string, string> option}
@@ -55,7 +58,7 @@ module SorterTester =
 
 type StandardSorterTestResults = 
         {
-            switchUses:SorterParts.SwitchUses;
+            switchUses:SwitchUses;
             successfulSortCount:SortableCount;
             switchUseCount:SwitchCount;
             stageUseCount:StageCount

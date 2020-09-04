@@ -1,7 +1,6 @@
 ﻿namespace Archie.console
 open Archie.Base
 open System
-open Archie.Base.SorterParts
 
 
 module Runs2 = 
@@ -154,7 +153,7 @@ module Runs2 =
                                      (SwitchCount.value w) (StageCount.value t)
 
         let sorterCount = SorterCount.create "" (InitialConditionCount.value icCount) |> Result.ExtractOrThrow
-        let sorterEvals = (SorterSet.createRandom degree sorterLength sorterCount sorterRando).sorters
+        let sorterEvals = (SorterSet.createRandom degree sorterLength None sorterCount sorterRando).sorters
                             |> (getSortingResults sortableSet)
                             |> Seq.map(fun (srtr,su,ss,w,t) -> (sorterInfo w t), srtr)
                             |> Seq.toArray

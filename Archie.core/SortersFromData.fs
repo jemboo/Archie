@@ -1,7 +1,6 @@
 ﻿namespace Archie.Base
 open System
 open Archie.Base
-open Archie.Base.SorterParts
 
 module SortersFromData =
 

@@ -3,7 +3,6 @@ open Archie.Base
 open BenchmarkDotNet.Attributes
 open System.Security.Cryptography
 open Archie.Base.SortersFromData
-open Archie.Base.SorterParts
 open System
 
 
@@ -41,7 +40,7 @@ type SorterSetRandomTest() =
     let seed = RandomSeed.create "" 41324 |> Result.ExtractOrThrow
     let randoLcg = new RandomLcg(seed) :> IRando
 
-    let sorterSetRnd = SorterSet.createRandom degree randSorterGen sorterCount randoLcg
+    let sorterSetRnd = SorterSet.createRandom degree randSorterGen None sorterCount randoLcg
     let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
     [<Benchmark(Baseline = true)>]

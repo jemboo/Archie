@@ -3,7 +3,6 @@
 open System
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open Archie.Base
-open Archie.Base.SorterParts
 open Archie.Base.SortersFromData
 
 [<TestClass>]
@@ -50,11 +49,11 @@ type SortingFixture () =
         let degree = Degree.create "" 16 |> Result.ExtractOrThrow
         let switchCount = SwitchCount.create "" 100 |> Result.ExtractOrThrow
         let randSorterGen = SorterLength.Switch switchCount
-        let sorter = Sorter.createRandom degree randSorterGen rnd
+        let sorter = Sorter.createRandom degree randSorterGen None rnd
         Assert.AreEqual(sorter.switches.Length, (SwitchCount.value switchCount))
-        let sorter2 = Sorter.createRandom degree randSorterGen rnd2
+        let sorter2 = Sorter.createRandom degree randSorterGen None rnd2
         Assert.AreEqual(sorter, sorter2)
-        let sorter3 = Sorter.createRandom degree randSorterGen rnd3
+        let sorter3 = Sorter.createRandom degree randSorterGen None rnd3
         Assert.AreNotEqual(sorter, sorter3)
 
 
@@ -65,7 +64,7 @@ type SortingFixture () =
         let randSorterGen = SorterLength.Switch switchCount
         let seed = 123 |> RandomSeed.create "" |> Result.ExtractOrThrow
         let rnd = new RandomLcg(seed)
-        let sorter = Sorter.createRandom degree randSorterGen rnd
+        let sorter = Sorter.createRandom degree randSorterGen None rnd
         Assert.AreEqual (sorter.switchCount, switchCount)
         Assert.AreEqual (sorter.degree, degree)
 
@@ -173,7 +172,7 @@ type SortingFixture () =
         let degree = Degree.create "" 16 |> Result.ExtractOrThrow
         let stageCount = StageCount.create "" 10 |> Result.ExtractOrThrow
         let randSorterGen = SorterLength.Stage stageCount
-        let sorter = Sorter.createRandom degree randSorterGen rnd
+        let sorter = Sorter.createRandom degree randSorterGen None rnd
         Console.WriteLine (SorterWriter.formatSwitches degree sorter.switches)
         Console.WriteLine("")
         seq {0..10} |> Seq.iter(fun i ->

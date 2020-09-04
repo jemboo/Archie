@@ -1,7 +1,6 @@
 ﻿namespace Archie.core.test
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open Archie.Base
-open Archie.Base.SorterParts
 open Archie.Base.SortersFromData
 open System
 
@@ -17,6 +16,7 @@ type GaRunDtoFixture() =
                        | Error m -> m
        Assert.IsTrue((result = "key dupicates"))
 
+
     [<TestMethod>]
     member this.MapWithoutKeyDupes() =
        let kvps = seq { ("a", 1); ("b", 2); ("c", 3); } |> Seq.toArray
@@ -25,6 +25,7 @@ type GaRunDtoFixture() =
                        | Ok m -> "success"
                        | Error m -> m
        Assert.IsTrue((result = "success"))
+
 
     [<TestMethod>]
     member this.Test2() =

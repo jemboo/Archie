@@ -68,6 +68,10 @@ module CollectionUtils =
                 if (m.ContainsKey (fst kv)) then
                         yield (fst kv, (m.[fst kv], snd kv)) }
 
+    let flatten (arr:'a[]) (plucker:'a->'b[]) =
+        arr |> Seq.map(fun a-> plucker a |> Array.toSeq)
+            |> Seq.concat
+
 
     // get a seq of key-value pairs for easy iteration with for (k,v) in d do...
     let pairs (d:Dictionary<'a, 'b>) =

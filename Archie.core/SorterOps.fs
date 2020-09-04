@@ -1,6 +1,5 @@
 ﻿namespace Archie.Base
 open Microsoft.FSharp.Collections
-open SorterParts
 
 module SorterOps =
 

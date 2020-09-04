@@ -29,23 +29,20 @@ type CombinatoricsTypesFixture () =
     member this.TestMakeMonoCycle() =
        let degree = Degree.create "" 6 |> Result.ExtractOrThrow
        let rnd = Rando.LcgFromSeed 424
-       let tc = TwoCyclePerm.makeMonoCycle degree 2 3 |> Result.ExtractOrThrow
-       let id = TwoCyclePerm.identity degree
-       let tcSq = TwoCyclePerm.product tc tc |> Result.ExtractOrThrow
-       Assert.AreNotEqual(tc, id)
-       Assert.AreEqual(id, tcSq)
+       let tcp = TwoCyclePerm.makeMonoCycle degree 2 3 |> Result.ExtractOrThrow
+       Assert.IsTrue(tcp |> TwoCyclePerm.toPermutation |> Permutation.isTwoCycle)
 
     [<TestMethod>]
     member this.TestMakeAllMonoCycles() =
        let degree = Degree.create "" 6 |> Result.ExtractOrThrow
        let rnd = Rando.LcgFromSeed 424
        let tcA = TwoCyclePerm.makeAllMonoCycles degree |> Seq.toArray
-       let tcASq = tcA |> Array.map (fun tcp -> TwoCyclePerm.product tcp tcp 
-                                                |> Result.ExtractOrThrow)
-       let id = TwoCyclePerm.identity degree
+       let tcASq = tcA |> Array.map (fun tcp -> 
+                tcp |> TwoCyclePerm.toPermutation |> Permutation.isTwoCycle)
        Assert.AreEqual(tcA.Length, 15)
        for i in {0 .. tcASq.Length - 1} do
-          Assert.AreEqual(tcASq.[i], id)
+          Assert.IsTrue(tcASq.[i])
+
 
     [<TestMethod>]
     member this.TestMakeMakeRandomFullPolyCycle() =
@@ -54,8 +51,7 @@ type CombinatoricsTypesFixture () =
        let id = TwoCyclePerm.identity degree
        for i in {0 .. 20} do
                 let tcp = TwoCyclePerm.makeRandomFullTwoCycle degree rnd
-                let tSq = TwoCyclePerm.product tcp tcp |> Result.ExtractOrThrow
-                Assert.AreEqual(tSq, id)
+                Assert.IsTrue(tcp |> TwoCyclePerm.toPermutation |> Permutation.isTwoCycle)
 
 
     [<TestMethod>]
@@ -66,8 +62,7 @@ type CombinatoricsTypesFixture () =
        let id = TwoCyclePerm.identity degree
        for i in {0 .. 20} do
                 let tcp = TwoCyclePerm.makeRandomTwoCycle degree rnd switchFreq
-                let tSq = TwoCyclePerm.product tcp tcp |> Result.ExtractOrThrow
-                Assert.AreEqual(tSq, id)
+                Assert.IsTrue(tcp |> TwoCyclePerm.toPermutation |> Permutation.isTwoCycle)
 
 
     [<TestMethod>]
@@ -81,13 +76,13 @@ type CombinatoricsTypesFixture () =
     [<TestMethod>]
     member this.makeFromTupleSeq() =        
         let rndy = Rando.LcgFromSeed 44
-        let degree = Degree.create "" 16 |> Result.ExtractOrThrow
-        let stageTupes = SorterParts.Stage.makeStagePackedSwitchSeq degree rndy
+        let switchFreq = 0.5
+        let degree = Degree.fromInt 16
+        let switchCount = SwitchCount.fromInt 8
+        let stageTupes = Stage.makeRandomStagedSwitchSeq degree switchFreq rndy
                          |> Seq.map(fun s -> (s.low, s.hi))
-                         |> Seq.take 8
+                         |> Seq.take (SwitchCount.value switchCount)
         let twoCycle = TwoCyclePerm.makeFromTupleSeq degree stageTupes
-        let product = twoCycle |> TwoCyclePerm.product twoCycle |> Result.ExtractOrThrow
-        Assert.AreEqual(product, TwoCyclePerm.identity degree)
         Assert.IsTrue (true)
 
 

@@ -57,13 +57,16 @@ module TwoCyclePerm =
     let arrayValues perm = perm.values
     let degree perm = perm.degree
 
-    let product (pA:TwoCyclePerm) (pB:TwoCyclePerm) =
-        if (Degree.value pA.degree) <> (Degree.value pB.degree) then
-                Error (sprintf "degree %d <> degree %d:" 
-                        (Degree.value pA.degree) (Degree.value pB.degree))
+    let toPermutation (tcp:TwoCyclePerm) =
+        { Permutation.degree = tcp.degree; 
+          Permutation.values = tcp.values }
+
+    let toTwoCycle (perm:Permutation) =
+        if (Permutation.isTwoCycle perm) then
+            { TwoCyclePerm.degree = perm.degree; 
+              TwoCyclePerm.values = perm.values } |> Result.Ok
         else
-        { degree=pA.degree; 
-          values= Combinatorics.composeMapIntArrays (pA |> arrayValues) (pB |> arrayValues)} |> Ok
+            "Not a two cycle" |> Error
 
     let makeMonoCycle (degree:Degree) (hi:int) (low:int) =
         if ((Permutation.inRange degree hi) && (Permutation.inRange degree low)) then
