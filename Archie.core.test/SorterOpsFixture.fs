@@ -24,7 +24,7 @@ type SorterOpsFixture() =
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
          let res = SorterOps.CompleteSort sortableSet sorterSet.sorters false
-         let goodies = res |> Array.filter(fun (_, _, r) -> SortableCount.value r =sortableSet.count)
+         let goodies = res |> Array.filter(fun (_,_, r) -> SortableCount.value r =sortableSet.count)
          let duke = goodies.Length
          Assert.IsTrue (duke > 0)
 
@@ -114,6 +114,6 @@ type SorterOpsFixture() =
         let sorterSet = SorterSet.fromSorters degree (seq {sorter; sorter})
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-        let srtr, su, res = SorterOps.SortAllTR sorter sortableSet
+        let su, res = SorterOps.SortAllTR sorter sortableSet
 
         Assert.IsTrue (SortableCount.value res > 0)

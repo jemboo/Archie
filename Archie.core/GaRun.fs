@@ -6,15 +6,51 @@ module RunSorterRandomWalks =
     let make = None
 
 
-type GenomeDifference =
-| Penotypic
-| CriticalRegion
-| NonCriticalRegion
+type GenomeDifference = | Penotypic
+                        | CriticalRegion
+                        | NonCriticalRegion
 
 
-type SorterGenome =
-| Self of Sorter
-| TwoCycles of TwoCyclePerm[]
+type SorterGenome = | Self of Sorter
+                    | TwoCycles of TwoCyclePerm[]
+
+type SorterPhenotype = | Sorter of Sorter
+
+type StandardSorterTestResults = 
+    {
+        switchUses:SwitchUses;
+        successfulSortCount:SortableCount;
+        switchUseCount:SwitchCount;
+        stageUseCount:StageCount
+    }
+
+type SorterTestResults = | Standard of StandardSorterTestResults
+type SorterEvaluation = | Standard of float
+
+type SorterGaAction = 
+    {
+        generation:GenerationNumber;
+        genome:SorterGenome;
+        phenotype:SorterPhenotype;
+        testResults:SorterTestResults;
+        eval:SorterEvaluation
+    }
+
+type SorterOrg =
+    | Original of SorterGaAction
+    | Mutant of SorterGaAction * SorterGaAction * GenomeDifference
+    | ReEvaluation of SorterGaAction * SorterGaAction
+
+
+type SorterPool = { generation:GenerationNumber; orgs:SorterOrg[] }
+type PoolReport = { reportType:string; report:string }
+    
+type SorterPhenotyper = SorterGenome -> SorterPhenotype
+type SorterTester = SorterPhenotype -> SorterTestResults
+type SorterEvaluator = SorterTestResults -> SorterEvaluation
+type PoolSelector = SorterPool -> SorterPool
+type PoolReporter = SorterPool -> PoolReport
+type PoolUpdater = SorterPool -> SorterPool
 
 
 module SorterGenome =
@@ -38,11 +74,6 @@ module SorterGenome =
 
         SorterGenome.TwoCycles twoCycles
 
-
-type SorterPhenotype = 
-| Sorter of Sorter
-
-type SorterPhenotyperDto = {parseKey:string; prams:Map<string, string> option}
 module SorterPhenotyper =
     let makeSorterPhenotype (sg:SorterGenome) = 
         match sg with
@@ -50,46 +81,17 @@ module SorterPhenotyper =
         | TwoCycles tc -> Sorter.fromTwoCycleArray tc
 
 
-
-type SorterTesterDto = {parseKey:string; prams:Map<string, string> option}
 module SorterTester =
-    let a = None
+    let CompleteSort = None
 
 
-type StandardSorterTestResults = 
-        {
-            switchUses:SwitchUses;
-            successfulSortCount:SortableCount;
-            switchUseCount:SwitchCount;
-            stageUseCount:StageCount
-        }
 
-type SorterTestResults = 
-| Standard of StandardSorterTestResults * SorterTesterDto
 module SorterTestResults =
     let a = None
 
 
-type SorterEvaluatorDto = {parseKey:string; prams:Map<string, string> option}
 module SorterEvaluator =
     let a = None
 
 
-type SorterEvaluation = 
-| Standard of float * SorterEvaluatorDto
 
-
-type SorterGenomeAction = 
-    {
-        generation:GenerationNumber;
-        genome:SorterGenome;
-        phenotype:SorterPhenotype;
-        testResults:SorterTestResults;
-        eval:SorterEvaluation
-    }
-
-
-type SorterOrg =
-    | Original of SorterGenomeAction
-    | Mutant of SorterGenomeAction * SorterGenomeAction * GenomeDifference
-    | ReEvaluation of SorterGenomeAction * SorterGenomeAction

@@ -30,7 +30,7 @@ module SorterOps =
                   successCount  <- (if (SortTR sorter 0 switchCount switchUses tcCopy i) then 1 else 0) +
                                   successCount
                   i <- i + (Degree.value sorter.degree)
-         sorter, switchUses, SortableCount.fromInt successCount
+         switchUses, SortableCount.fromInt successCount
 
 
     // returns early when the sortable is sorted
@@ -63,16 +63,18 @@ module SorterOps =
                   successCount  <- (if (SortTB sorter 0 switchCount switchUses tcCopy i) then 1 else 0) +
                                       successCount
                   i <- i + (Degree.value sorter.degree)
-         sorter, switchUses, SortableCount.fromInt successCount
+         switchUses, SortableCount.fromInt successCount
          
 
     let private SorterSetOnSortableSet (sortableSet:SortableSet) (sorters:Sorter[]) 
                                        (_parallel:bool) sorterOnSortableSet =
+        let rewrap s = 
+            let su, sc = sorterOnSortableSet s sortableSet
+            s, su, sc
+
         match _parallel with
-        | true -> sorters |> Array.Parallel.map(
-                        fun s-> sorterOnSortableSet s sortableSet)
-        | false -> sorters |> Array.map(
-                        fun s-> sorterOnSortableSet s sortableSet)
+        | true -> sorters |> Array.Parallel.map(fun s-> rewrap s)
+        | false -> sorters |> Array.map(fun s-> rewrap s)
 
 
     let CompleteSort (sortableSet:SortableSet) (sorters:Sorter[])

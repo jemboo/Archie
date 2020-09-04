@@ -1,6 +1,10 @@
 ﻿namespace Archie.Base
 
 
+type SorterPhenotyperDto = {parseKey:string; prams:Map<string, string> option}
+type SorterTesterDto = {parseKey:string; prams:Map<string, string> option}
+type SorterEvaluatorDto = {parseKey:string; prams:Map<string, string> option}
+
 
 
 type GaRunDto = private {parseKey:string; prams:Map<string, string>}
