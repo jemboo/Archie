@@ -16,14 +16,6 @@ type SorterGenome = | Self of Sorter
 
 type SorterPhenotype = | Sorter of Sorter
 
-type StandardSorterTestResults = 
-    {
-        switchUses:SwitchUses;
-        successfulSortCount:SortableCount;
-        switchUseCount:SwitchCount;
-        stageUseCount:StageCount
-    }
-
 type SorterTestResults = | Standard of StandardSorterTestResults
 type SorterEvaluation = | Standard of float
 
@@ -52,6 +44,16 @@ type PoolSelector = SorterPool -> SorterPool
 type PoolReporter = SorterPool -> PoolReport
 type PoolUpdater = SorterPool -> SorterPool
 
+type GenAction = {sorterPhenotyper:SorterPhenotyper; 
+                  sorterTester:SorterTester;
+                  sorterEvaluator:SorterEvaluator;
+                  poolSelector:PoolSelector;
+                  poolReporter:PoolReporter;
+                  poolUpdater:PoolUpdater;}
+
+
+type GenRun = {genTotal:GenerationNumber; makeAction:GenerationNumber->GenAction}
+
 
 module SorterGenome =
 
@@ -74,6 +76,7 @@ module SorterGenome =
 
         SorterGenome.TwoCycles twoCycles
 
+
 module SorterPhenotyper =
     let makeSorterPhenotype (sg:SorterGenome) = 
         match sg with
@@ -82,8 +85,11 @@ module SorterPhenotyper =
 
 
 module SorterTester =
-    let CompleteSort = None
-
+    let CompleteSort (testCases:SortableSet) = 
+        let _sort (pheno:SorterPhenotype) =
+            match pheno with
+            | Sorter s -> SorterOps.SortAllTR s testCases
+        _sort
 
 
 module SorterTestResults =
@@ -94,4 +100,22 @@ module SorterEvaluator =
     let a = None
 
 
+module PoolSelector =
+    let a = None
+
+
+module PoolReporter =
+    let a = None
+
+
+module PoolUpdater =
+    let a = None
+
+
+module GenAction =
+    let a = None
+
+
+module GenRun =
+    let a = None
 

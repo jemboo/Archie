@@ -26,7 +26,7 @@ module FitnessFunc =
 
 
 type RwUpdateParams = 
-    {generationCount:GenerationCount;
+    {generationNumber:GenerationNumber;
     mutationType:MutationType;
     poolCount:SorterCount;
     rngGen:RngGen;
@@ -65,7 +65,7 @@ module RwUpdateParams =
     let pm rg dex =
         let gc, pc = SplitPoolGenBnWFrac poolSize dex
         {
-            generationCount=GenerationCount.fromInt gc;
+            generationNumber=GenerationNumber.fromInt gc;
             mutationType=MutationType.Switch (MutationRate.fromFloat 0.02);
             poolCount=SorterCount.fromInt pc;
             rngGen=rg;
@@ -95,7 +95,7 @@ module RwUpdateParams =
       let pm rg dex =
           let gc, pc, mut = SplitPoolGenMut2 poolCount dex
           {
-              generationCount=GenerationCount.fromInt gc;
+              generationNumber=GenerationNumber.fromInt gc;
               mutationType=mut;
               poolCount=SorterCount.fromInt pc;
               rngGen=rg;
@@ -106,7 +106,7 @@ module RwUpdateParams =
 
 type PoolUpdateParams = 
         {breederFrac:PoolFraction;
-        generationCount:GenerationCount;
+        generationNumber:GenerationNumber;
         mutationType:MutationType;
         poolCount:SorterCount;
         rngGen:RngGen;
@@ -147,7 +147,7 @@ module PoolUpdateParams =
             let gc, pc, bFrac, wFrac  = SplitPoolGenBnWFrac poolSize dex
             {
                 breederFrac=bFrac;
-                generationCount=GenerationCount.fromInt gc;
+                generationNumber=GenerationNumber.fromInt gc;
                 mutationType=MutationType.Switch (MutationRate.fromFloat 0.02);
                 poolCount=SorterCount.fromInt pc;
                 rngGen=rg;
@@ -180,7 +180,7 @@ module PoolUpdateParams =
               let gc, pc, mut = SplitPoolGenMut2 poolGenCount dex
               {
                   breederFrac=(PoolFraction.fromFloat 0.5);
-                  generationCount=GenerationCount.fromInt gc;
+                  generationNumber=GenerationNumber.fromInt gc;
                   mutationType=mut;
                   poolCount=SorterCount.fromInt pc;
                   rngGen=rg;

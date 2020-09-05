@@ -24,7 +24,7 @@ type SorterOpsFixture() =
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
          let res = SorterOps.CompleteSort sortableSet sorterSet.sorters false
-         let goodies = res |> Array.filter(fun (_,_, r) -> SortableCount.value r =sortableSet.count)
+         let goodies = res |> Array.filter(fun (_, r) -> SortableCount.value r.successfulSortCount =sortableSet.count)
          let duke = goodies.Length
          Assert.IsTrue (duke > 0)
 
@@ -44,7 +44,7 @@ type SorterOpsFixture() =
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
          let res = SorterOps.StopIfSorted sortableSet sorterSet.sorters false
-         let goodies = res |> Array.filter(fun (_, _, r) -> SortableCount.value r=sortableSet.count)
+         let goodies = res |> Array.filter(fun (_, r) -> SortableCount.value r.successfulSortCount = sortableSet.count)
          let duke = goodies.Length
          Assert.IsTrue (duke > 0)
 
@@ -53,19 +53,19 @@ type SorterOpsFixture() =
      member this.RunSorterSetOnSortableSetTB() =
          let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
          let switchCount = (SwitchCount.create "" 1600) |> Result.ExtractOrThrow
-         let randSorterGen = SorterLength.Switch switchCount
+         let sorterLength = SorterLength.Switch switchCount
          let sorterCount = (SorterCount.create "" 200) |> Result.ExtractOrThrow
          let seed = RandomSeed.create "" 41324 |> Result.ExtractOrThrow
          let randoLcg = new RandomLcg(seed) :> IRando
 
-         let sorterSet = SorterSet.createRandom degree randSorterGen None
+         let sorterSet = SorterSet.createRandom degree sorterLength None
                                     sorterCount randoLcg
 
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
          let res = SorterOps.CompleteSort sortableSet sorterSet.sorters false
-         let goodies = res |> Array.map(fun (_, u, _) -> u|> SwitchUses.entropyBits )
+         let goodies = res |> Array.map(fun (_, r) -> r.switchUses |> SwitchUses.entropyBits )
          goodies |> Array.iter(fun v-> Debug.WriteLine(sprintf "%A" v))
-         let goodies2 = res |> Array.map(fun (_, u, _) -> u|> SwitchUses.getSwitchUseCount |> Result.ExtractOrThrow )
+         let goodies2 = res |> Array.map(fun (_, r) -> r.switchUses |> SwitchUses.getSwitchUseCount |> Result.ExtractOrThrow )
          goodies2 |> Array.iter(fun v-> Debug.WriteLine(sprintf "%A" v))
          Assert.IsTrue (true)
 
@@ -74,20 +74,20 @@ type SorterOpsFixture() =
      member this.GetEntropyBitsForRandom() =
         let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
         let stageCount = (StageCount.create "" 200) |> Result.ExtractOrThrow
-        let randSorterGen = SorterLength.Stage stageCount
+        let sorterLength = SorterLength.Stage stageCount
         let sorterCount = (SorterCount.create "" 10) |> Result.ExtractOrThrow
         let seed = RandomSeed.create "" 4124 |> Result.ExtractOrThrow
         let randoLcg = new RandomLcg(seed) :> IRando
 
-        let sorterSet = SorterSet.createRandom degree randSorterGen None
+        let sorterSet = SorterSet.createRandom degree sorterLength None
                                 sorterCount randoLcg
 
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
         let res = SorterOps.CompleteSort sortableSet sorterSet.sorters false
-        let goodies = res |> Array.map(fun (_, u, _) -> u |> SwitchUses.entropyBits)
+        let goodies = res |> Array.map(fun (_, r) -> r.switchUses |> SwitchUses.entropyBits )
         Debug.WriteLine(sprintf "%A" goodies)
-        let goodies2 = res |> Array.map(fun (_, u, _) -> u |> SwitchUses.getSwitchUseCount |> Result.ExtractOrThrow ) 
+        let goodies2 = res |> Array.map(fun (_, r) -> r.switchUses |> SwitchUses.getSwitchUseCount |> Result.ExtractOrThrow )
         Debug.WriteLine(sprintf "%A" goodies2)
         Assert.IsTrue (true)
 
@@ -101,7 +101,7 @@ type SorterOpsFixture() =
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
         let res = SorterOps.CompleteSort sortableSet sorterSet.sorters false
-        let goodies = res |> Array.map(fun (_, u, _) -> u |> SwitchUses.entropyBits)
+        let goodies = res |> Array.map(fun (_, r) -> r.switchUses |> SwitchUses.entropyBits )
         goodies |> Array.iter(fun a -> Console.WriteLine(sprintf "%A" a))
         Assert.IsTrue (true)
 

@@ -4,7 +4,6 @@ open System
 type String50 = private String50 of string
 type Degree = private Degree of int
 type EntityId = private EntityId of Guid
-type GenerationCount = private GenerationCount of int
 type GenerationNumber = private GenerationNumber of int
 type InitialConditionCount = private InitialConditionCount of int
 type JsonString = private JsonString of string
@@ -55,12 +54,6 @@ module Degree =
 module EntityId =
     let value (EntityId v) = v
     let create id = Ok (EntityId id)
-    
-module GenerationCount =
-    let value (GenerationCount v) = v
-    let create fieldName v = 
-        ConstrainedType.createInt fieldName GenerationCount 1 100000000 v
-    let fromInt v = create "" v |> Result.ExtractOrThrow
 
 module InitialConditionCount =
     let value (InitialConditionCount v) = v

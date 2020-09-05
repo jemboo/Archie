@@ -21,7 +21,7 @@ module FitnessFuncDto =
 
 
 type PoolUpdateParamsDto = {breederFrac:float; 
-                            generationCount:int;
+                            generationNumber:int;
                             mutationTypeDto:MutationTypeDto;
                             poolCount:int;
                             rngGenDto:RngGenDto;
@@ -33,7 +33,7 @@ module PoolUpdateParamsDto =
     let toDto (pup:PoolUpdateParams) =
         {
             breederFrac = PoolFraction.value pup.breederFrac;
-            generationCount = GenerationCount.value pup.generationCount;
+            generationNumber = GenerationNumber.value pup.generationNumber;
             mutationTypeDto = pup.mutationType |> MutationTypeDto.toDto;
             poolCount = SorterCount.value pup.poolCount;
             rngGenDto= pup.rngGen |> RngGenDto.toDto;
@@ -44,7 +44,7 @@ module PoolUpdateParamsDto =
     let fromDto (dto:PoolUpdateParamsDto) =
         result {
                 let! bf = PoolFraction.create "" dto.breederFrac
-                let! gc = GenerationCount.create "" dto.generationCount
+                let! gc = GenerationNumber.create "" dto.generationNumber
                 let! mt = dto.mutationTypeDto |> MutationTypeDto.fromDto
                 let! pc = SorterCount.create "" dto.poolCount
                 let! rg = dto.rngGenDto |> RngGenDto.fromDto
@@ -52,12 +52,12 @@ module PoolUpdateParamsDto =
                 let! wf = PoolFraction.create "" dto.winnerFrac
                 return {
                     breederFrac=bf;
-                    generationCount=gc;
+                    generationNumber=gc;
                     mutationType=mt;
                     poolCount=pc;
                     rngGen=rg;
                     fitnessFunc=ff;
-                    winnerFrac=wf;}
+                    winnerFrac=wf; }
           }
 
 

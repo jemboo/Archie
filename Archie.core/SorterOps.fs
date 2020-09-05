@@ -1,6 +1,14 @@
 ﻿namespace Archie.Base
 open Microsoft.FSharp.Collections
 
+type StandardSorterTestResults = 
+    {
+        switchUses:SwitchUses;
+        successfulSortCount:SortableCount;
+        switchUseCount:SwitchCount;
+        stageUseCount:StageCount
+    }
+
 module SorterOps =
 
     let SortTR (sorter:Sorter) (mindex:int) (maxdex:int) 
@@ -65,12 +73,21 @@ module SorterOps =
                   i <- i + (Degree.value sorter.degree)
          switchUses, SortableCount.fromInt successCount
          
+    let addSwitchAndStageUses (s:Sorter) (su:SwitchUses) (sc:SortableCount) =
+        let w, t = (SwitchUses.getSwitchAndStageUses s su)
+        { 
+            StandardSorterTestResults.switchUses = su;
+            StandardSorterTestResults.successfulSortCount = sc;
+            StandardSorterTestResults.switchUseCount = w;
+            StandardSorterTestResults.stageUseCount = t;
+        }
 
     let private SorterSetOnSortableSet (sortableSet:SortableSet) (sorters:Sorter[]) 
                                        (_parallel:bool) sorterOnSortableSet =
         let rewrap s = 
             let su, sc = sorterOnSortableSet s sortableSet
-            s, su, sc
+            s,
+            addSwitchAndStageUses s su sc
 
         match _parallel with
         | true -> sorters |> Array.Parallel.map(fun s-> rewrap s)

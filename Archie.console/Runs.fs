@@ -34,17 +34,11 @@ module Runs =
 
     let getSortingResults (sortableSet:SortableSet) (sorters:Sorter[]) = 
         SorterOps.StopIfSorted sortableSet sorters true
-        |> Seq.map(fun (s, u, r) -> let w, t = (SwitchUses.getSwitchAndStageUses s u)
-                                    s, u, r, w, t)
 
-
-    let SuccessfulSorterFitness (sorterRes:seq<Sorter*SwitchUses*SortableCount*SwitchCount*StageCount>) = 
+    let SuccessfulSorterFitness (sorterRes:seq<Sorter*StandardSorterTestResults>) = 
         let ff w = (FitnessFunc.standardSwitch 4.0).fitnessFunc ((SwitchCount.value w) :> obj)
-        sorterRes|> Seq.map(fun (srtr,su,ss,w,t) -> (srtr,su,ss,w,t, ff w))
-
-    //let SuccessfulSorterFitness (sorterRes:seq<Sorter*SwitchCount*StageCount>) = 
-    //    let ff w = SorterSetEval.fitnessInt 4.0 (SwitchCount.value w)
-    //    sorterRes|> Seq.map(fun (s,w,t) -> ((s,w,t), ff w))
+        sorterRes|> Seq.map(fun (srtr,r) -> (srtr,r, ff r.switchUseCount))
+  
     
     let checkArray (a:'a[]) =
         if a.Length < 1 then
@@ -59,10 +53,10 @@ module Runs =
 
         let mutator = Sorter.mutate prams.mutationType
 
-        let reportEvalBinsMin (genPool:int) (results:(Sorter*SwitchUses*SortableCount*SwitchCount*StageCount*SorterFitness)[]) =
-            let summary = results|> Array.minBy (fun (srtr,su,ss,w,t,f)-> w)
-            let (srtr,su,ss,w,t,f) = summary
-            sprintf "%s %d %d %.3f %.3f %s %d %d %d" sorterInfo (SwitchCount.value w) (StageCount.value t)
+        let reportEvalBinsMin (genPool:int) (results:(Sorter*StandardSorterTestResults*SorterFitness)[]) =
+            let summary = results|> Array.minBy (fun (srtr,r,f)-> r.switchUseCount)
+            let (srtr,r,f) = summary
+            sprintf "%s %d %d %.3f %.3f %s %d %d %d" sorterInfo (SwitchCount.value r.switchUseCount) (StageCount.value r.stageUseCount)
                      (PoolFraction.value prams.breederFrac) (PoolFraction.value prams.winnerFrac)
                      (MutationTypeF.StrF prams.mutationType)
                      (SorterCount.value prams.poolCount) genPool (RandomSeed.value prams.rngGen.seed)
@@ -74,10 +68,10 @@ module Runs =
         let randoLcgV = Rando.fromRngGen prams.rngGen
 
         let nextGenArgs sorterWraps =
-            NextGen<Sorter*SwitchUses*SortableCount*SwitchCount*StageCount*SorterFitness, Sorter>
+            NextGen<Sorter*StandardSorterTestResults*SorterFitness, Sorter>
                     (mutator randoLcgV) prams.poolCount prams.breederFrac prams.winnerFrac randoLcgV
-                       (fun (srtr,su,ss,w,t,f) -> srtr) 
-                       (fun (srtr,su,ss,w,t,f) -> f)
+                       (fun (srtr,r,f) -> srtr) 
+                       (fun (srtr,r,f) -> f)
                        (fun wrap srtr -> srtr)
                        sorterWraps
 
@@ -93,7 +87,7 @@ module Runs =
 
         let mutable gen = 0
         let mutable nextRep = 0
-        while (gen < (GenerationCount.value prams.generationCount)) && (checkArray currentEvals) do
+        while (gen < (GenerationNumber.value prams.generationNumber)) && (checkArray currentEvals) do
             let currentSorterFitness = currentEvals 
                                        |> (getSortingResults sortableSet)
                                        |> SuccessfulSorterFitness
