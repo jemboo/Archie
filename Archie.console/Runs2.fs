@@ -2,7 +2,6 @@
 open Archie.Base
 open System
 
-
 module Runs2 = 
 
     let NextGen<'a,'b> (mutator:Sorter->Sorter)
@@ -48,8 +47,10 @@ module Runs2 =
         else true
 
 
-    let RunSorterMpG (sorterInfo:string) (sorter:Sorter)
-                     (prams:PoolUpdateParams) (reportingFrequency:ReportingFrequency)
+    let RunSorterMpG (sorterInfo:string) 
+                     (sorter:Sorter)
+                     (prams:PoolUpdateParams) 
+                     (reportingFrequency:ReportingFrequency)
                      logToFile =
         let mutator = Sorter.mutate prams.mutationType
 
@@ -69,7 +70,8 @@ module Runs2 =
 
         let nextGenArgs sorterWraps =
             NextGen<Sorter*StandardSorterTestResults*SorterFitness, Sorter>
-                    (mutator randoLcgV) prams.poolCount prams.breederFrac prams.winnerFrac randoLcgV
+                    (mutator randoLcgV) prams.poolCount prams.breederFrac 
+                     prams.winnerFrac randoLcgV
                        (fun (srtr,r,f) -> srtr) 
                        (fun (srtr,r,f) -> f)
                        (fun wrap srtr -> srtr)
