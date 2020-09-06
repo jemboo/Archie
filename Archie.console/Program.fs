@@ -14,7 +14,7 @@ module Consolo =
         printfn "Starting RunSorterMpgBatch"
         let paramSeed = 72234
         let sorterSeed = 2323
-        let poolTmesGenCount = 40
+        let poolTmesGenCount = 4000
         let replicaCount = 48
         let initialConditionCount = 48
         let degree = 14

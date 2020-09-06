@@ -2,11 +2,11 @@
 
 type FitnessFuncDto = {cat:string; args:string;}
 module FitnessFuncDto =
-    let toDto (ff:FitnessFunc) =
-        {
-            cat=ff.funcType;
-            args = sprintf "%float" (ff.funcParam :?> float)
-        }
+    //let toDto (ff:FitnessFunc) =
+    //    {
+    //        cat=ff.funcType;
+    //        args = sprintf "%float" (ff.funcParam :?> float)
+    //    }
 
     let fromDto (dto:FitnessFuncDto) =
         result {
@@ -30,16 +30,16 @@ type PoolUpdateParamsDto = {breederFrac:float;
 
 module PoolUpdateParamsDto =
 
-    let toDto (pup:PoolUpdateParams) =
-        {
-            breederFrac = PoolFraction.value pup.breederFrac;
-            generationNumber = GenerationNumber.value pup.generationNumber;
-            mutationTypeDto = pup.mutationType |> MutationTypeDto.toDto;
-            poolCount = SorterCount.value pup.poolCount;
-            rngGenDto= pup.rngGen |> RngGenDto.toDto;
-            fitnessFuncDto = pup.fitnessFunc|> FitnessFuncDto.toDto;
-            winnerFrac= PoolFraction.value pup.winnerFrac;
-        }
+    //let toDto (pup:PoolUpdateParams) =
+    //    {
+    //        breederFrac = PoolFraction.value pup.breederFrac;
+    //        generationNumber = GenerationNumber.value pup.generationNumber;
+    //        mutationTypeDto = pup.mutationType |> MutationTypeDto.toDto;
+    //        poolCount = SorterCount.value pup.poolCount;
+    //        rngGenDto= pup.rngGen |> RngGenDto.toDto;
+    //        fitnessFuncDto = pup.fitnessFunc|> FitnessFuncDto.toDto;
+    //        winnerFrac= PoolFraction.value pup.winnerFrac;
+    //    }
 
     let fromDto (dto:PoolUpdateParamsDto) =
         result {

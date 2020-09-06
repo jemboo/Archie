@@ -64,7 +64,7 @@ module InitialConditionCount =
 module GenerationNumber =
     let value (GenerationNumber v) = v
     let create fieldName v = 
-        ConstrainedType.createInt fieldName GenerationNumber 1 100000000 v
+        ConstrainedType.createInt fieldName GenerationNumber 0 100000000 v
     let fromInt v = create "" v |> Result.ExtractOrThrow
 
 module JsonString =

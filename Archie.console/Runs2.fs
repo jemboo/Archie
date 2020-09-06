@@ -35,10 +35,10 @@ module Runs2 =
     let getSortingResults (sortableSet:SortableSet) (sorters:Sorter[]) = 
         SorterOps.StopIfSorted sortableSet sorters true
 
-    let SuccessfulSorterFitness (sorterRes:seq<Sorter*StandardSorterTestResults>) = 
-        let ff w = (FitnessFunc.standardSwitch 4.0).fitnessFunc ((SwitchCount.value w) :> obj)
-        sorterRes|> Seq.map(fun (srtr,r) -> (srtr,r, ff r.switchUseCount))
-  
+
+    let SuccessfulSorterFitness (fitf:FitnessFunc) (sorterRes:StandardSorterTestResults) =
+        fitf.func sorterRes
+
 
     let checkArray (a:'a[]) =
         if a.Length < 1 then
@@ -89,8 +89,9 @@ module Runs2 =
         let mutable gen = 0
         let mutable nextRep = 0
         while (gen < (GenerationNumber.value prams.generationNumber)) && (checkArray currentEvals) do
+            let genN = GenerationNumber.fromInt gen
             let currentSorterFitness = currentEvals |> (getSortingResults sortableSet)
-                                       |> SuccessfulSorterFitness
+                                       |> Seq.map(fun r -> (fst r), (snd r), (prams.fitnessFunc.func (snd r) genN))
                                        |> Seq.toArray
             if (nextRep = (ReportingFrequency.value reportingFrequency)) then 
                 let binRec = currentSorterFitness |> reportEvalBinsMin (gen * (SorterCount.value prams.poolCount))
@@ -102,9 +103,10 @@ module Runs2 =
             nextRep <- nextRep + (SorterCount.value prams.poolCount)
 
         if (checkArray currentEvals) then
+            let genN = GenerationNumber.fromInt gen
             let binRecords = currentEvals 
                               |> getSortingResults sortableSet
-                              |> SuccessfulSorterFitness
+                              |> Seq.map(fun r -> (fst r), (snd r), (prams.fitnessFunc.func (snd r) genN))
                               |> Seq.toArray |> reportEvalBinsMin (gen * (SorterCount.value prams.poolCount))
             logToFile binRecords true
         true

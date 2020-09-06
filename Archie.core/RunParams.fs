@@ -1,6 +1,6 @@
 ﻿namespace Archie.Base
 
-type FitnessFunc ={funcType:string; funcParam:obj; fitnessFunc:obj->SorterFitness}
+type FitnessFunc = {func:StandardSorterTestResults->GenerationNumber->SorterFitness}
 module FitnessFunc =
     let sorterFitness (offset:float) (value:int) =
         let fv = (float value)
@@ -10,19 +10,12 @@ module FitnessFunc =
         | v -> SorterFitness.create "" (1.0 / (offset + 1.0 - v)) 
                                     |> Result.ExtractOrThrow
 
+
     let standardSwitch offset = 
-       {
-            funcType="Switch";
-            funcParam=offset;
-            fitnessFunc = fun fv -> sorterFitness offset (fv :?> int);
-       }
+              { func = (fun r g -> sorterFitness offset (SwitchCount.value r.switchUseCount))}
 
     let standardStage offset = 
-        {
-            funcType="Stage";
-            funcParam=offset;
-            fitnessFunc = fun fv -> sorterFitness offset (fv :?> int)
-        }
+              { func = (fun r g -> sorterFitness offset (StageCount.value r.stageUseCount))}
 
 
 type RwUpdateParams = 
@@ -99,7 +92,7 @@ module RwUpdateParams =
               mutationType=mut;
               poolCount=SorterCount.fromInt pc;
               rngGen=rg;
-              fitnessFunc=FitnessFunc.standardSwitch 4.0;
+              fitnessFunc=FitnessFunc.standardSwitch 4.0 ;
           }
       RandoCollections.IndexedSeedGen rngGen |> Seq.map(fun (dex, rg) -> pm rg dex)
 
