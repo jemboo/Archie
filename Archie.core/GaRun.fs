@@ -88,7 +88,7 @@ module SorterTester =
     let CompleteSort (testCases:SortableSet) = 
         let _sort (pheno:SorterPhenotype) =
             match pheno with
-            | Sorter s -> SorterOps.SortAllTR s testCases
+            | Sorter s -> SorterOps.SortAllComplete s testCases
         _sort
 
 

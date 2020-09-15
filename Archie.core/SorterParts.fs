@@ -18,7 +18,7 @@ module Switch =
     let switchSeqFromIntArray (pArray:int[]) =
             seq { for i = 0 to pArray.Length - 1 do
                     let j = pArray.[i]
-                    if ((j > i ) && (i = pArray.[j]) ) then
+                    if ((j >= i ) && (i = pArray.[j]) ) then
                             yield {Switch.low=i; Switch.hi=j} }
 
     let switchSeqFromPermutation (p:Permutation) =
@@ -95,8 +95,10 @@ module Stage =
                     stageTracker.[sw.hi] <- true
                     stageTracker.[sw.low] <- true
                     switchesForStage.Add sw
-                yield { Stage.switches=switchesForStage |> Seq.toList;  degree = degree}
-                }
+                if switchesForStage.Count > 0 then
+                    yield { Stage.switches=switchesForStage |> Seq.toList; 
+                            degree = degree}
+             }
 
     let getStageIndexesFromSwitches (order:int) (switches:seq<Switch>) =
         let mutable stageTracker = Array.init order (fun i -> false)
@@ -201,6 +203,14 @@ module Sorter =
         | SorterLength.Stage  tc -> createWithRandomStages degree tc swf rnd
 
 
+    let createRandomArray (degree:Degree) (sorterLength:SorterLength) 
+                          (switchFreq:float option) (rnd:IRando) 
+                          (sorterCount:SorterCount) =
+        (seq {1 .. (SorterCount.value sorterCount)} 
+                |> Seq.map(fun _ -> (createRandom degree sorterLength switchFreq rnd))
+                |> Seq.toArray)
+
+
     let appendSwitches (switches:seq<Switch>) (sorter:Sorter) =
         let newSwitches = (switches |> Seq.toArray) |> Array.append sorter.switches
         let newSwitchCount = SwitchCount.create "" newSwitches.Length |> Result.toOption
@@ -257,9 +267,9 @@ module SorterSet =
     let createRandom (degree:Degree) (sorterLength:SorterLength) (switchFreq:float option)
                         (sorterCount:SorterCount) (rnd:IRando) =
         fromSorters degree 
-                    (seq {1 .. (SorterCount.value sorterCount)} 
-                            |> Seq.map(fun _ -> (Sorter.createRandom degree sorterLength switchFreq rnd))
-                            |> Seq.toArray)
+            (seq {1 .. (SorterCount.value sorterCount)} 
+                    |> Seq.map(fun _ -> (Sorter.createRandom degree sorterLength switchFreq rnd))
+                    |> Seq.toArray)
 
 
 type SorterSetE = {degree:Degree; sorterCount:SorterCount;

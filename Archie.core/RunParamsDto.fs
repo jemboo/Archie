@@ -26,6 +26,7 @@ type PoolUpdateParamsDto = {breederFrac:float;
                             poolCount:int;
                             rngGenDto:RngGenDto;
                             fitnessFuncDto:FitnessFuncDto
+                            legacyBias:float;
                             winnerFrac:float }
 
 module PoolUpdateParamsDto =
@@ -49,6 +50,7 @@ module PoolUpdateParamsDto =
                 let! pc = SorterCount.create "" dto.poolCount
                 let! rg = dto.rngGenDto |> RngGenDto.fromDto
                 let! ff = dto.fitnessFuncDto |> FitnessFuncDto.fromDto
+                let! lb = SorterFitness.create "" dto.legacyBias
                 let! wf = PoolFraction.create "" dto.winnerFrac
                 return {
                     breederFrac=bf;
@@ -56,6 +58,7 @@ module PoolUpdateParamsDto =
                     mutationType=mt;
                     poolCount=pc;
                     rngGen=rg;
+                    legacyBias=lb;
                     fitnessFunc=ff;
                     winnerFrac=wf; }
           }

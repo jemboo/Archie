@@ -167,7 +167,7 @@ type SortingFixture () =
         let rnd = Rando.LcgFromSeed 424
         let rnd2 = Rando.LcgFromSeed 424
         let rnd3 = Rando.LcgFromSeed 7721
-        let mutationRate = MutationRate.create "" 0.15 |> Result.ExtractOrThrow
+        let mutationRate = MutationRate.create "" 0.150 |> Result.ExtractOrThrow
 
         let degree = Degree.create "" 16 |> Result.ExtractOrThrow
         let stageCount = StageCount.create "" 10 |> Result.ExtractOrThrow

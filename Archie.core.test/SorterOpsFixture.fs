@@ -23,7 +23,7 @@ type SorterOpsFixture() =
 
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-         let res = SorterOps.CompleteSort sortableSet sorterSet.sorters false
+         let res = SorterOps.GetStandardSortingResultsComplete sortableSet (UseParallel.create false) sorterSet.sorters 
          let goodies = res |> Array.filter(fun (_, r) -> SortableCount.value r.successfulSortCount =sortableSet.count)
          let duke = goodies.Length
          Assert.IsTrue (duke > 0)
@@ -43,7 +43,7 @@ type SorterOpsFixture() =
 
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-         let res = SorterOps.StopIfSorted sortableSet sorterSet.sorters false
+         let res = SorterOps.GetStandardSortingResultsEager sortableSet (UseParallel.create false) sorterSet.sorters
          let goodies = res |> Array.filter(fun (_, r) -> SortableCount.value r.successfulSortCount = sortableSet.count)
          let duke = goodies.Length
          Assert.IsTrue (duke > 0)
@@ -62,7 +62,7 @@ type SorterOpsFixture() =
                                     sorterCount randoLcg
 
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
-         let res = SorterOps.CompleteSort sortableSet sorterSet.sorters false
+         let res = SorterOps.GetStandardSortingResultsComplete sortableSet (UseParallel.create false) sorterSet.sorters
          let goodies = res |> Array.map(fun (_, r) -> r.switchUses |> SwitchUses.entropyBits )
          goodies |> Array.iter(fun v-> Debug.WriteLine(sprintf "%A" v))
          let goodies2 = res |> Array.map(fun (_, r) -> r.switchUses |> SwitchUses.getSwitchUseCount |> Result.ExtractOrThrow )
@@ -84,7 +84,7 @@ type SorterOpsFixture() =
 
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-        let res = SorterOps.CompleteSort sortableSet sorterSet.sorters false
+        let res = SorterOps.GetStandardSortingResultsComplete sortableSet (UseParallel.create false) sorterSet.sorters 
         let goodies = res |> Array.map(fun (_, r) -> r.switchUses |> SwitchUses.entropyBits )
         Debug.WriteLine(sprintf "%A" goodies)
         let goodies2 = res |> Array.map(fun (_, r) -> r.switchUses |> SwitchUses.getSwitchUseCount |> Result.ExtractOrThrow )
@@ -100,7 +100,7 @@ type SorterOpsFixture() =
         let sorterSet = SorterSet.fromSorters degree (seq {sorter; sorte2})
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-        let res = SorterOps.CompleteSort sortableSet sorterSet.sorters false
+        let res = SorterOps.GetStandardSortingResultsComplete sortableSet (UseParallel.create false) sorterSet.sorters 
         let goodies = res |> Array.map(fun (_, r) -> r.switchUses |> SwitchUses.entropyBits )
         goodies |> Array.iter(fun a -> Console.WriteLine(sprintf "%A" a))
         Assert.IsTrue (true)
@@ -114,6 +114,6 @@ type SorterOpsFixture() =
         let sorterSet = SorterSet.fromSorters degree (seq {sorter; sorter})
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-        let su, res = SorterOps.SortAllTR sorter sortableSet
+        let su, res = SorterOps.SortAllComplete sorter sortableSet
 
         Assert.IsTrue (SortableCount.value res > 0)

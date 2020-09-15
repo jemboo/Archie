@@ -36,6 +36,8 @@ module RngGenDto =
         {rngType=(RngType.toDto rngGen.rngType); 
          seed=RandomSeed.value rngGen.seed}
 
+    let toJson (rngGen:RngGen) =
+        rngGen |> toDto |> Json.serialize
 
     //let fromJson (json:string) :Result<obj, RngGen> =
     //    result {
@@ -99,7 +101,7 @@ module SorterLengthDto =
         | SorterLength.Switch ct -> {wOrT="Switch"; value=(SwitchCount.value ct)}
         | SorterLength.Stage ct -> {wOrT="Stage"; value=(StageCount.value ct);}
 
-    let toString (sorterLength:SorterLength) =
+    let toJson (sorterLength:SorterLength) =
         sorterLength |> toDto |> Json.serialize
 
     let fromDto (dto:SorterLengthDto) =

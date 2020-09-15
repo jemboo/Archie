@@ -17,12 +17,12 @@ type BenchmarkSorterOps() =
 
     [<Benchmark>]
     member this.SortAllTR() =
-        let res = SorterOps.SortAllTR sorter16 sortableSet
+        let res = SorterOps.SortAllComplete sorter16 sortableSet
         res
 
     [<Benchmark>]
     member this.SortAllTB() =
-        let res = SorterOps.SortAllTB sorter16 sortableSet
+        let res = SorterOps.SortAllEager sorter16 sortableSet
         res
 
 
@@ -45,19 +45,19 @@ type SorterSetRandomTest() =
 
     [<Benchmark(Baseline = true)>]
     member this.CompleteSort() =
-        SorterOps.CompleteSort sortableSet sorterSetRnd.sorters false
+        SorterOps.GetStandardSortingResultsComplete sortableSet (UseParallel.create false) sorterSetRnd.sorters
 
     [<Benchmark>]
     member this.StopIfSorted() =
-        SorterOps.StopIfSorted sortableSet sorterSetRnd.sorters false
+        SorterOps.GetStandardSortingResultsEager sortableSet (UseParallel.create false) sorterSetRnd.sorters
 
     [<Benchmark>]
     member this.CompleteSortP() =
-        SorterOps.CompleteSort sortableSet sorterSetRnd.sorters true
+        SorterOps.GetStandardSortingResultsComplete sortableSet (UseParallel.create false) sorterSetRnd.sorters
 
     [<Benchmark>]
     member this.StopIfSortedP() =
-        SorterOps.StopIfSorted sortableSet sorterSetRnd.sorters true
+        SorterOps.GetStandardSortingResultsEager sortableSet (UseParallel.create false) sorterSetRnd.sorters
 
 
 ////|        Method |      Mean |     Error |    StdDev | Ratio | RatioSD |
@@ -77,19 +77,19 @@ type SorterSetGreenTest() =
 
     [<Benchmark(Baseline = true)>]
     member this.CompleteSort() =
-        SorterOps.CompleteSort sortableSet sorterSet16.sorters false
+        SorterOps.GetStandardSortingResultsComplete sortableSet (UseParallel.create false) sorterSet16.sorters
 
     [<Benchmark>]
     member this.StopIfSorted() =
-        SorterOps.StopIfSorted sortableSet sorterSet16.sorters false
+        SorterOps.GetStandardSortingResultsEager sortableSet (UseParallel.create false) sorterSet16.sorters
 
     [<Benchmark>]
     member this.CompleteSortP() =
-        SorterOps.CompleteSort sortableSet sorterSet16.sorters true
+        SorterOps.GetStandardSortingResultsComplete sortableSet (UseParallel.create true) sorterSet16.sorters
 
     [<Benchmark>]
     member this.StopIfSortedP() =
-        SorterOps.StopIfSorted sortableSet sorterSet16.sorters true
+        SorterOps.GetStandardSortingResultsEager sortableSet (UseParallel.create true) sorterSet16.sorters
 
 
 

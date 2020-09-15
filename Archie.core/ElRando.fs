@@ -97,19 +97,17 @@ module Rando =
                         pc3.[0]; pc3.[1]; pc3.[2]; pc3.[3]; } |> Seq.toArray
         new System.Guid(woof)
 
-
     let NextGuid (curr1:IRando) (curr2:IRando option) : System.Guid =
         match curr2 with
         | Some rando -> _NextGuid2 curr1 rando
         | None -> _NextGuid curr1
 
-
-    let RandoFromSeed rngtype seed =
+    let fromSeed rngtype seed =
         match rngtype with
         | RngType.Lcg -> LcgFromSeed seed
         | RngType.Net -> NetFromSeed seed
 
-    let GetSeed = 
+    let getSeed = 
         (RandomSeed.create "" (int System.DateTime.Now.Ticks))
 
     let fromRngGen (rngGen:RngGen) =
@@ -123,7 +121,7 @@ module Rando =
         let mutable i=0
         let mutable successCount = 0
         while (i < numDraws) do
-                 successCount  <- successCount + draw rnd
+                 successCount <- successCount + draw rnd
                  i <- i + 1
         successCount
 
@@ -131,22 +129,22 @@ module Rando =
 module RandoCollections =
 
     let IndexedRandomData (rngGen:RngGen) (f:IRando->'a) = 
-      let rando = Rando.RandoFromSeed rngGen.rngType (RandomSeed.value rngGen.seed)
+      let rando = Rando.fromSeed rngGen.rngType (RandomSeed.value rngGen.seed)
       Seq.initInfinite(fun i ->  (i, (f rando)) )
 
 
     let IndexedRandomData2 (rngGen:RngGen) (rngGen2:RngGen option) 
                            (f:IRando->IRando option->'a) = 
-        let rando = Rando.RandoFromSeed rngGen.rngType (RandomSeed.value rngGen.seed)
+        let rando = Rando.fromSeed rngGen.rngType (RandomSeed.value rngGen.seed)
         match rngGen2 with
-        | Some rg -> let rando2 = Rando.RandoFromSeed rngGen.rngType (RandomSeed.value rngGen.seed)
+        | Some rg -> let rando2 = Rando.fromSeed rngGen.rngType (RandomSeed.value rngGen.seed)
                      Seq.initInfinite(fun i ->  (i, (f rando (Some rando2))) )
         | None -> Seq.initInfinite(fun i ->  (i, (f rando None)) )
 
 
-    let IndexedSeedGen (rngGen:RngGen) = 
-        IndexedRandomData 
-          rngGen 
+    let IndexedSeedGen (rngGen:RngGen) =
+        IndexedRandomData
+          rngGen
           (fun rando -> {
               RngGen.rngType=rngGen.rngType; 
               RngGen.seed = RandomSeed.create "" rando.NextPositiveInt |> Result.ExtractOrThrow})
@@ -157,6 +155,3 @@ module RandoCollections =
             rngGen rngGen2
             (fun rando rando2 -> Rando.NextGuid rando rando2)
 
-    let Repeater f (items:'a[]) (count:int) =
-        let tt = seq {for i=0 to (items.Length-1) do yield! Seq.replicate count (f items.[i]) }
-        seq { while true do yield! tt }

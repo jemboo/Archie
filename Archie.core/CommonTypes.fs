@@ -10,6 +10,7 @@ type JsonString = private JsonString of string
 type MutationRate = private MutationRate of float
 type PoolFraction = private PoolFraction of float
 type PoolGenCount = private PoolGenCount of int
+type PoolMemberRank = private PoolMemberRank of int
 type RandomSeed = private RandomSeed of int
 type ReplicaCount = private ReplicaCount of int
 type ReportingFrequency = private ReportingFrequency of int
@@ -21,6 +22,8 @@ type StageCount = private StageCount of int
 type SorterFitness = private SorterFitness of float
 type SorterFitnessParam = private SorterFitnessParam of float
 type SwitchCount = private SwitchCount of int
+type UseEagerProc = private UseEagerProc of bool
+type UseParallel = private UseParallel of bool
 
 type IRando =
     abstract member Count: int
@@ -30,6 +33,8 @@ type IRando =
     abstract member NextULong : uint64
     abstract member NextFloat : float
     abstract member RngType : RngType
+
+type SwitchOrStage = | Switch | Stage
 
 type MutationType = | Switch of MutationRate 
                     | Stage of MutationRate
@@ -86,12 +91,6 @@ module MutationTypeF =
         | MutationType.Switch mr -> sprintf "w%.3f" (MutationRate.value mr)
         | MutationType.Stage mr -> sprintf "t%.3f" (MutationRate.value mr)
 
-module PoolGenCount =
-    let value (PoolGenCount v) = v
-    let create fieldName v = 
-        ConstrainedType.createInt fieldName PoolGenCount 1 1000000000 v
-    let fromInt v = create "" v |> Result.ExtractOrThrow
-
 module PoolFraction =
     let value (PoolFraction v) = v
     let create fieldName v = 
@@ -99,6 +98,21 @@ module PoolFraction =
     let boundedMultiply pf rhs =
         Math.Max((int ((float rhs) * (value pf))), 1)
     let fromFloat v = create "" v |> Result.ExtractOrThrow
+
+module PoolGenCount =
+    let value (PoolGenCount v) = v
+    let create fieldName v = 
+        ConstrainedType.createInt fieldName PoolGenCount 1 1000000000 v
+    let fromInt v = create "" v |> Result.ExtractOrThrow
+
+module PoolMemberRank =
+    let value (PoolMemberRank v) = v
+    let create fieldName v = 
+        ConstrainedType.createInt fieldName PoolMemberRank 1 100000 v
+    let fromInt v = create "" v |> Result.ExtractOrThrow
+    let repStr v = match v with
+                    |Some r -> sprintf "%d" (value r)
+                    |None -> ""
 
 module RandomSeed =
     let value (RandomSeed seed) = seed
@@ -155,14 +169,20 @@ module SorterCount =
 module SortableCount =
     let value (SortableCount v) = v
     let create fieldName v = 
-        ConstrainedType.createInt fieldName SortableCount 1 100000000 v
+        ConstrainedType.createInt fieldName SortableCount 0 100000000 v
     let fromInt v = create "" v |> Result.ExtractOrThrow
+    let repStr v = match v with
+                          |Some r -> sprintf "%d" (value r)
+                          |None -> ""
 
 module SorterFitness =
     let value (SorterFitness v) = v
     let create fieldName v = 
-        ConstrainedType.createFloat fieldName SorterFitness 0.0 1.0 v
-    let fromInt v = create "" v |> Result.ExtractOrThrow
+        ConstrainedType.createFloat fieldName SorterFitness -100000.0 10000.0 v
+    let fromFloat v = create "" v |> Result.ExtractOrThrow
+    let repStr v = match v with
+                          |Some r -> sprintf "%f" (value r)
+                          |None -> ""
 
 module SorterFitnessParam =
     let value (SorterFitnessParam v) = v
@@ -173,19 +193,27 @@ module SorterFitnessParam =
 module SwitchCount =
     let value (SwitchCount v) = v
     let create fieldName v = 
-        ConstrainedType.createInt fieldName SwitchCount 1 10000 v
+        ConstrainedType.createInt fieldName SwitchCount 0 10000 v
     let fromInt v = create "" v |> Result.ExtractOrThrow
 
 module StageCount =
     let value (StageCount v) = v
     let create fieldName v = 
-        ConstrainedType.createInt fieldName StageCount 1 1000 v
+        ConstrainedType.createInt fieldName StageCount 0 1000 v
     let ToSwitchCount (degree:Degree) (stageCount:StageCount) =
         SwitchCount.create "" ((Degree.value degree) * (value stageCount) / 2)
     let fromInt v = create "" v |> Result.ExtractOrThrow
 
+module UseParallel = 
+    let create (useParallel:bool) =
+        UseParallel useParallel
+    let value (UseParallel v) = v
 
-
+module UseEagerProc = 
+    let create (useEagerProc:bool) =
+        UseEagerProc useEagerProc
+    let value (UseEagerProc v) = v
+    
 module SorterLength =
 
     let degreeToSwitchCount (degree:Degree) =
@@ -220,11 +248,11 @@ module SorterLength =
         SorterLength.Stage tc
 
 
-    let to999Sucessful (degree:Degree) (switchOrStage:string) =
-        match switchOrStage with
-        | "Switch" -> (degreeToSwitchCount degree) |> Ok
-        | "Stage" -> (degreeToStageCount degree) |> Ok
-        | _ -> Error (sprintf "not handled: %s" switchOrStage)
+    let to999Sucessful (degree:Degree) (wOrT:SwitchOrStage) =
+        match wOrT with
+        | SwitchOrStage.Switch -> (degreeToSwitchCount degree) |> Ok
+        | SwitchOrStage.Stage -> (degreeToStageCount degree) |> Ok
+        | _ -> Error (sprintf "not handled: %A" wOrT)
 
 
     let makeSwitchCount switchCount =

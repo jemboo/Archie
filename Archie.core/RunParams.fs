@@ -1,23 +1,113 @@
 ﻿namespace Archie.Base
 
-type FitnessFunc = {func:StandardSorterTestResults->GenerationNumber->SorterFitness}
+open System
+
+type FitnessFunc = {cat:string; args:string; func:StandardSorterTestResults->GenerationNumber->SorterFitness}
 module FitnessFunc =
-    let sorterFitness (offset:float) (value:int) =
+
+    let mesa (offset:float) (value:int) =
         let fv = (float value)
         match fv with
-        | v when v > offset -> SorterFitness.create "" (1.0 / (v - offset)) 
-                                    |> Result.ExtractOrThrow
-        | v -> SorterFitness.create "" (1.0 / (offset + 1.0 - v)) 
-                                    |> Result.ExtractOrThrow
-
+        | v when v > offset -> 1.0 / (v - offset)
+        | v -> 0.0 // 1.0 / (offset + 1.0 - v)
 
     let standardSwitch offset = 
-              { func = (fun r g -> sorterFitness offset (SwitchCount.value r.switchUseCount))}
+        { cat = (sprintf "switch");
+          args = (sprintf "%f" offset);
+          func = (fun r g -> SorterFitness.fromFloat (mesa offset (SwitchCount.value r.usedSwitchCount)))}
 
     let standardStage offset = 
-              { func = (fun r g -> sorterFitness offset (StageCount.value r.stageUseCount))}
+        { cat = (sprintf "stage");
+          args = (sprintf "%f" offset);
+          func = (fun r g -> SorterFitness.fromFloat (mesa offset (SwitchCount.value r.usedSwitchCount)))}
+
+    let altSwitchAndStage offsetT offsetW (cycleG:GenerationNumber) = 
+        let ff r g =
+            let phase = (GenerationNumber.value g) % ((GenerationNumber.value cycleG) * 2)
+            if (phase < (GenerationNumber.value cycleG)) then
+               SorterFitness.fromFloat (mesa offsetT (StageCount.value r.stageUseCount))
+            else
+               SorterFitness.fromFloat (mesa offsetW (SwitchCount.value r.usedSwitchCount))
+        { cat = (sprintf "WaltT");
+          args = (sprintf "%f %f %d" offsetT offsetW (GenerationNumber.value cycleG));
+          func = ff }
+
+    let switchAndSuccess (maxCoverage:float) (usageR:float) = 
+        let sas r (g:GenerationNumber) =
+            let cov = (float (SortableCount.value r.successfulSortCount)) / 
+                           (maxCoverage - float (SortableCount.value r.successfulSortCount))
+            let tweak = (20000.0 - float (GenerationNumber.value g)) / 10000.0
+            let sw = usageR * ( 1.0 + ( Math.Cos((float (SwitchCount.value r.usedSwitchCount) / 34.0) ) ))
+            SorterFitness.fromFloat (cov + sw*tweak)
+        { cat = (sprintf "wNs");
+          args = (sprintf "%f %.2f" maxCoverage usageR);
+          func = sas }
+
+    let stageAndSuccess (maxCoverage:float) (usageR:float) = 
+        let cosy v =
+            if v < Math.PI / 2.0 then 
+                Math.Cos(v) 
+            else 
+                (Math.PI / 2.0) - v 
+        let sas r (g:GenerationNumber) =
+            //let nuCov = maxCoverage + 20000.0 - (float (GenerationNumber.value g))
+            //let cov = (float (SortableCount.value r.successfulSortCount)) / 
+            //              (nuCov - float (SortableCount.value r.successfulSortCount))
+            let cov = (float (SortableCount.value r.successfulSortCount)) / 
+                          (maxCoverage - float (SortableCount.value r.successfulSortCount))
+            let st = usageR * ( 1.0 + (cosy((float (StageCount.value r.stageUseCount) / 6.0) ) ))     //Degree12:9
+            let sw = 0.5 * usageR * ( 1.0 + (cosy((float (SwitchCount.value r.usedSwitchCount) / 34.0) ) ))  //Degree12:39
+            SorterFitness.fromFloat (cov + sw + st)
+        { cat = (sprintf "tNs");
+          args = (sprintf "%f %.2f" maxCoverage usageR);
+          func = sas }
+
+module ParamUtils =
+    let SplitPoolGenBnWFrac (poolSize:int) (dex:int) =
+        match (dex % 6) with
+        | 0 -> GenerationNumber.fromInt (poolSize/2), 2
+        | 1 -> GenerationNumber.fromInt (poolSize/4), 4
+        | 2 -> GenerationNumber.fromInt (poolSize/8), 8
+        | 3 -> GenerationNumber.fromInt (poolSize/2), 2
+        | 4 -> GenerationNumber.fromInt (poolSize/4), 4
+        | _ -> GenerationNumber.fromInt (poolSize/8), 8
+
+    let SplitPoolGenMut (poolSize:int) (dex:int) =
+        match (dex % 6) with
+        | 0 -> GenerationNumber.fromInt (poolSize/2), SorterCount.fromInt 2, MutationType.Switch (MutationRate.fromFloat 0.01)
+        | 1 -> GenerationNumber.fromInt (poolSize/2), SorterCount.fromInt 2, MutationType.Switch (MutationRate.fromFloat 0.015)
+        | 2 -> GenerationNumber.fromInt (poolSize/2), SorterCount.fromInt 2, MutationType.Switch (MutationRate.fromFloat 0.02)
+        | 3 -> GenerationNumber.fromInt (poolSize/2), SorterCount.fromInt 2, MutationType.Stage (MutationRate.fromFloat 0.08)
+        | 4 -> GenerationNumber.fromInt (poolSize/2), SorterCount.fromInt 2, MutationType.Stage (MutationRate.fromFloat 0.12)
+        | _ -> GenerationNumber.fromInt (poolSize/2), SorterCount.fromInt 2, MutationType.Stage (MutationRate.fromFloat 0.16)
 
 
+    let SplitPoolGenMut2 (poolSize:int) (dex:int) =
+        match (dex % 3) with
+        | 0 -> GenerationNumber.fromInt (poolSize/16), SorterCount.fromInt 16, MutationType.Stage (MutationRate.fromFloat 0.12)
+        | 1 -> GenerationNumber.fromInt (poolSize/8), SorterCount.fromInt 8, MutationType.Stage (MutationRate.fromFloat 0.10)
+        | _ -> GenerationNumber.fromInt (poolSize/4), SorterCount.fromInt 4, MutationType.Stage (MutationRate.fromFloat 0.08)
+
+
+
+    let SplitGenMtMr (poolGenCount:PoolGenCount) (dex:int) =
+        match (dex % 6) with
+        | 0 -> (PoolGenCount.value poolGenCount) / 2, SorterCount.fromInt 2, MutationType.Switch (MutationRate.fromFloat 0.01)
+        | 1 -> (PoolGenCount.value poolGenCount) / 2, SorterCount.fromInt 2, MutationType.Switch (MutationRate.fromFloat 0.015)
+        | 2 -> (PoolGenCount.value poolGenCount) / 2, SorterCount.fromInt 2, MutationType.Switch (MutationRate.fromFloat 0.02)
+        | 3 -> (PoolGenCount.value poolGenCount) / 2, SorterCount.fromInt 2, MutationType.Stage (MutationRate.fromFloat 0.08)
+        | 4 -> (PoolGenCount.value poolGenCount) / 2, SorterCount.fromInt 2, MutationType.Stage (MutationRate.fromFloat 0.12)
+        | _ -> (PoolGenCount.value poolGenCount) / 2, SorterCount.fromInt 2, MutationType.Stage (MutationRate.fromFloat 0.16)
+
+
+    let SplitPoolGenMr (poolGenCount:PoolGenCount) (dex:int) =
+          match (dex % 3) with
+          | 0 -> (PoolGenCount.value poolGenCount) / 16, SorterCount.fromInt 16, MutationType.Stage (MutationRate.fromFloat 0.12)
+          | 1 -> (PoolGenCount.value poolGenCount) / 8, SorterCount.fromInt 8, MutationType.Stage (MutationRate.fromFloat 0.10)
+          | _ -> (PoolGenCount.value poolGenCount) / 4, SorterCount.fromInt 4, MutationType.Stage (MutationRate.fromFloat 0.08)
+
+
+// Params for Random walk process
 type RwUpdateParams = 
     {generationNumber:GenerationNumber;
     mutationType:MutationType;
@@ -28,37 +118,11 @@ type RwUpdateParams =
 
 module RwUpdateParams =
 
-  let MutationTypes =
-      let fr r = MutationRate.create "" r |> Result.ExtractOrThrow
-      let fts r = MutationType.Stage (fr r)
-      let ftw r = MutationType.Switch (fr r)
-      let svs = seq {0.06 .. 0.02 .. 0.16} |> Seq.map(fts)
-      let svw = seq {0.06 .. 0.02 .. 0.16} |> Seq.map(ftw)
-      svs |> Seq.append svw |> Seq.toArray
-
-
-  let SplitPoolGen (poolSize:int) (dex:int) =
-    match (dex % 3) with
-    | 0 -> poolSize/2, 2
-    | 1 -> poolSize/4, 4
-    | _ -> poolSize/8, 8
- 
-
-  let SplitPoolGenBnWFrac (poolSize:int) (dex:int) =
-      match (dex % 6) with
-      | 0 -> poolSize/2, 2
-      | 1 -> poolSize/4, 4
-      | 2 -> poolSize/8, 8
-      | 3 -> poolSize/2, 2
-      | 4 -> poolSize/4, 4
-      | _ -> poolSize/8, 8
-
-
   let Params10 (rngGen:RngGen) (poolSize:int) =
     let pm rg dex =
-        let gc, pc = SplitPoolGenBnWFrac poolSize dex
+        let gc, pc = ParamUtils.SplitPoolGenBnWFrac poolSize dex
         {
-            generationNumber=GenerationNumber.fromInt gc;
+            generationNumber = gc;
             mutationType=MutationType.Switch (MutationRate.fromFloat 0.02);
             poolCount=SorterCount.fromInt pc;
             rngGen=rg;
@@ -66,121 +130,157 @@ module RwUpdateParams =
         }
     RandoCollections.IndexedSeedGen rngGen |> Seq.map(fun (dex, rg) -> pm rg dex)
 
-
-  let SplitPoolGenMut (poolSize:int) (dex:int) =
-    match (dex % 6) with
-    | 0 -> poolSize/2, 2, MutationType.Switch (MutationRate.fromFloat 0.01)
-    | 1 -> poolSize/2, 2, MutationType.Switch (MutationRate.fromFloat 0.015)
-    | 2 -> poolSize/2, 2, MutationType.Switch (MutationRate.fromFloat 0.02)
-    | 3 -> poolSize/2, 2, MutationType.Stage (MutationRate.fromFloat 0.08)
-    | 4 -> poolSize/2, 2, MutationType.Stage (MutationRate.fromFloat 0.12)
-    | _ -> poolSize/2, 2, MutationType.Stage (MutationRate.fromFloat 0.16)
-
-
-  let SplitPoolGenMut2 (poolSize:int) (dex:int) =
-      match (dex % 3) with
-      | 0 -> poolSize/16, 16, MutationType.Stage (MutationRate.fromFloat 0.12)
-      | 1 -> poolSize/8, 8, MutationType.Stage (MutationRate.fromFloat 0.10)
-      | _ -> poolSize/4, 4, MutationType.Stage (MutationRate.fromFloat 0.08)
-
-
   let ParamsM (rngGen:RngGen) (poolCount:int) =
       let pm rg dex =
-          let gc, pc, mut = SplitPoolGenMut2 poolCount dex
+          let gc, pc, mut = ParamUtils.SplitPoolGenMut2 poolCount dex
           {
-              generationNumber=GenerationNumber.fromInt gc;
-              mutationType=mut;
-              poolCount=SorterCount.fromInt pc;
-              rngGen=rg;
+              generationNumber = gc;
+              mutationType = mut;
+              poolCount = pc;
+              rngGen = rg;
               fitnessFunc=FitnessFunc.standardSwitch 4.0 ;
           }
       RandoCollections.IndexedSeedGen rngGen |> Seq.map(fun (dex, rg) -> pm rg dex)
 
 
-type PoolUpdateParams = 
+type PoolUpdateParamsBnW = 
         {breederFrac:PoolFraction;
+        fitnessFunc:FitnessFunc;
         generationNumber:GenerationNumber;
+        legacyBias:SorterFitness;
         mutationType:MutationType;
         poolCount:SorterCount;
         rngGen:RngGen;
-        fitnessFunc:FitnessFunc;
         winnerFrac:PoolFraction;}
 
 
-module PoolUpdateParams =
-    
-      let MutationTypes =
-          let fr r = MutationRate.create "" r |> Result.ExtractOrThrow
-          let fts r = MutationType.Stage (fr r)
-          let ftw r = MutationType.Switch (fr r)
-          let svs = seq {0.06 .. 0.02 .. 0.16} |> Seq.map(fts)
-          let svw = seq {0.06 .. 0.02 .. 0.16} |> Seq.map(ftw)
-          svs |> Seq.append svw |> Seq.toArray
+module PoolUpdateParamsBnW =
+
+    let headers =
+        [|"breederFrac"; "winnerFrac"; "generation"; "mutationType"; "mutationRate"; 
+          "runSeed"; "ff_cat"; "ff_args"; "legacyBias"; "poolCount"|]
+
+    let report (pup:PoolUpdateParamsBnW) =
+        let rgDto = RngGenDto.toDto pup.rngGen
+        let mtDto = MutationTypeDto.toDto pup.mutationType
+        [|sprintf "%.3f" (PoolFraction.value pup.breederFrac);
+          sprintf "%.3f" (PoolFraction.value pup.winnerFrac);
+          sprintf "%d" (GenerationNumber.value pup.generationNumber);
+          sprintf "%s" mtDto.mType;
+          sprintf "%.3f" mtDto.rate;
+          sprintf "%d" rgDto.seed;
+          sprintf "%s" pup.fitnessFunc.cat;
+          sprintf "%s" pup.fitnessFunc.args;
+          sprintf "%.3f" (SorterFitness.value pup.legacyBias);
+          sprintf "%d" (SorterCount.value pup.poolCount)|]
+
+    let mutator prams =
+         Sorter.mutate prams.mutationType
+                       (Rando.fromRngGen prams.rngGen)
+
+    let SplitPoolGenBnWFrac (poolSize:int) (dex:int) =
+        match (dex % 6) with
+        | 0 -> GenerationNumber.fromInt (poolSize/2), SorterCount.fromInt 2, (PoolFraction.fromFloat 0.5), (PoolFraction.fromFloat 0.5)
+        | 1 -> GenerationNumber.fromInt (poolSize/4), SorterCount.fromInt 4, (PoolFraction.fromFloat 0.25), (PoolFraction.fromFloat 0.25)
+        | 2 -> GenerationNumber.fromInt (poolSize/8), SorterCount.fromInt 8, (PoolFraction.fromFloat 0.125), (PoolFraction.fromFloat 0.125)
+        | 3 -> GenerationNumber.fromInt (poolSize/2), SorterCount.fromInt 2, (PoolFraction.fromFloat 0.5), (PoolFraction.fromFloat 0.5)
+        | 4 -> GenerationNumber.fromInt (poolSize/4), SorterCount.fromInt 4, (PoolFraction.fromFloat 0.5), (PoolFraction.fromFloat 0.25)
+        | _ -> GenerationNumber.fromInt (poolSize/8), SorterCount.fromInt 8, (PoolFraction.fromFloat 0.5), (PoolFraction.fromFloat 0.125)
 
 
-      let SplitPoolGen (poolSize:int) (dex:int) =
-        match (dex % 3) with
-        | 0 -> poolSize/2, 2
-        | 1 -> poolSize/4, 4
-        | _ -> poolSize/8, 8
- 
-
-      let SplitPoolGenBnWFrac (poolSize:int) (dex:int) =
-          match (dex % 6) with
-          | 0 -> poolSize/2, 2, (PoolFraction.fromFloat 0.5), (PoolFraction.fromFloat 0.5)
-          | 1 -> poolSize/4, 4, (PoolFraction.fromFloat 0.25), (PoolFraction.fromFloat 0.25)
-          | 2 -> poolSize/8, 8, (PoolFraction.fromFloat 0.125), (PoolFraction.fromFloat 0.125)
-          | 3 -> poolSize/2, 2, (PoolFraction.fromFloat 0.5), (PoolFraction.fromFloat 0.5)
-          | 4 -> poolSize/4, 4, (PoolFraction.fromFloat 0.5), (PoolFraction.fromFloat 0.25)
-          | _ -> poolSize/8, 8, (PoolFraction.fromFloat 0.5), (PoolFraction.fromFloat 0.125)
-
-
-      let Params10 (rngGen:RngGen) (poolSize:int) =
+    let Params10 (rngGen:RngGen) (poolSize:int) =
         let pm rg dex =
             let gc, pc, bFrac, wFrac  = SplitPoolGenBnWFrac poolSize dex
             {
-                breederFrac=bFrac;
-                generationNumber=GenerationNumber.fromInt gc;
-                mutationType=MutationType.Switch (MutationRate.fromFloat 0.02);
-                poolCount=SorterCount.fromInt pc;
-                rngGen=rg;
-                fitnessFunc=FitnessFunc.standardSwitch 4.0;
-                winnerFrac=wFrac;
+                breederFrac = bFrac;
+                generationNumber = gc;
+                legacyBias = SorterFitness.fromFloat 0.01;
+                mutationType = MutationType.Switch (MutationRate.fromFloat 0.02);
+                poolCount = pc;
+                rngGen = rg;
+                fitnessFunc = FitnessFunc.standardSwitch 4.0;
+                winnerFrac = wFrac;
             }
         RandoCollections.IndexedSeedGen rngGen |> Seq.map(fun (dex, rg) -> pm rg dex)
 
 
-      let SplitPoolGenMut (poolGenCount:PoolGenCount) (dex:int) =
-        match (dex % 6) with
-
-        | 0 -> (PoolGenCount.value poolGenCount) / 2, 2, MutationType.Switch (MutationRate.fromFloat 0.01)
-        | 1 -> (PoolGenCount.value poolGenCount) / 2, 2, MutationType.Switch (MutationRate.fromFloat 0.015)
-        | 2 -> (PoolGenCount.value poolGenCount) / 2, 2, MutationType.Switch (MutationRate.fromFloat 0.02)
-        | 3 -> (PoolGenCount.value poolGenCount) / 2, 2, MutationType.Stage (MutationRate.fromFloat 0.08)
-        | 4 -> (PoolGenCount.value poolGenCount) / 2, 2, MutationType.Stage (MutationRate.fromFloat 0.12)
-        | _ -> (PoolGenCount.value poolGenCount) / 2, 2, MutationType.Stage (MutationRate.fromFloat 0.16)
-
-
-      let SplitPoolGenMut2 (poolGenCount:PoolGenCount) (dex:int) =
-          match (dex % 3) with
-          | 0 -> (PoolGenCount.value poolGenCount) / 16, 16, MutationType.Stage (MutationRate.fromFloat 0.12)
-          | 1 -> (PoolGenCount.value poolGenCount) / 8, 8, MutationType.Stage (MutationRate.fromFloat 0.10)
-          | _ -> (PoolGenCount.value poolGenCount) / 4, 4, MutationType.Stage (MutationRate.fromFloat 0.08)
+    let SplitPoolGenMff (dex:int) =
+        let offsetT = 3.0
+        let offsetW = 20.0
+        let cycleG1 = GenerationNumber.fromInt 200
+        let cycleG2 = GenerationNumber.fromInt 600
+        match (dex % 3) with
+        | 0 -> FitnessFunc.altSwitchAndStage offsetT offsetW cycleG1
+        | 1 -> FitnessFunc.altSwitchAndStage offsetT offsetW cycleG2
+        | _ -> FitnessFunc.standardSwitch offsetW
 
 
-      let ParamsM (rngGen:RngGen) (poolGenCount:PoolGenCount) =
-          let pm rg dex =
-              let gc, pc, mut = SplitPoolGenMut2 poolGenCount dex
-              {
-                  breederFrac=(PoolFraction.fromFloat 0.5);
-                  generationNumber=GenerationNumber.fromInt gc;
-                  mutationType=mut;
-                  poolCount=SorterCount.fromInt pc;
-                  rngGen=rg;
-                  fitnessFunc=FitnessFunc.standardSwitch 4.0;
-                  winnerFrac=(PoolFraction.fromFloat 0.5);
-              }
-          RandoCollections.IndexedSeedGen rngGen |> Seq.map(fun (dex, rg) -> pm rg dex)
+    let SplitSwitchAndSuccess (dex:int) =
+        match (dex % 3) with
+        | 0 -> FitnessFunc.switchAndSuccess (16384.0 + 120.0) (2.0)
+        | 1 -> FitnessFunc.switchAndSuccess (16384.0 + 120.0) (3.5)
+        | _ -> FitnessFunc.switchAndSuccess (16384.0 + 120.0) (5.0)
+
+
+    let SplitStageAndSuccess (dex:int) =
+        match (dex % 3) with
+        | 0 -> FitnessFunc.stageAndSuccess (4096.0 + 1024.0) (0.55)
+        | 1 -> FitnessFunc.stageAndSuccess (4096.0 + 1024.0) (0.6)
+        | _ -> FitnessFunc.stageAndSuccess (4096.0 + 1024.0) (0.65)
+
+    //let SplitStageAndSuccess (dex:int) =
+    //    match (dex % 3) with
+    //    | 0 -> FitnessFunc.stageAndSuccess (16384.0 + 20120.0) (2.0)
+    //    | 1 -> FitnessFunc.stageAndSuccess (16384.0 + 20120.0) (3.5)
+    //    | _ -> FitnessFunc.stageAndSuccess (16384.0 + 20120.0) (5.0)
+
+
+    let ParamsMr (rngGen:RngGen) (poolGenCount:PoolGenCount) =
+        let pm rg dex =
+            let gc, pc, mut = ParamUtils.SplitPoolGenMr poolGenCount dex
+            {
+                breederFrac=(PoolFraction.fromFloat 0.5);
+                generationNumber=GenerationNumber.fromInt gc;
+                mutationType=mut;
+                legacyBias = SorterFitness.fromFloat 0.01;
+                poolCount = pc;
+                rngGen=rg;
+                fitnessFunc=FitnessFunc.standardSwitch 4.0;
+                winnerFrac=(PoolFraction.fromFloat 0.5);
+            }
+        RandoCollections.IndexedSeedGen rngGen |> Seq.map(fun (dex, rg) -> pm rg dex)
+
+
+    let ParamsMff (rngGen:RngGen) (poolGenCount:PoolGenCount) =
+        let pm rg dex =
+            let ff = SplitPoolGenMff dex
+            {
+                breederFrac=(PoolFraction.fromFloat 0.5);
+                generationNumber=GenerationNumber.fromInt (PoolGenCount.value poolGenCount / 2);
+                legacyBias = SorterFitness.fromFloat 0.01;
+                mutationType=MutationType.Stage (MutationRate.fromFloat 0.10);
+                poolCount=SorterCount.fromInt 2;
+                rngGen=rg;
+                fitnessFunc=ff;
+                winnerFrac=(PoolFraction.fromFloat 0.5);
+            }
+        RandoCollections.IndexedSeedGen rngGen |> Seq.map(fun (dex, rg) -> pm rg dex)
+        
+
+    let ParamsSnS (rngGen:RngGen) (poolGenCount:PoolGenCount) =
+        let pm rg dex =
+            let ff = SplitStageAndSuccess dex
+            {
+                breederFrac=(PoolFraction.fromFloat 0.5);
+                generationNumber=GenerationNumber.fromInt (PoolGenCount.value poolGenCount / 2);
+                legacyBias = SorterFitness.fromFloat 0.01;
+                mutationType=MutationType.Stage (MutationRate.fromFloat 0.10);
+                poolCount=SorterCount.fromInt 2;
+                rngGen=rg;
+                fitnessFunc=ff;
+                winnerFrac=(PoolFraction.fromFloat 0.5);
+            }
+        RandoCollections.IndexedSeedGen rngGen |> Seq.map(fun (dex, rg) -> pm rg dex)
 
 
 type RndSorterParams = 
@@ -193,10 +293,10 @@ type RndSorterParams =
 module RndSorterParams =
 
     let Make (degree:Degree) (sorterCount:SorterCount) 
-             (rngGen:RngGen) (switchOrStage:string) =
+             (rngGen:RngGen) (wOrT:SwitchOrStage) =
     
         result {
-            let! sorterLength = SorterLength.to999Sucessful degree switchOrStage
+            let! sorterLength = SorterLength.to999Sucessful degree wOrT
             return 
                 {RndSorterParams.degree=degree;
                 sorterCount=sorterCount;

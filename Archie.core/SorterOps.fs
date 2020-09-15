@@ -5,9 +5,24 @@ type StandardSorterTestResults =
     {
         switchUses:SwitchUses;
         successfulSortCount:SortableCount;
-        switchUseCount:SwitchCount;
+        usedSwitchCount:SwitchCount;
         stageUseCount:StageCount
     }
+
+module StandardSorterTestResults = 
+    let headers =
+        [|"successfulSortCount"; "usedSwitchCount"; "stageUseCount"|]
+
+    let report (sstr:StandardSorterTestResults) =
+        [|sprintf "%d" (SortableCount.value sstr.successfulSortCount);
+          sprintf "%d" (SwitchCount.value sstr.usedSwitchCount);
+          sprintf "%d" (StageCount.value sstr.stageUseCount);|]
+
+    let reportOpt (sstr:StandardSorterTestResults option) =
+        match sstr with
+        | Some r -> report r
+        | None -> [|"";"";""|]
+
 
 module SorterOps =
 
@@ -28,7 +43,7 @@ module SorterOps =
         Combinatorics.isSortedOffset testCases.baseArray index (Degree.value(testCases.degree))
 
 
-    let SortAllTR (sorter:Sorter) (testCases:SortableSet) =
+    let SortAllComplete (sorter:Sorter) (testCases:SortableSet) =
          let switchCount = (SwitchCount.value sorter.switchCount)
          let switchUses = SwitchUses.create sorter.switchCount
          let tcCopy = (SortableSet.copy testCases) |> Result.ExtractOrThrow
@@ -61,7 +76,7 @@ module SorterOps =
         Combinatorics.isSortedOffset testCases.baseArray index (Degree.value(testCases.degree))
 
 
-    let SortAllTB (sorter:Sorter) (testCases:SortableSet) =
+    let SortAllEager (sorter:Sorter) (testCases:SortableSet) =
          let switchCount = (SwitchCount.value sorter.switchCount)
          let switchUses = SwitchUses.create sorter.switchCount
          let tcCopy = (SortableSet.copy testCases) |> Result.ExtractOrThrow
@@ -72,34 +87,36 @@ module SorterOps =
                                       successCount
                   i <- i + (Degree.value sorter.degree)
          switchUses, SortableCount.fromInt successCount
-         
+   
+
     let addSwitchAndStageUses (s:Sorter) (su:SwitchUses) (sc:SortableCount) =
         let w, t = (SwitchUses.getSwitchAndStageUses s su)
         { 
             StandardSorterTestResults.switchUses = su;
             StandardSorterTestResults.successfulSortCount = sc;
-            StandardSorterTestResults.switchUseCount = w;
+            StandardSorterTestResults.usedSwitchCount = w;
             StandardSorterTestResults.stageUseCount = t;
         }
 
-    let private SorterSetOnSortableSet (sortableSet:SortableSet) (sorters:Sorter[]) 
-                                       (_parallel:bool) sorterOnSortableSet =
+
+    let private GetStandardSortingResults (sortableSet:SortableSet) (sorters:Sorter[]) 
+                                          (_parallel:UseParallel) sorterOnSortableSet =
         let rewrap s = 
             let su, sc = sorterOnSortableSet s sortableSet
             s,
             addSwitchAndStageUses s su sc
 
-        match _parallel with
+        match UseParallel.value(_parallel) with
         | true -> sorters |> Array.Parallel.map(fun s-> rewrap s)
         | false -> sorters |> Array.map(fun s-> rewrap s)
 
 
-    let CompleteSort (sortableSet:SortableSet) (sorters:Sorter[])
-                     (_parallel:bool) =
-        SortAllTR |> SorterSetOnSortableSet sortableSet sorters _parallel
+    let GetStandardSortingResultsComplete (sortableSet:SortableSet) (_parallel:UseParallel) 
+                                          (sorters:Sorter[]) =
+        SortAllComplete |> GetStandardSortingResults sortableSet sorters _parallel
 
 
-    let StopIfSorted (sortableSet:SortableSet) (sorters:Sorter[])
-                     (_parallel:bool) =
-        SortAllTB |> SorterSetOnSortableSet sortableSet sorters _parallel
+    let GetStandardSortingResultsEager (sortableSet:SortableSet) (_parallel:UseParallel)
+                                       (sorters:Sorter[]) =
+        SortAllEager |> GetStandardSortingResults sortableSet sorters _parallel
          

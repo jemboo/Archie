@@ -29,6 +29,7 @@
     <Compile Include="SorterOps.fs" />
     <Compile Include="RunParams.fs" />
     <Compile Include="RunParamsDto.fs" />
+    <Compile Include="SorterPool.fs" />
     <Compile Include="SortersFromData.fs" />
     <Compile Include="GaRun.fs" />
     <Compile Include="GaRunDto.fs" />

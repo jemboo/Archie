@@ -46,6 +46,15 @@ module LogUtils =
 
 module CollectionUtils =
 
+    let Repeater f (items:'a[]) (count:int) =
+        let tt = seq {for i=0 to (items.Length-1) do yield! Seq.replicate count (f items.[i]) }
+        seq { while true do yield! tt }
+
+    let IterateCircular (count:int) (ofWhat:'a[]) =
+        seq { for i in 0..(count-1) do yield ofWhat.[i%ofWhat.Length] }
+        
+
+
 //// Converts seq of key - value pairs to mutable Dictionary
 //    let ofSeq (src:seq<'a * 'b>) = 
 //       let d = new Dictionary<'a, 'b>()
@@ -100,19 +109,28 @@ module StringUtils =
           |> ignore
         sb.ToString()
 
-    let printArray (d:'a[]) =
+    let printArray (d:'a[]) (delimiter:string) =
         let sb = new System.Text.StringBuilder()
-        d |> Seq.map(fun i -> sb.Append(sprintf "%A%s" i Environment.NewLine))
+        d |> Seq.map(fun i -> sb.Append(sprintf "%A%s" i delimiter))
           |> Seq.toArray
           |> ignore
         sb.ToString()
 
-    let printArrayf f (d:'a[]) =
+    let printLinesOfArray (d:'a[]) =
+        printArray d Environment.NewLine
+
+    let printArrayAsTabDelimited (d:'a[]) =
+        printArray d "\t"
+
+    let printArrayf f (d:'a[]) (delimiter:string) =
         let sb = new System.Text.StringBuilder()
-        d |> Seq.map(fun i -> sb.Append(sprintf "%A%s" (f i) Environment.NewLine))
+        d |> Seq.map(fun i -> sb.Append(sprintf "%A%s" (f i) delimiter))
           |> Seq.toArray
           |> ignore
         sb.ToString()
+
+    let printLinesOfArrayf f (d:'a[]) =
+        printArrayf f d Environment.NewLine
 
     let printTupes (d:seq<string*'A>) =
        let sb = new System.Text.StringBuilder()

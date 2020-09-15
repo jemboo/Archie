@@ -21,9 +21,19 @@ type RunParamsFixture () =
 
 
     [<TestMethod>]
-    member this.SorterTrimLength() =
-      let dd = PoolUpdateParams.MutationTypes 
-                    |> Seq.take 10
-                    |> Seq.toArray
-      Assert.IsTrue(true)
+    member this.FitnessFuncAlt() =
+      let sstr = {
+                    StandardSorterTestResults.stageUseCount = StageCount.fromInt 1;
+                    StandardSorterTestResults.successfulSortCount = SortableCount.fromInt 3;
+                    StandardSorterTestResults.usedSwitchCount = SwitchCount.fromInt 7;
+                    StandardSorterTestResults.switchUses = SwitchUses.create(SwitchCount.fromInt 100);
+                 }
+      let genNum0 = GenerationNumber.fromInt 9
+      let genNum1 = GenerationNumber.fromInt 10
+      let genNum2 = GenerationNumber.fromInt 11
+      let dd = FitnessFunc.altSwitchAndStage 4.0 6.0 (GenerationNumber.fromInt 10)
+      let sorterFitness0 = dd.func sstr genNum0
+      let sorterFitness1 = dd.func sstr genNum1
+      let sorterFitness2 = dd.func sstr genNum2
 
+      Assert.IsTrue((SorterFitness.fromFloat 0.5) = sorterFitness0)
