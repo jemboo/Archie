@@ -22,7 +22,7 @@ module FitnessFuncDto =
 
 type PoolUpdateParamsDto = {breederFrac:float; 
                             generationNumber:int;
-                            mutationTypeDto:MutationTypeDto;
+                            sorterMutationTypeDto:SorterMutationTypeDto;
                             poolCount:int;
                             rngGenDto:RngGenDto;
                             fitnessFuncDto:FitnessFuncDto
@@ -46,7 +46,7 @@ module PoolUpdateParamsDto =
         result {
                 let! bf = PoolFraction.create "" dto.breederFrac
                 let! gc = GenerationNumber.create "" dto.generationNumber
-                let! mt = dto.mutationTypeDto |> MutationTypeDto.fromDto
+                let! mt = dto.sorterMutationTypeDto |> SorterMutationTypeDto.fromDto
                 let! pc = SorterCount.create "" dto.poolCount
                 let! rg = dto.rngGenDto |> RngGenDto.fromDto
                 let! ff = dto.fitnessFuncDto |> FitnessFuncDto.fromDto

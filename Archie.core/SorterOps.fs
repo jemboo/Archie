@@ -89,7 +89,7 @@ module SorterOps =
          switchUses, SortableCount.fromInt successCount
    
 
-    let addSwitchAndStageUses (s:Sorter) (su:SwitchUses) (sc:SortableCount) =
+    let makeStandardSorterTestResults (s:Sorter) (su:SwitchUses) (sc:SortableCount) =
         let w, t = (SwitchUses.getSwitchAndStageUses s su)
         { 
             StandardSorterTestResults.switchUses = su;
@@ -98,13 +98,25 @@ module SorterOps =
             StandardSorterTestResults.stageUseCount = t;
         }
 
+    let private GetTheStandardSortingResults (sortableSet:SortableSet) (sorter:Sorter) 
+                                             sorterOnSortableSet =
+        let su, sc = sorterOnSortableSet sorter sortableSet
+        makeStandardSorterTestResults sorter su sc
+
+    let GetTheStandardSortingResultsComplete (sortableSet:SortableSet)
+                                             (sorter:Sorter) =
+        SortAllComplete |> GetTheStandardSortingResults sortableSet sorter
+
+    let GetTheStandardSortingResultsEager (sortableSet:SortableSet)
+                                          (sorter:Sorter) =
+        SortAllEager |> GetTheStandardSortingResults sortableSet sorter
+
 
     let private GetStandardSortingResults (sortableSet:SortableSet) (sorters:Sorter[]) 
                                           (_parallel:UseParallel) sorterOnSortableSet =
         let rewrap s = 
             let su, sc = sorterOnSortableSet s sortableSet
-            s,
-            addSwitchAndStageUses s su sc
+            s, (makeStandardSorterTestResults s su sc)
 
         match UseParallel.value(_parallel) with
         | true -> sorters |> Array.Parallel.map(fun s-> rewrap s)

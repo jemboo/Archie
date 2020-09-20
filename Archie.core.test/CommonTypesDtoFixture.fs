@@ -32,3 +32,11 @@ type CommonTypesDtoFixture () =
         let json = JsonConvert.SerializeObject(kvps)
         let kvpsB = JsonConvert.DeserializeObject<Map<string,string>>(json)
         Assert.AreEqual(kvps, kvpsB)
+
+
+    [<TestMethod>]
+    member this.MutationTypeSer() =
+        let mt = SorterMutationType.Stage (MutationRate.fromFloat 0.1)
+        let json = SorterMutationTypeDto.toJson mt
+        let mtBack = SorterMutationTypeDto.fromJson json |> Result.ExtractOrThrow
+        Assert.AreEqual(mt,mtBack)

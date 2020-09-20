@@ -21,7 +21,6 @@ module Json =
 
 type LogFileDto = {cat:string; descr:string; header:string; records:string[]}
 
-
 type CustomParamsDto = {parseKey:string; prams:Map<string, string>}
 
 type RngGenDto = {rngType:string; seed:int}
@@ -74,23 +73,31 @@ module RngGenDto =
     //        return! doArgs pcs
     //    }
     
-type MutationTypeDto = {mType:string; rate:float}
-module  MutationTypeDto =
-    let fromDto (dto:MutationTypeDto) =
+type SorterMutationTypeDto = {mType:string; rate:float}
+module SorterMutationTypeDto =
+    let fromDto (dto:SorterMutationTypeDto) =
         result {
                 let! mr = MutationRate.create "" dto.rate
                 match dto.mType with
-                | "Switch" -> return MutationType.Switch mr
-                | "Stage" ->  return MutationType.Stage mr
-                | _ ->        let! res =  Error (sprintf "no match for MutationType: %s" dto.mType)
+                | "Switch" -> return SorterMutationType.Switch mr
+                | "Stage" ->  return SorterMutationType.Stage mr
+                | _ ->        let! res =  Error (sprintf "no match for SorterMutationType: %s" dto.mType)
                               return res
             }
 
-    let toDto (mutationType:MutationType) =
+    let toDto (mutationType:SorterMutationType) =
         match mutationType with
-        | MutationType.Switch mr -> {mType="Switch"; rate=MutationRate.value mr}
-        | MutationType.Stage mr -> {mType="Stage"; rate=MutationRate.value mr}
+        | SorterMutationType.Switch mr -> {mType="Switch"; rate=MutationRate.value mr}
+        | SorterMutationType.Stage mr -> {mType="Stage"; rate=MutationRate.value mr}
 
+    let toJson (mutationType:SorterMutationType) =
+        toDto mutationType |> Json.serialize
+
+    let fromJson (json:string) =
+        result {
+            let! dto = Json.deserialize<SorterMutationTypeDto> json
+            return! dto |> fromDto
+        }
 
 
 type SorterLengthDto = {wOrT:string; value:int;}

@@ -37,14 +37,16 @@ module ParseUtils =
             MakeFloat pcs.[0]
 
 
-module LogUtils =
-    let logFile path res (append:bool) =
-        use sw =
-            new StreamWriter(path, append)
-        fprintfn sw "%s" res
-
-
 module CollectionUtils =
+
+    let listToTuples (ltt:'a list) =
+        let rec yucko (last:'a) (tail:'a list) (tupes: ('a*'a) list) =
+            match tail with
+            | [] -> tupes
+            | head::rest -> yucko head rest ((last,head )::tupes)
+        match ltt with
+        | [] -> []
+        | head::tail -> yucko head tail [] |> List.rev
 
     let Repeater f (items:'a[]) (count:int) =
         let tt = seq {for i=0 to (items.Length-1) do yield! Seq.replicate count (f items.[i]) }
@@ -52,21 +54,49 @@ module CollectionUtils =
 
     let IterateCircular (count:int) (ofWhat:'a[]) =
         seq { for i in 0..(count-1) do yield ofWhat.[i%ofWhat.Length] }
-        
+
+    // Converts seq of key - value pairs to mutable Dictionary
+    let dictFromSeqOfTuples(src:seq<'a * 'b>) = 
+       let dictionary = new Dictionary<'a, 'b>()
+       for (k,v) in src do
+           dictionary.Add(k,v)
+       dictionary
+
+    // returns a list of the items that were added
+    let addDictionary (dBase:Dictionary<'a, 'b>) (dAdd:Dictionary<'a, 'b>) =
+        let mutable lstRet = []
+        dAdd.Keys |> Seq.iter(fun k-> if (not (dBase.ContainsKey(k))) then  
+                                         dBase.Add(k, dAdd.[k])                       
+                                         lstRet <- dAdd.[k]::lstRet)
+        lstRet
 
 
-//// Converts seq of key - value pairs to mutable Dictionary
-//    let ofSeq (src:seq<'a * 'b>) = 
-//       let d = new Dictionary<'a, 'b>()
-//       for (k,v) in src do
-//           d.Add(k,v)
-//       d
+    // returns a list of the new items added
+    let cumulate (cumer:Dictionary<int, Dictionary<'a,'b>>) (key:int) (group:'a) (item:'b) =
+        if cumer.ContainsKey(key) then
+            cumer.[key].Add(group, item)
+            [item]
+        else
+            let newDict = new Dictionary<'a,'b>()
+            newDict.Add(group, item)
+            cumer.Add(key, newDict)
+            [item]
+
+    let cumerBackFill (cumer:Dictionary<int, Dictionary<'a,'b>>) =
+        let backFill (dPrev:Dictionary<'a,'b>) (dNext:Dictionary<'a,'b>)
+                     (nextKey:int) =
+            addDictionary dNext dPrev  |> List.map(fun a->(nextKey, a))
+        let hops = cumer.Keys |> Seq.sort |> Seq.toList |> listToTuples
+        let ssts = hops |> List.map(fun (p,s) -> backFill cumer.[p] cumer.[s] s)
+        ssts |> List.concat
+            
 
     let tuplesToMap (tupes:('a*'b)[]) =
         let map = tupes |> Map.ofSeq
         if (map.Count = tupes.Length) then
             map |> Ok
         else "key duplicates" |> Error
+
 
     let mapSubset (m:Map<'a,'v>) (keys:seq<'a>) = 
         keys |> Seq.map(fun k-> k, (m.[k]))
@@ -77,8 +107,9 @@ module CollectionUtils =
                 if (m.ContainsKey (fst kv)) then
                         yield (fst kv, (m.[fst kv], snd kv)) }
 
-    let flatten (arr:'a[]) (plucker:'a->'b[]) =
-        arr |> Seq.map(fun a-> plucker a |> Array.toSeq)
+
+    let flatten (arr:'a[]) (iron:'a->'b[]) =
+        arr |> Seq.map(fun a-> iron a |> Array.toSeq)
             |> Seq.concat
 
 
@@ -138,3 +169,24 @@ module StringUtils =
          |> Seq.toArray
          |> ignore
        sb.ToString()
+
+
+module LogUtils =
+    let logFile path item (append:bool) =
+        use sw =
+            new StreamWriter(path, append)
+        fprintfn sw "%s" item
+
+        //returns a cumer
+    let logFileKeyHeader path item =
+        logFile path (sprintf "%skey" item ) true
+        new Dictionary<int, Dictionary<Guid, string>>()
+
+
+    let logFileKey path (cumer:Dictionary<int, Dictionary<Guid, string>>) (key:int) (group:Guid) item  =
+        let newItems = CollectionUtils.cumulate cumer key group item
+        newItems |> List.iter(fun item->logFile path (sprintf "%s%d" item key) true)
+
+    let logFileBackfill path (cumer:Dictionary<int, Dictionary<Guid, string>>) =
+        let newItems = CollectionUtils.cumerBackFill cumer
+        newItems |> List.iter(fun item->logFile path (sprintf "%s%d" (snd item) (fst item)) true)

@@ -8,32 +8,33 @@ module RunWs =
         let filePath = sprintf "c:\log\SorterBnW_%d.txt" System.DateTime.Now.Ticks
         printfn "Starting RunPoolOfBnW"
 
-        let wRtGen = SwitchOrStage.Stage
-        let wRtMut = SwitchOrStage.Stage
-
+        let wOrTGen = SwitchOrStage.Stage
+        let sorterMutationType = SorterMutationType.Stage (MutationRate.fromFloat 0.05)
         let rngGenSorters = {RngGen.rngType= RngType.Lcg; seed=(RandomSeed.fromInt 2323)}
         let rngGenParams = {RngGen.rngType=RngType.Lcg; seed=(RandomSeed.fromInt 72234)}
         let initialConditionCount = InitialConditionCount.create "" 48 |> Result.ExtractOrThrow
         let replicaCount = ReplicaCount.create "" 48 |> Result.ExtractOrThrow
         let degree = Degree.create "" 12 |> Result.ExtractOrThrow
-        let mutationRate = MutationRate.fromFloat 0.1
         let useParallelProcessing = (UseParallel.create false)
         let useEagerProcesing = (UseEagerProc.create false)
-        let poolGenCount = PoolGenCount.fromInt 100000
+        let poolGenCount = PoolGenCount.fromInt 10000
+        let poolCount = SorterCount.fromInt 2
         let initialSwitchFrequency = 0.0
+        let legacyBias = SorterFitness.fromFloat 0.00
 
         let res = SorterRun.RunPoolOfBnW
                     filePath
-                    degree
-                    initialSwitchFrequency
                     initialConditionCount
-                    mutationRate
-                    rngGenParams
                     replicaCount
+                    degree
                     rngGenSorters
-                    wRtGen
-                    wRtMut
+                    wOrTGen
+                    initialSwitchFrequency
                     poolGenCount
+                    poolCount
+                    rngGenParams
+                    legacyBias
+                    sorterMutationType
                     useParallelProcessing
                     useEagerProcesing
 
@@ -48,7 +49,7 @@ module RunWs =
         printfn "Starting RunSorterMpgBatch"
         let paramSeed = 72234
         let sorterSeed = 2323
-        let poolTmesGenCount = 100000
+        let poolTmesGenCount = 100
         let replicaCount = 48
         let initialConditionCount = 48
         let degree = 12

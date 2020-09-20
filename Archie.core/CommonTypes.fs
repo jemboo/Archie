@@ -36,8 +36,8 @@ type IRando =
 
 type SwitchOrStage = | Switch | Stage
 
-type MutationType = | Switch of MutationRate 
-                    | Stage of MutationRate
+type SorterMutationType = | Switch of MutationRate 
+                          | Stage of MutationRate
 
 type SorterLength = | Switch of SwitchCount
                     | Stage of StageCount
@@ -85,11 +85,11 @@ module MutationRate =
         ConstrainedType.createFloat fieldName MutationRate 0.0 1.0 v
     let fromFloat v = create "" v |> Result.ExtractOrThrow
 
-module MutationTypeF =
-    let StrF (mt:MutationType) =
+module SorterMutationType =
+    let StrF (mt:SorterMutationType) =
         match mt with
-        | MutationType.Switch mr -> sprintf "w%.3f" (MutationRate.value mr)
-        | MutationType.Stage mr -> sprintf "t%.3f" (MutationRate.value mr)
+        | SorterMutationType.Switch mr -> sprintf "w%.3f" (MutationRate.value mr)
+        | SorterMutationType.Stage mr -> sprintf "t%.3f" (MutationRate.value mr)
 
 module PoolFraction =
     let value (PoolFraction v) = v
@@ -181,7 +181,7 @@ module SorterFitness =
         ConstrainedType.createFloat fieldName SorterFitness -100000.0 10000.0 v
     let fromFloat v = create "" v |> Result.ExtractOrThrow
     let repStr v = match v with
-                          |Some r -> sprintf "%f" (value r)
+                          |Some r -> sprintf "%.4f" (value r)
                           |None -> ""
 
 module SorterFitnessParam =

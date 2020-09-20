@@ -8,9 +8,9 @@ module Runs =
                        (sorterEx:'a->Sorter)
                        (sorterFitnessEx:'a->SorterFitness)
                        (rewrap: 'a->Sorter->'b)
-                       (sorterwraps:'a[]) =
+                       (sorterwraps:'a[]) 
+                       (randy:IRando) =
 
-        let randy = Rando.fromRngGen prams.rngGen
         let mutator = PoolUpdateParamsBnW.mutator prams
         let breederCount = PoolFraction.boundedMultiply prams.breederFrac sorterwraps.Length
         let winnerCount = PoolFraction.boundedMultiply prams.winnerFrac sorterwraps.Length
@@ -29,7 +29,7 @@ module Runs =
                                 sorterFitnessEx
                                 randy
                         |> Seq.take (mutantCount) 
-                        |> Seq.map(fun w-> rewrap w (mutator (sorterEx w)))
+                        |> Seq.map(fun w-> rewrap w (mutator randy (sorterEx w)))
                         |> Seq.toArray
         stsMutants |> Array.append stsWinners
 
@@ -62,7 +62,7 @@ module Runs =
                      prams.fitnessFunc.cat
                      (PoolFraction.value prams.breederFrac) 
                      (PoolFraction.value prams.winnerFrac)
-                     (MutationTypeF.StrF prams.mutationType)
+                     (SorterMutationType.StrF prams.mutationType)
                      (SorterCount.value prams.poolCount) genPool 
                      (RandomSeed.value prams.rngGen.seed)
 
@@ -77,7 +77,7 @@ module Runs =
                      prams.fitnessFunc.cat
                      (PoolFraction.value prams.breederFrac) 
                      (PoolFraction.value prams.winnerFrac)
-                     (MutationTypeF.StrF prams.mutationType)
+                     (SorterMutationType.StrF prams.mutationType)
                      (SorterCount.value prams.poolCount) genPool 
                      (RandomSeed.value prams.rngGen.seed)
 
@@ -90,9 +90,10 @@ module Runs =
                        sorterWraps
 
         let sortableSet = SortableSet.allBinary sorter.degree |> Result.ExtractOrThrow
-
+        
+        let randy = Rando.fromRngGen prams.rngGen
         let sortersGen0 = seq {1.. (SorterCount.value prams.poolCount)}
-                                |> Seq.map(fun _ -> (PoolUpdateParamsBnW.mutator prams) sorter)
+                                |> Seq.map(fun _ -> (PoolUpdateParamsBnW.mutator prams randy) sorter)
                                 |> Seq.toArray
 
         Console.WriteLine(sprintf "%s %d" sorterInfo (RandomSeed.value prams.rngGen.seed))
@@ -114,7 +115,7 @@ module Runs =
                 logToFile binRec true
                 nextRep <- 0
 
-            currentEvals <- nextGenArgs currentSorterFitness
+            currentEvals <- nextGenArgs currentSorterFitness randy
             gen <- gen + 1
             nextRep <- nextRep + (SorterCount.value prams.poolCount)
 
@@ -177,7 +178,11 @@ module Runs =
                             |> Seq.map(fun (srtr,r) -> (sorterInfo r.usedSwitchCount r.stageUseCount), srtr, r)
                             |> Seq.toArray
 
-        let sorterAndPrams = PoolUpdateParamsBnW.ParamsSnS paramRndGen poolGenCount
+        let sorterMutationType = SorterMutationType.Stage (MutationRate.fromFloat 0.1)
+        let legacyBias = SorterFitness.fromFloat 0.00
+        let poolCount = SorterCount.fromInt 2
+        let sorterAndPrams = PoolUpdateParamsBnW.ParamsSnS paramRndGen poolGenCount poolCount
+                                sorterMutationType legacyBias 1024.0 0.0 0.0025 0.0025
                                 |> Seq.take (ReplicaCount.value replicaCount)
                                 |> Seq.toArray
                                 |> Array.allPairs sorterEvals   

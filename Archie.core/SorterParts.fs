@@ -248,10 +248,10 @@ module Sorter =
             switches = newSwitches
         }
 
-    let mutate (mutationType:MutationType) (rnd:IRando) (sorter:Sorter) =
+    let mutate (mutationType:SorterMutationType) (rnd:IRando) (sorter:Sorter) =
         match mutationType with
-        | MutationType.Switch mr -> mutateBySwitch mr rnd sorter
-        | MutationType.Stage mr -> mutateByStage mr rnd sorter
+        | SorterMutationType.Switch mr -> mutateBySwitch mr rnd sorter
+        | SorterMutationType.Stage mr -> mutateByStage mr rnd sorter
              
 
 type SorterSet = {degree:Degree; sorterCount:SorterCount; sorters:Sorter[] }
