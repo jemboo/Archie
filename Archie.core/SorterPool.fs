@@ -17,7 +17,7 @@ type SorterPoolMember = {
         parent:SorterPoolMember option;
         sorter:Sorter;
         poolMemberRank:PoolMemberRank option;
-        testResults:StandardSorterTestResults option;
+        testResults:SorterTestResults option;
         fitness:SorterFitness option;
     }
 
@@ -85,14 +85,14 @@ module SorterPoolMember =
         | Root _ -> failwith "cannot convert Root to Legacy"
 
 
-    let toTested (pm:SorterPoolMember) (eval:Sorter->StandardSorterTestResults) 
+    let toTested (pm:SorterPoolMember) (eval:Sorter->SorterTestResults) 
                  (fitnessFunc:FitnessFunc) (gen:GenerationNumber) =
         match pm.poolMemberState with
         | Legacy -> pm
         | Tested -> pm
         | Root -> 
             let r = eval pm.sorter
-            let f = fitnessFunc.func r gen
+            let f = fitnessFunc.func (Some (gen:>obj)) r
             {SorterPoolMember.id = pm.id;
              poolMemberState = PoolMemberState.Tested;
              birthDate = pm.birthDate;
@@ -103,7 +103,7 @@ module SorterPoolMember =
              fitness = Some f;}
         | Initiate -> 
             let r = eval pm.sorter
-            let f = fitnessFunc.func r gen
+            let f = fitnessFunc.func (Some (gen:>obj)) r
             {SorterPoolMember.id = pm.id;
              poolMemberState = PoolMemberState.Tested;
              birthDate = pm.birthDate;
@@ -157,13 +157,13 @@ module SorterPoolMember =
         | None -> [|"";"";"";""|]
 
 
-    let reportHeader =  StandardSorterTestResults.headers
+    let reportHeader =  SorterTestResults.headers
                         |> Array.append parentReportHeader
                         |> Array.append [|"sorter_id"; "birthdate"; "rank"; "fitness"|]
 
 
     let report (spm:SorterPoolMember) =
-          (StandardSorterTestResults.reportOpt (spm.testResults))
+          (SorterTestResults.reportOpt (spm.testResults))
           |> Array.append (reportParent (spm))
           |> Array.append [|(sprintf "%A" spm.id); 
                             (sprintf "%d" (GenerationNumber.value (spm.birthDate))); 
@@ -231,7 +231,7 @@ module SorterRun =
         let mutable gen = GenerationNumber.fromInt 1
         let mutable lastWinningBirtdate = GenerationNumber.fromInt 0
         while ((GenerationNumber.value gen) < (GenerationNumber.value poolUpdateParamsBnW.generationNumber)) do
-            sorterPool <-sorterPool |> Array.map(fun spm-> testSPM spm gen)
+            sorterPool <- sorterPool |> Array.map(fun spm-> testSPM spm gen)
             sorterPool <- NextGen poolUpdateParamsBnW sorterPool gen rando
             let winner = sorterPool |> Array.filter(fun pm -> SorterPoolMember.isTopRanked pm) |> Array.exactlyOne
             if winner.birthDate <> lastWinningBirtdate then
@@ -260,8 +260,10 @@ module SorterRun =
         let LogToFile = LogUtils.logFile logfile
         LogToFile (sprintf "starting RunPoolOfBnW at %s" (System.DateTime.Now.ToString "hh:mm:ss") ) false
    
-        let sorterLength = SorterLength.to999Sucessful degree wOrTGen |> Result.ExtractOrThrow
-        let sorterCount = SorterCount.fromInt (InitialConditionCount.value initialConditionCount)
+       // let sorterLength = SorterLength.to999Sucessful degree wOrTGen
+       // let sorterLength = SorterLength.toRecordSorterLength degree //(SorterLength.makeStageCount 1)
+        let sorterLength = SorterLength.toRecordSorterLengthPlus degree  (SorterLength.Stage (StageCount.fromInt 2))
+        let sorterCount = SorterCount.fromInt (InitialConditionCount.value initialConditionCount) 
 
         let paramReport =
             sprintf "initialConditionCount:%d
@@ -308,6 +310,12 @@ module SorterRun =
                                 |> Seq.take (ReplicaCount.value replicaCount) 
                                 |> Seq.toArray
                                 |> Array.allPairs sorterPoolMembers
+
+        //let sorterAndPrams = PoolUpdateParamsBnW.ParamsMr rngGenParams poolGenCount
+        //                        |> Seq.take (ReplicaCount.value replicaCount) 
+        //                        |> Seq.toArray
+        //                        |> Array.allPairs sorterPoolMembers
+
 
         let _res = sorterAndPrams 
                    |> Array.map(fun q -> RunBnW (fst q) (snd q) sortableSet logToFileKey |> ignore

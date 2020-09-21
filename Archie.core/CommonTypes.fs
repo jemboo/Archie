@@ -20,7 +20,6 @@ type SortableCount = private SortableCount of int
 type SorterCount = private SorterCount of int
 type StageCount = private StageCount of int
 type SorterFitness = private SorterFitness of float
-type SorterFitnessParam = private SorterFitnessParam of float
 type SwitchCount = private SwitchCount of int
 type UseEagerProc = private UseEagerProc of bool
 type UseParallel = private UseParallel of bool
@@ -41,11 +40,6 @@ type SorterMutationType = | Switch of MutationRate
 
 type SorterLength = | Switch of SwitchCount
                     | Stage of StageCount
-
-
-type SorterFitnessFunc =
-| Switch of SorterFitnessParam
-| Stage of SorterFitnessParam
 
 
 module Degree =
@@ -184,12 +178,6 @@ module SorterFitness =
                           |Some r -> sprintf "%.4f" (value r)
                           |None -> ""
 
-module SorterFitnessParam =
-    let value (SorterFitnessParam v) = v
-    let create fieldName v = 
-        ConstrainedType.createFloat fieldName SorterFitnessParam 1.0 1000000.0 v
-    let fromFloat v = create "" v |> Result.ExtractOrThrow
-
 module SwitchCount =
     let value (SwitchCount v) = v
     let create fieldName v = 
@@ -216,7 +204,70 @@ module UseEagerProc =
     
 module SorterLength =
 
-    let degreeToSwitchCount (degree:Degree) =
+    let makeSwitchCount switchCount =
+        result {
+            let! wc = (SwitchCount.create "" switchCount)
+            return SorterLength.Switch wc
+        }
+
+
+    let makeStageCount stageCount =
+        result {
+            let! tc = (StageCount.create "" stageCount)
+            return SorterLength.Stage  tc
+        }
+
+
+    let Add (lhs:SorterLength) (rhs:SorterLength) =
+            match lhs with
+                | SorterLength.Switch (SwitchCount wCtL) -> 
+                        match rhs with
+                        | SorterLength.Switch (SwitchCount wCtR) -> makeSwitchCount (wCtL + wCtR)
+                        | SorterLength.Stage _ -> Error "cant add SwitchCount and StageCount"
+                | SorterLength.Stage (StageCount tCtL) -> 
+                        match rhs with
+                        | SorterLength.Switch _ -> Error "cant add SwitchCount and StageCount"
+                        | SorterLength.Stage (StageCount tCtR) -> makeStageCount (tCtL + tCtR)
+
+
+    let degreeToRecordSwitchCount (degree:Degree) =
+        let d = (Degree.value degree)
+        let ct = match d with
+                    | 4 -> 5
+                    | 5 -> 9
+                    | 6 -> 12
+                    | 7 -> 16
+                    | 8 -> 19
+                    | 9 -> 25
+                    | 10 -> 29
+                    | 11 -> 35
+                    | 12 -> 39
+                    | 13 -> 45
+                    | 14 -> 51
+                    | 15 -> 56
+                    | 16 -> 60
+                    | 17 -> 71
+                    | 18 -> 77
+                    | 19 -> 85
+                    | 20 -> 91
+                    | 21 -> 100
+                    | 22 -> 107
+                    | 23 -> 115
+                    | 24 -> 120
+                    | 25 -> 132
+                    | 26 -> 139
+                    | 27 -> 150
+                    | 28 -> 155
+                    | 29 -> 165
+                    | 30 -> 172
+                    | 31 -> 180
+                    | 32 -> 185
+                    | _ -> 0
+        let wc = SwitchCount.create "" ct |> Result.ExtractOrThrow
+        SorterLength.Switch wc
+
+
+    let degreeTo999SwitchCount (degree:Degree) =
         let d = (Degree.value degree)
         let ct = match d with
                     | 10 -> 800
@@ -232,7 +283,44 @@ module SorterLength =
         SorterLength.Switch wc
 
 
-    let degreeToStageCount (degree:Degree) =
+    let degreeToRecordStageCount (degree:Degree) =
+        let d = (Degree.value degree)
+        let ct = match d with
+                    | 4 ->  3
+                    | 5 ->  5
+                    | 6 ->  5
+                    | 7 ->  6
+                    | 8 ->  6
+                    | 9 ->  7
+                    | 10 -> 7
+                    | 11 -> 8
+                    | 12 -> 8
+                    | 13 -> 9
+                    | 14 -> 9
+                    | 15 -> 9
+                    | 16 -> 9
+                    | 17 -> 10
+                    | 18 -> 11
+                    | 19 -> 11
+                    | 20 -> 11
+                    | 21 -> 12
+                    | 22 -> 12
+                    | 23 -> 12
+                    | 24 -> 12
+                    | 25 -> 13
+                    | 26 -> 13
+                    | 27 -> 14
+                    | 28 -> 14
+                    | 29 -> 14
+                    | 30 -> 14
+                    | 31 -> 14
+                    | 32 -> 14
+                    | _ -> 0
+        let tc = StageCount.create "" ct |> Result.ExtractOrThrow
+        SorterLength.Stage tc
+
+
+    let degreeTo999StageCount (degree:Degree) =
         let d = (Degree.value degree)
         let ct = match d with
                     | 10 -> 160
@@ -250,22 +338,18 @@ module SorterLength =
 
     let to999Sucessful (degree:Degree) (wOrT:SwitchOrStage) =
         match wOrT with
-        | SwitchOrStage.Switch -> (degreeToSwitchCount degree) |> Ok
-        | SwitchOrStage.Stage -> (degreeToStageCount degree) |> Ok
-        | _ -> Error (sprintf "not handled: %A" wOrT)
+        | SwitchOrStage.Switch -> (degreeTo999SwitchCount degree)
+        | SwitchOrStage.Stage -> (degreeTo999StageCount degree)
 
+    let toRecordSorterLength (degree:Degree) (wOrT:SwitchOrStage) =
+        match wOrT with
+        | SwitchOrStage.Switch -> (degreeToRecordSwitchCount degree)
+        | SwitchOrStage.Stage -> (degreeToRecordStageCount degree)
 
-    let makeSwitchCount switchCount =
-        result {
-            let! wc = (SwitchCount.create "" switchCount)
-            return SorterLength.Switch wc
-        }
+    let toRecordSorterLengthPlus(degree:Degree) (extraLength:SorterLength) =
+        match extraLength with
+        | SorterLength.Switch wCt -> (toRecordSorterLength degree SwitchOrStage.Switch) |> Add extraLength |> Result.ExtractOrThrow
+        | SorterLength.Stage wCt -> (toRecordSorterLength degree SwitchOrStage.Stage) |> Add extraLength |> Result.ExtractOrThrow
 
-
-    let makeStageCount stageCount =
-        result {
-            let! tc = (StageCount.create "" stageCount)
-            return SorterLength.Stage  tc
-        }
        
 

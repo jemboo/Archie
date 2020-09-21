@@ -47,12 +47,12 @@ module Runs =
 
     let RunSorterMpG (sorterInfo:string) 
                      (sorter:Sorter)
-                     (res:StandardSorterTestResults)
+                     (res:SorterTestResults)
                      (prams:PoolUpdateParamsBnW) 
                      (reportingFrequency:ReportingFrequency)
                      logToFile =
 
-        let reportSorterResults (genPool:int) (results:(Sorter*StandardSorterTestResults*SorterFitness)) =
+        let reportSorterResults (genPool:int) (results:(Sorter*SorterTestResults*SorterFitness)) =
             let (srtr,r,f) = results
             sprintf "%s %d %d %d %s %.3f %.3f %s %d %d %d" 
                      sorterInfo 
@@ -66,7 +66,7 @@ module Runs =
                      (SorterCount.value prams.poolCount) genPool 
                      (RandomSeed.value prams.rngGen.seed)
 
-        let reportEvalBinsMin (genPool:int) (results:(Sorter*StandardSorterTestResults*SorterFitness)[]) =
+        let reportEvalBinsMin (genPool:int) (results:(Sorter*SorterTestResults*SorterFitness)[]) =
             let summary = results|> Array.minBy (fun (srtr,r,f)-> r.usedSwitchCount)
             let (srtr,r,f) = summary
             sprintf "%s %d %d %d %s %.3f %.3f %s %d %d %d" 
@@ -82,7 +82,7 @@ module Runs =
                      (RandomSeed.value prams.rngGen.seed)
 
         let nextGenArgs sorterWraps =
-            NextGen<Sorter*StandardSorterTestResults*SorterFitness, Sorter>
+            NextGen<Sorter*SorterTestResults*SorterFitness, Sorter>
                        prams
                        (fun (srtr,r,f) -> srtr) 
                        (fun (srtr,r,f) -> f)
@@ -105,7 +105,7 @@ module Runs =
         while (gen < (GenerationNumber.value prams.generationNumber)) && (checkArray currentEvals) do
             let genN = GenerationNumber.fromInt gen
             let currentSorterFitness = currentEvals |> (getSortingResults sortableSet)
-                                       |> Seq.map(fun r -> (fst r), (snd r), (prams.fitnessFunc.func (snd r) genN))
+                                       |> Seq.map(fun r -> (fst r), (snd r), (prams.fitnessFunc.func (Some (genN:>obj)) (snd r)))
                                        |> Seq.toArray
 
            // let _, res, _ = currentSorterFitness
@@ -123,7 +123,7 @@ module Runs =
             let genN = GenerationNumber.fromInt gen
             let binRecords = currentEvals 
                               |> getSortingResults sortableSet
-                              |> Seq.map(fun r -> (fst r), (snd r), (prams.fitnessFunc.func (snd r) genN))
+                              |> Seq.map(fun r -> (fst r), (snd r), (prams.fitnessFunc.func (Some (genN:>obj)) (snd r) ))
                               |> Seq.toArray |> reportEvalBinsMin (gen * (SorterCount.value prams.poolCount))
             logToFile binRecords true
         true
@@ -146,7 +146,7 @@ module Runs =
 
         let replicaCount = ReplicaCount.create "" replicaCount |> Result.ExtractOrThrow
         let degree = Degree.create "" degree |> Result.ExtractOrThrow
-        let sorterLength = SorterLength.to999Sucessful degree wOrT |> Result.ExtractOrThrow
+        let sorterLength = SorterLength.to999Sucessful degree wOrT
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
         let paramRndGen = RngGen.createLcg paramSeed
@@ -163,7 +163,7 @@ module Runs =
         LogToFile reportHeader true
 
 
-        let RunSorterMpgParams (q:string*Sorter*StandardSorterTestResults) (prams:PoolUpdateParamsBnW) =
+        let RunSorterMpgParams (q:string*Sorter*SorterTestResults) (prams:PoolUpdateParamsBnW) =
             let (info,sorter, res) = q
             RunSorterMpG info sorter res prams repFreq LogToFile
         

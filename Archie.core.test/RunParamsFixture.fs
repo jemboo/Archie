@@ -23,17 +23,17 @@ type RunParamsFixture () =
     [<TestMethod>]
     member this.FitnessFuncAlt() =
       let sstr = {
-                    StandardSorterTestResults.stageUseCount = StageCount.fromInt 1;
-                    StandardSorterTestResults.successfulSortCount = SortableCount.fromInt 3;
-                    StandardSorterTestResults.usedSwitchCount = SwitchCount.fromInt 7;
-                    StandardSorterTestResults.switchUses = SwitchUses.create(SwitchCount.fromInt 100);
+                    SorterTestResults.stageUseCount = StageCount.fromInt 1;
+                    SorterTestResults.successfulSortCount = SortableCount.fromInt 3;
+                    SorterTestResults.usedSwitchCount = SwitchCount.fromInt 7;
+                    SorterTestResults.switchUses = SwitchUses.create(SwitchCount.fromInt 100);
                  }
       let genNum0 = GenerationNumber.fromInt 9
       let genNum1 = GenerationNumber.fromInt 10
       let genNum2 = GenerationNumber.fromInt 11
       let dd = FitnessFunc.altSwitchAndStage 4.0 6.0 (GenerationNumber.fromInt 10)
-      let sorterFitness0 = dd.func sstr genNum0
-      let sorterFitness1 = dd.func sstr genNum1
-      let sorterFitness2 = dd.func sstr genNum2
+      let sorterFitness0 = dd.func (Some (genNum0:>obj)) sstr 
+      let sorterFitness1 = dd.func (Some (genNum1:>obj)) sstr 
+      let sorterFitness2 = dd.func (Some (genNum2:>obj)) sstr 
 
       Assert.IsTrue((SorterFitness.fromFloat 0.5) = sorterFitness0)

@@ -16,7 +16,6 @@ type SorterGenome = | Self of Sorter
 
 type SorterPhenotype = | Sorter of Sorter
 
-type SorterTestResults = | Standard of StandardSorterTestResults
 type SorterEvaluation = | Standard of float
 
 type SorterGaAction = 
@@ -90,11 +89,6 @@ module SorterTester =
             match pheno with
             | Sorter s -> SorterOps.SortAllComplete s testCases
         _sort
-
-
-module SorterTestResults =
-    let a = None
-
 
 module SorterEvaluator =
     let a = None

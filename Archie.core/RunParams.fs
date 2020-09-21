@@ -2,7 +2,7 @@
 
 open System
 
-type FitnessFunc = {cat:string; args:string; func:StandardSorterTestResults->GenerationNumber->SorterFitness}
+type FitnessFunc = {cat:string; args:string; func:obj option->SorterTestResults->SorterFitness}
 module FitnessFunc =
 
     let mesa (offset:float) (value:int) =
@@ -14,15 +14,16 @@ module FitnessFunc =
     let standardSwitch offset = 
         { cat = (sprintf "switch");
           args = (sprintf "%f" offset);
-          func = (fun r g -> SorterFitness.fromFloat (mesa offset (SwitchCount.value r.usedSwitchCount)))}
+          func = (fun o r -> SorterFitness.fromFloat (mesa offset (SwitchCount.value r.usedSwitchCount)))}
 
     let standardStage offset = 
         { cat = (sprintf "stage");
           args = (sprintf "%f" offset);
-          func = (fun r g -> SorterFitness.fromFloat (mesa offset (SwitchCount.value r.usedSwitchCount)))}
+          func = (fun o r -> SorterFitness.fromFloat (mesa offset (SwitchCount.value r.usedSwitchCount)))}
 
     let altSwitchAndStage offsetT offsetW (cycleG:GenerationNumber) = 
-        let ff r g =
+        let ff (p:obj option) r =
+            let g = p |> Option.get :?> GenerationNumber
             let phase = (GenerationNumber.value g) % ((GenerationNumber.value cycleG) * 2)
             if (phase < (GenerationNumber.value cycleG)) then
                SorterFitness.fromFloat (mesa offsetT (StageCount.value r.stageUseCount))
@@ -33,7 +34,8 @@ module FitnessFunc =
           func = ff }
 
     let switchAndSuccess (maxCoverage:float) (usageR:float) = 
-        let sas r (g:GenerationNumber) =
+        let sas (p:obj option) r  =
+            let g = p |> Option.get :?> GenerationNumber
             let cov = (float (SortableCount.value r.successfulSortCount)) / 
                            (maxCoverage - float (SortableCount.value r.successfulSortCount))
             let tweak = (20000.0 - float (GenerationNumber.value g)) / 10000.0
@@ -49,7 +51,7 @@ module FitnessFunc =
                 Math.Cos(v) 
             else 
                 (Math.PI / 2.0) - v 
-        let sas r (g:GenerationNumber) =
+        let sas o r =
             //let nuCov = maxCoverage + 20000.0 - (float (GenerationNumber.value g))
             //let cov = (float (SortableCount.value r.successfulSortCount)) / 
             //              (nuCov - float (SortableCount.value r.successfulSortCount))
@@ -105,6 +107,14 @@ module ParamUtils =
           | 0 -> (PoolGenCount.value poolGenCount) / 16, SorterCount.fromInt 16, SorterMutationType.Stage (MutationRate.fromFloat 0.12)
           | 1 -> (PoolGenCount.value poolGenCount) / 8, SorterCount.fromInt 8, SorterMutationType.Stage (MutationRate.fromFloat 0.10)
           | _ -> (PoolGenCount.value poolGenCount) / 4, SorterCount.fromInt 4, SorterMutationType.Stage (MutationRate.fromFloat 0.08)
+
+
+    let SplitPoolMr (poolGenCount:PoolGenCount) (dex:int) =
+          match (dex % 3) with
+          | 0 -> (PoolGenCount.value poolGenCount) / 2, SorterCount.fromInt 2, SorterMutationType.Stage (MutationRate.fromFloat 0.12)
+          | 1 -> (PoolGenCount.value poolGenCount) / 2, SorterCount.fromInt 2, SorterMutationType.Stage (MutationRate.fromFloat 0.10)
+          | _ -> (PoolGenCount.value poolGenCount) / 2, SorterCount.fromInt 2, SorterMutationType.Stage (MutationRate.fromFloat 0.08)
+
 
 
 // Params for Random walk process
@@ -236,7 +246,7 @@ module PoolUpdateParamsBnW =
 
     let ParamsMr (rngGen:RngGen) (poolGenCount:PoolGenCount) =
         let pm rg dex =
-            let gc, pc, mut = ParamUtils.SplitPoolGenMr poolGenCount dex
+            let gc, pc, mut = ParamUtils.SplitPoolMr poolGenCount dex
             {
                 breederFrac=(PoolFraction.fromFloat 0.5);
                 generationNumber=GenerationNumber.fromInt gc;
@@ -298,7 +308,7 @@ module RndSorterParams =
              (rngGen:RngGen) (wOrT:SwitchOrStage) =
     
         result {
-            let! sorterLength = SorterLength.to999Sucessful degree wOrT
+            let sorterLength = SorterLength.to999Sucessful degree wOrT
             return 
                 {RndSorterParams.degree=degree;
                 sorterCount=sorterCount;

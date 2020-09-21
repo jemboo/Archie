@@ -1,7 +1,7 @@
 ﻿namespace Archie.Base
 open Microsoft.FSharp.Collections
 
-type StandardSorterTestResults = 
+type SorterTestResults = 
     {
         switchUses:SwitchUses;
         successfulSortCount:SortableCount;
@@ -9,16 +9,16 @@ type StandardSorterTestResults =
         stageUseCount:StageCount
     }
 
-module StandardSorterTestResults = 
+module SorterTestResults = 
     let headers =
         [|"successfulSortCount"; "usedSwitchCount"; "stageUseCount"|]
 
-    let report (sstr:StandardSorterTestResults) =
+    let report (sstr:SorterTestResults) =
         [|sprintf "%d" (SortableCount.value sstr.successfulSortCount);
           sprintf "%d" (SwitchCount.value sstr.usedSwitchCount);
           sprintf "%d" (StageCount.value sstr.stageUseCount);|]
 
-    let reportOpt (sstr:StandardSorterTestResults option) =
+    let reportOpt (sstr:SorterTestResults option) =
         match sstr with
         | Some r -> report r
         | None -> [|"";"";""|]
@@ -92,10 +92,10 @@ module SorterOps =
     let makeStandardSorterTestResults (s:Sorter) (su:SwitchUses) (sc:SortableCount) =
         let w, t = (SwitchUses.getSwitchAndStageUses s su)
         { 
-            StandardSorterTestResults.switchUses = su;
-            StandardSorterTestResults.successfulSortCount = sc;
-            StandardSorterTestResults.usedSwitchCount = w;
-            StandardSorterTestResults.stageUseCount = t;
+            SorterTestResults.switchUses = su;
+            SorterTestResults.successfulSortCount = sc;
+            SorterTestResults.usedSwitchCount = w;
+            SorterTestResults.stageUseCount = t;
         }
 
     let private GetTheStandardSortingResults (sortableSet:SortableSet) (sorter:Sorter) 

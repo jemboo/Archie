@@ -46,12 +46,12 @@ module Runs2 =
 
     let RunSorterMpG (sorterInfo:string) 
                      (sorter:Sorter)
-                     (res:StandardSorterTestResults)
+                     (res:SorterTestResults)
                      (prams:PoolUpdateParamsBnW) 
                      (reportingFrequency:ReportingFrequency)
                      logToFile =
 
-        let reportSorterResults (genPool:int) (results:(Sorter*StandardSorterTestResults*SorterFitness)) =
+        let reportSorterResults (genPool:int) (results:(Sorter*SorterTestResults*SorterFitness)) =
             let (srtr,r,f) = results
             sprintf "%s %d %d %d %s %.3f %.3f %s %d %d %d" 
                      sorterInfo 
@@ -65,7 +65,7 @@ module Runs2 =
                      (SorterCount.value prams.poolCount) genPool 
                      (RandomSeed.value prams.rngGen.seed)
 
-        let reportEvalBinsMin (genPool:int) (results:(Sorter*StandardSorterTestResults*SorterFitness)[]) =
+        let reportEvalBinsMin (genPool:int) (results:(Sorter*SorterTestResults*SorterFitness)[]) =
             let summary = results|> Array.minBy (fun (srtr,r,f)-> r.usedSwitchCount)
             let (srtr,r,f) = summary
             sprintf "%s %d %d %d %s %.3f %.3f %s %d %d %d" 
@@ -81,7 +81,7 @@ module Runs2 =
                      (RandomSeed.value prams.rngGen.seed)
 
         let nextGenArgs sorterWraps =
-            NextGen<Sorter*StandardSorterTestResults*SorterFitness, Sorter>
+            NextGen<Sorter*SorterTestResults*SorterFitness, Sorter>
                        prams
                        (fun (srtr,r,f) -> srtr) 
                        (fun (srtr,r,f) -> f)
@@ -95,7 +95,6 @@ module Runs2 =
                                 |> Seq.map(fun _ -> (PoolUpdateParamsBnW.mutator prams) randy sorter)
                                 |> Seq.toArray
 
-                                    
         Console.WriteLine(sprintf "%s %d" sorterInfo (RandomSeed.value prams.rngGen.seed))
 
         let mutable currentEvals = Array.copy(sortersGen0)
@@ -105,10 +104,8 @@ module Runs2 =
         while (gen < (GenerationNumber.value prams.generationNumber)) && (checkArray currentEvals) do
             let genN = GenerationNumber.fromInt gen
             let currentSorterFitness = currentEvals |> (getSortingResults sortableSet)
-                                       |> Seq.map(fun r -> (fst r), (snd r), (prams.fitnessFunc.func (snd r) genN))
+                                       |> Seq.map(fun r -> (fst r), (snd r), (prams.fitnessFunc.func (Some (genN:>obj)) (snd r)))
                                        |> Seq.toArray
-
-           // let _, res, _ = currentSorterFitness
 
             if (nextRep = (ReportingFrequency.value reportingFrequency)) then 
                 let binRec = currentSorterFitness |> reportEvalBinsMin (gen * (SorterCount.value prams.poolCount))
@@ -123,7 +120,7 @@ module Runs2 =
             let genN = GenerationNumber.fromInt gen
             let binRecords = currentEvals 
                               |> getSortingResults sortableSet
-                              |> Seq.map(fun r -> (fst r), (snd r), (prams.fitnessFunc.func (snd r) genN))
+                              |> Seq.map(fun r -> (fst r), (snd r), (prams.fitnessFunc.func (Some (genN:>obj)) (snd r)))
                               |> Seq.toArray |> reportEvalBinsMin (gen * (SorterCount.value prams.poolCount))
             logToFile binRecords true
         true
@@ -146,12 +143,11 @@ module Runs2 =
         let poolGenCount = PoolGenCount.create "" poolTimesGenCount |> Result.ExtractOrThrow
         let replicaCount = ReplicaCount.create "" replicaCount |> Result.ExtractOrThrow
         let degree = Degree.create "" degree |> Result.ExtractOrThrow
-        let sorterLength = SorterLength.to999Sucessful degree wOrT |> Result.ExtractOrThrow
-
+        let sorterLength = SorterLength.to999Sucessful degree wOrT
 
         let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
-        let paramRndGen = RngGen.createLcg paramSeed
+        let rngGenParams = RngGen.createLcg paramSeed
         let sorterRando = Rando.LcgFromSeed sorterSeed
 
         let paramReport =
@@ -164,7 +160,7 @@ module Runs2 =
         let reportHeader = "id sw1 st1 sw2 st2 sortT ffT ffP bFrac wFrac mutTy poolCt genPool seed"
         LogToFile reportHeader true
 
-        let RunSorterMpgParams (q:string*Sorter*StandardSorterTestResults) (prams:PoolUpdateParamsBnW) =
+        let RunSorterMpgParams (q:string*Sorter*SorterTestResults) (prams:PoolUpdateParamsBnW) =
             let (info,sorter, res) = q
             RunSorterMpG info sorter res prams repFreq LogToFile
         
@@ -172,22 +168,26 @@ module Runs2 =
                                      (SwitchCount.value w) (StageCount.value t)
 
         let sorterCount = SorterCount.create "" (InitialConditionCount.value icCount) |> Result.ExtractOrThrow
-        let sorters = (SorterSet.createRandom degree sorterLength (Some 0.00) sorterCount sorterRando).sorters
+        let sorters = (SorterSet.createRandom degree sorterLength (Some 1.00) sorterCount sorterRando).sorters
 
-        let sorterEvals =   sorters
-                            |> (getSortingResults sortableSet)
-                            |> Seq.map(fun (srtr,r) -> (sorterInfo r.usedSwitchCount r.stageUseCount), srtr, r)
-                            |> Seq.toArray
+        let sorterPoolMembers = sorters
+                                |> (getSortingResults sortableSet)
+                                |> Seq.map(fun (srtr,r) -> (sorterInfo r.usedSwitchCount r.stageUseCount), srtr, r)
+                                |> Seq.toArray
 
         let sorterMutationType = SorterMutationType.Stage (MutationRate.fromFloat 0.1)
         let legacyBias = SorterFitness.fromFloat 0.00
         let poolCount = SorterCount.fromInt 2
-        let sorterAndPrams = PoolUpdateParamsBnW.ParamsSnS paramRndGen poolGenCount
-                                poolCount sorterMutationType legacyBias 1024.0 0.0 0.0025 0.0025
-                                |> Seq.take (ReplicaCount.value replicaCount)
-                                |> Seq.toArray
-                                |> Array.allPairs sorterEvals
-                                    
+        //let sorterAndPrams = PoolUpdateParamsBnW.ParamsSnS paramRndGen poolGenCount
+        //                        poolCount sorterMutationType legacyBias 1024.0 0.0 0.0025 0.0025
+        //                        |> Seq.take (ReplicaCount.value replicaCount)
+        //                        |> Seq.toArray
+        //                        |> Array.allPairs sorterPoolMembers
+        let sorterAndPrams = PoolUpdateParamsBnW.ParamsMr rngGenParams poolGenCount
+                            |> Seq.take (ReplicaCount.value replicaCount) 
+                            |> Seq.toArray
+                            |> Array.allPairs sorterPoolMembers
+      
         let _res = sorterAndPrams |> Array.map(fun q -> 
                     let (info, srtr, res), pups = q
                     RunSorterMpgParams (info, srtr, res) pups)
