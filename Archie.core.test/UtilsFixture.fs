@@ -1,7 +1,7 @@
 ﻿namespace Archie.core.test
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open Archie.Base
-open System.Linq
+open System
 open System.Collections.Generic
 
 
@@ -13,8 +13,18 @@ type UtilsFixture () =
     member this.sequo() =
         let ts = [|1; 2; 3|]
         let reppy = CollectionUtils.IterateCircular 10 ts  |> Seq.toArray
-        
         Assert.IsTrue(reppy.Length = 10)
+
+
+    [<TestMethod>]
+    member this.addGuid() =
+        let g1 = Guid.NewGuid()
+        let g2 = Guid.NewGuid()
+        let g3 = g1 |> GuidUtils.addGuids g2
+        let hc = g3.GetHashCode()
+
+        Assert.IsTrue(true)
+
 
     [<TestMethod>]
     member this.addDictionary() =

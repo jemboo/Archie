@@ -4,6 +4,28 @@ open Microsoft.FSharp.Core
 open System
 open System.IO
 
+module GuidUtils = 
+
+    let makeGuid (g1:uint64) (g2:uint64) (g3:uint64) (g4:uint64) =
+        let pc0 = System.BitConverter.GetBytes(g1)
+        let pc1 = System.BitConverter.GetBytes(g2)
+        let pc2 = System.BitConverter.GetBytes(g3)
+        let pc3 = System.BitConverter.GetBytes(g4)
+
+        let woof = seq {pc0.[0]; pc0.[1]; pc0.[2]; pc0.[3]; 
+                        pc1.[0]; pc1.[1]; pc1.[2]; pc1.[3];
+                        pc2.[0]; pc2.[1]; pc2.[2]; pc2.[3];
+                        pc3.[0]; pc3.[1]; pc3.[2]; pc3.[3]; } |> Seq.toArray
+        new System.Guid(woof)
+
+
+    let addGuids (g1:Guid) (g2:Guid) =
+        let pcs1 = g1.ToByteArray()
+        let pcs2 = g2.ToByteArray()
+        let pcsS = Array.init 16 (fun i-> pcs1.[i] + pcs2.[i])
+        new System.Guid(pcsS)
+
+
 module ParseUtils =
 
     let MakeInt32 (str:string) =
@@ -186,6 +208,7 @@ module LogUtils =
     let logFileKey path (cumer:Dictionary<int, Dictionary<Guid, string>>) (key:int) (group:Guid) item  =
         let newItems = CollectionUtils.cumulate cumer key group item
         newItems |> List.iter(fun item->logFile path (sprintf "%s%d" item key) true)
+
 
     let logFileBackfill path (cumer:Dictionary<int, Dictionary<Guid, string>>) =
         let newItems = CollectionUtils.cumerBackFill cumer

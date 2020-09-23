@@ -65,6 +65,7 @@ module GenerationNumber =
     let create fieldName v = 
         ConstrainedType.createInt fieldName GenerationNumber 0 100000000 v
     let fromInt v = create "" v |> Result.ExtractOrThrow
+    let increment gen = fromInt ((value gen) + 1)
 
 module JsonString =
     let value (JsonString str) = str
@@ -204,30 +205,36 @@ module UseEagerProc =
     
 module SorterLength =
 
-    let makeSwitchCount switchCount =
+    let makeSwitchCountR switchCount =
         result {
             let! wc = (SwitchCount.create "" switchCount)
             return SorterLength.Switch wc
         }
 
 
-    let makeStageCount stageCount =
+    let makeStageCountR stageCount =
         result {
             let! tc = (StageCount.create "" stageCount)
             return SorterLength.Stage  tc
         }
+    
+    let makeStageCount stageCount =
+        SorterLength.Stage (StageCount.fromInt stageCount)
+
+    let makeSwitchCount switchCount =
+        SorterLength.Switch (SwitchCount.fromInt switchCount)
 
 
     let Add (lhs:SorterLength) (rhs:SorterLength) =
             match lhs with
                 | SorterLength.Switch (SwitchCount wCtL) -> 
                         match rhs with
-                        | SorterLength.Switch (SwitchCount wCtR) -> makeSwitchCount (wCtL + wCtR)
+                        | SorterLength.Switch (SwitchCount wCtR) -> makeSwitchCount (wCtL + wCtR) |> Result.Ok
                         | SorterLength.Stage _ -> Error "cant add SwitchCount and StageCount"
                 | SorterLength.Stage (StageCount tCtL) -> 
                         match rhs with
                         | SorterLength.Switch _ -> Error "cant add SwitchCount and StageCount"
-                        | SorterLength.Stage (StageCount tCtR) -> makeStageCount (tCtL + tCtR)
+                        | SorterLength.Stage (StageCount tCtR) -> makeStageCount (tCtL + tCtR) |> Result.Ok
 
 
     let degreeToRecordSwitchCount (degree:Degree) =

@@ -62,58 +62,54 @@ type RandomLcg(seed:RandomSeed) =
             this.NextFloat
         member this.RngType = RngType.Lcg
 
-        
+     
 module Rando =
     
     let NetFromSeed seed =
         let seed = RandomSeed.create "" seed |> Result.ExtractOrThrow
         new RandomNet(seed) :> IRando
 
+
     let LcgFromSeed seed =
         let seed = RandomSeed.create "" seed |> Result.ExtractOrThrow
         new RandomLcg(seed) :> IRando
 
-    let private _NextGuid (curr:IRando) : System.Guid =
-        let pc0 = System.BitConverter.GetBytes(curr.NextULong)
-        let pc1 = System.BitConverter.GetBytes(curr.NextULong)
-        let pc2 = System.BitConverter.GetBytes(curr.NextULong)
-        let pc3 = System.BitConverter.GetBytes(curr.NextULong)
 
-        let woof = seq {pc0.[0]; pc0.[1]; pc0.[2]; pc0.[3]; 
-                        pc1.[0]; pc1.[1]; pc1.[2]; pc1.[3];
-                        pc2.[0]; pc2.[1]; pc2.[2]; pc2.[3];
-                        pc3.[0]; pc3.[1]; pc3.[2]; pc3.[3]; } |> Seq.toArray
-        new System.Guid(woof)
+    let private _NextGuid (curr:IRando) : System.Guid =
+                GuidUtils.makeGuid (curr.NextULong) (curr.NextULong) 
+                                   (curr.NextULong) (curr.NextULong)
+
 
     let private _NextGuid2 (curr1:IRando) (curr2:IRando) : System.Guid =
-        let pc0 = System.BitConverter.GetBytes(curr1.NextULong)
-        let pc1 = System.BitConverter.GetBytes(curr1.NextULong)
-        let pc2 = System.BitConverter.GetBytes(curr2.NextULong)
-        let pc3 = System.BitConverter.GetBytes(curr2.NextULong)
+                GuidUtils.makeGuid (curr1.NextULong) (curr1.NextULong) 
+                                   (curr2.NextULong) (curr2.NextULong)
 
-        let woof = seq {pc0.[0]; pc0.[1]; pc0.[2]; pc0.[3]; 
-                        pc1.[0]; pc1.[1]; pc1.[2]; pc1.[3];
-                        pc2.[0]; pc2.[1]; pc2.[2]; pc2.[3];
-                        pc3.[0]; pc3.[1]; pc3.[2]; pc3.[3]; } |> Seq.toArray
-        new System.Guid(woof)
 
     let NextGuid (curr1:IRando) (curr2:IRando option) : System.Guid =
         match curr2 with
         | Some rando -> _NextGuid2 curr1 rando
         | None -> _NextGuid curr1
 
+
     let fromSeed rngtype seed =
         match rngtype with
         | RngType.Lcg -> LcgFromSeed seed
         | RngType.Net -> NetFromSeed seed
 
+
+    let fromGuid rngType (gu:Guid) =
+        fromSeed rngType (gu.GetHashCode())
+
+
     let getSeed = 
         (RandomSeed.create "" (int System.DateTime.Now.Ticks))
+
 
     let fromRngGen (rngGen:RngGen) =
         match rngGen.rngType with
         | RngType.Lcg -> LcgFromSeed (RandomSeed.value rngGen.seed)
         | RngType.Net -> NetFromSeed (RandomSeed.value rngGen.seed)
+
 
     let multiDraw (rnd:IRando) (freq:float) (numDraws:int)  =
         let draw (randy:IRando) =
@@ -121,8 +117,8 @@ module Rando =
         let mutable i=0
         let mutable successCount = 0
         while (i < numDraws) do
-                 successCount <- successCount + draw rnd
-                 i <- i + 1
+                successCount <- successCount + draw rnd
+                i <- i + 1
         successCount
 
 

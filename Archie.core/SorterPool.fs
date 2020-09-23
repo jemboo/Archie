@@ -23,9 +23,9 @@ type SorterPoolMember = {
 
 module SorterPoolMember =
 
-    let makeRoot rootSorter res fit =
+    let makeRoot id rootSorter res fit =
         {
-            id=Guid.NewGuid();
+            id=id;
             poolMemberState=PoolMemberState.Root; 
             birthDate=GenerationNumber.fromInt 0; 
             parent=None;
@@ -34,6 +34,7 @@ module SorterPoolMember =
             testResults=res;
             fitness=fit;
         }
+
 
     let toArchived spm =
         match spm.poolMemberState with
@@ -150,10 +151,11 @@ module SorterPoolMember =
         match spm.parent with
         | Some p ->
                 match p.poolMemberState with
-                | Legacy | Evaluated | Initiate -> [|(sprintf "%A" p.id);
-                                                    (sprintf "%d" (GenerationNumber.value (p.birthDate))); 
-                                                    (sprintf "%s" (PoolMemberRank.repStr p.poolMemberRank));
-                                                    (sprintf "%.4f" (SorterFitness.value (getFitness p)))|]
+                | Legacy | Evaluated | Initiate -> 
+                    [|(sprintf "%A" p.id);
+                    (sprintf "%d" (GenerationNumber.value (p.birthDate))); 
+                    (sprintf "%s" (PoolMemberRank.repStr p.poolMemberRank));
+                    (sprintf "%.4f" (SorterFitness.value (getFitness p)))|]
                 | _ -> [|"";"";"";""|]
         | None -> [|"";"";"";""|]
 
@@ -190,8 +192,23 @@ module SorterRun =
         StringUtils.printArrayAsTabDelimited litem
 
 
-    let NextGen (prams:PoolUpdateParamsBnW) (sorterPool:SorterPoolMember[]) 
-                (gen:GenerationNumber) (rando:IRando) =
+    let Measure (sorterPool:SorterPoolMember[]) (sortableSet:SortableSet)  =
+        sorterPool
+        |> Array.map(fun spm-> let eval = SorterOps.GetTheStandardSortingResultsComplete sortableSet
+                               SorterPoolMember.toMeasured spm eval)
+
+
+    let Evaluate (prams:PoolUpdateParamsBnW) (sorterPool:SorterPoolMember[]) 
+                 (gen:GenerationNumber) =
+        sorterPool
+        |> Array.map(fun pm-> match pm.poolMemberState with
+                              | Legacy -> pm
+                              | _ -> SorterPoolMember.toEvaluated pm prams.fitnessFunc gen)
+
+
+    let NextGen (prams:PoolUpdateParamsBnW) (sorterPool:SorterPoolMember[]) (rando:IRando)
+                (gen:GenerationNumber) =
+
         let mutator = PoolUpdateParamsBnW.mutator prams rando
         let breederCount = PoolFraction.boundedMultiply prams.breederFrac sorterPool.Length
         let winnerCount = PoolFraction.boundedMultiply prams.winnerFrac sorterPool.Length
@@ -199,7 +216,6 @@ module SorterRun =
 
         let fitnessRankedMembers =
             sorterPool
-            |> Array.map(fun pm-> SorterPoolMember.toEvaluated pm prams.fitnessFunc gen)
             |> Array.map(fun w ->
                 (w, SorterFitness.value (SorterPoolMember.getAdjFitness w prams.legacyBias)))
             |> Array.sortByDescending(snd)
@@ -222,26 +238,23 @@ module SorterRun =
                (sortableSet:SortableSet) 
                (logToFile:(int->Guid->string->unit)) =
 
-        let testSPM (spm:SorterPoolMember) (gen:GenerationNumber) = 
-            let eval = SorterOps.GetTheStandardSortingResultsComplete sortableSet
-            SorterPoolMember.toMeasured spm eval
-
         let runId = Guid.NewGuid()
-        let rando = (Rando.fromRngGen poolUpdateParamsBnW.rngGen)
         logToFile 0 runId (RunReportForBnW runId poolUpdateParamsBnW sorterPoolMember)
+        let rando = Rando.fromRngGen poolUpdateParamsBnW.rngGen
 
         let mutable sorterPool = [|sorterPoolMember|]
         let mutable gen = GenerationNumber.fromInt 1
         let mutable lastWinningBirtdate = GenerationNumber.fromInt 0
         while ((GenerationNumber.value gen) < (GenerationNumber.value poolUpdateParamsBnW.generationNumber)) do
-            sorterPool <- sorterPool |> Array.map(fun spm-> testSPM spm gen)
-            sorterPool <- NextGen poolUpdateParamsBnW sorterPool gen rando
+            sorterPool <- Measure sorterPool sortableSet
+            sorterPool <- Evaluate poolUpdateParamsBnW sorterPool gen
+            sorterPool <- NextGen poolUpdateParamsBnW sorterPool rando gen
             let winner = sorterPool |> Array.filter(fun pm -> SorterPoolMember.isTopRanked pm) |> Array.exactlyOne
             if winner.birthDate <> lastWinningBirtdate then
                Console.WriteLine(sprintf "%A %d" runId (GenerationNumber.value gen))
                logToFile  (GenerationNumber.value gen) runId (RunReportForBnW runId poolUpdateParamsBnW winner)
                lastWinningBirtdate <- winner.birthDate
-            gen <- GenerationNumber.fromInt ((GenerationNumber.value gen) + 1)
+            gen <- GenerationNumber.increment gen
         true
 
 
@@ -265,7 +278,7 @@ module SorterRun =
    
        // let sorterLength = SorterLength.to999Sucessful degree wOrTGen
        // let sorterLength = SorterLength.toRecordSorterLength degree //(SorterLength.makeStageCount 1)
-        let sorterLength = SorterLength.toRecordSorterLengthPlus degree  (SorterLength.Stage (StageCount.fromInt 2))
+        let sorterLength = SorterLength.toRecordSorterLengthPlus degree (SorterLength.makeStageCount 2)//  (SorterLength.Stage (StageCount.fromInt 2))
         let sorterCount = SorterCount.fromInt (InitialConditionCount.value initialConditionCount) 
 
         let paramReport =
@@ -306,7 +319,7 @@ module SorterRun =
                              (Some initialSwitchFrequency) sorterRando sorterCount
         
         let sorterPoolMembers = SorterOps.GetStandardSortingResultsEager sortableSet (UseParallel.create false) sorters
-                                |> Array.map(fun tup -> SorterPoolMember.makeRoot (fst tup) (Some (snd tup)) None)
+                                |> Array.map(fun tup -> SorterPoolMember.makeRoot (Guid.NewGuid()) (fst tup) (Some (snd tup)) None)
 
         let sorterAndPrams = PoolUpdateParamsBnW.ParamsSnS rngGenParams poolGenCount poolCount
                                 sorterMutationType legacyBias 1024.0 0.0 0.0005 0.0005
