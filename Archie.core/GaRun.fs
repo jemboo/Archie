@@ -57,7 +57,7 @@ type GenRun = {genTotal:GenerationNumber; makeAction:GenerationNumber->GenAction
 module SorterGenome =
 
     let createRandomSorterType (degree:Degree) (sorterLength:SorterLength) 
-                               (switchFreq:float option) (rnd:IRando) =
+                               (switchFreq:SwitchFrequency option) (rnd:IRando) =
          SorterGenome.Self
             (Sorter.createRandom degree sorterLength switchFreq rnd)
 

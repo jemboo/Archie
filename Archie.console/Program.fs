@@ -44,7 +44,7 @@ module RunWs =
         let useEagerProcesing = (UseEagerProc.create false)
         let poolGenCount = PoolGenCount.fromInt 100000
         let poolCount = SorterCount.fromInt 2
-        let initialSwitchFrequency = 0.5
+        let initialSwitchFrequency = SwitchFrequency.fromFloat 0.5
         let legacyBias = SorterFitness.fromFloat 0.00
 
         let res = SorterRun.RunPoolOfBnW

@@ -22,7 +22,13 @@ type UtilsFixture () =
         let g2 = Guid.NewGuid()
         let g3 = g1 |> GuidUtils.addGuids g2
         let hc = g3.GetHashCode()
+        Assert.IsTrue(true)
 
+
+    [<TestMethod>]
+    member this.guidFromObjs() =
+        let objs = seq { Guid.NewGuid():>obj; Guid.NewGuid():>obj;}
+        let g2 = objs |> GuidUtils.guidFromObjs
         Assert.IsTrue(true)
 
 

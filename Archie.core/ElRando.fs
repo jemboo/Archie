@@ -143,11 +143,17 @@ module RandoCollections =
           rngGen
           (fun rando -> {
               RngGen.rngType=rngGen.rngType; 
-              RngGen.seed = RandomSeed.create "" rando.NextPositiveInt |> Result.ExtractOrThrow})
+              RngGen.seed = RandomSeed.fromInt rando.NextPositiveInt })
 
 
-    let IndexedGuidGen (rngGen:RngGen) (rngGen2:RngGen option) = 
+    let IndexedGuidGen2 (rngGen:RngGen) (rngGen2:RngGen option) = 
         IndexedRandomData2 
             rngGen rngGen2
             (fun rando rando2 -> Rando.NextGuid rando rando2)
+
+    let IndexedGuidGen (rngGen:RngGen) = 
+        IndexedRandomData
+            rngGen
+            (fun rando -> Rando.NextGuid rando None)
+
 

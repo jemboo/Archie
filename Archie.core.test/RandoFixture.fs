@@ -49,8 +49,5 @@ type RandoFixture () =
         let seeds = RandoCollections.IndexedSeedGen rg
                     |> Seq.take(10) |> Seq.toArray
 
-        let guids = RandoCollections.IndexedGuidGen rg None
-                    |> Seq.take(10) |> Seq.toArray
-
         Assert.IsTrue(seeds.Length = 10)
 

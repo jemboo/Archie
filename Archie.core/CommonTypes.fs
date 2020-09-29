@@ -9,6 +9,7 @@ type InitialConditionCount = private InitialConditionCount of int
 type JsonString = private JsonString of string
 type MutationRate = private MutationRate of float
 type PoolFraction = private PoolFraction of float
+type PoolCount = private PoolCount of int
 type PoolGenCount = private PoolGenCount of int
 type PoolMemberRank = private PoolMemberRank of int
 type RandomSeed = private RandomSeed of int
@@ -21,6 +22,7 @@ type SorterCount = private SorterCount of int
 type StageCount = private StageCount of int
 type SorterFitness = private SorterFitness of float
 type SwitchCount = private SwitchCount of int
+type SwitchFrequency = private SwitchFrequency of float
 type UseEagerProc = private UseEagerProc of bool
 type UseParallel = private UseParallel of bool
 
@@ -49,7 +51,12 @@ module Degree =
     let within (b:Degree) v =
         (v >= 0) && (v < (value b))
     let fromInt v = create "" v |> Result.ExtractOrThrow
-    
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>int)
+        }
+
 module EntityId =
     let value (EntityId v) = v
     let create id = Ok (EntityId id)
@@ -59,6 +66,11 @@ module InitialConditionCount =
     let create fieldName v = 
         ConstrainedType.createInt fieldName InitialConditionCount 1 100000 v
     let fromInt v = create "" v |> Result.ExtractOrThrow
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>int)
+        }
 
 module GenerationNumber =
     let value (GenerationNumber v) = v
@@ -66,6 +78,11 @@ module GenerationNumber =
         ConstrainedType.createInt fieldName GenerationNumber 0 100000000 v
     let fromInt v = create "" v |> Result.ExtractOrThrow
     let increment gen = fromInt ((value gen) + 1)
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>int)
+        }
 
 module JsonString =
     let value (JsonString str) = str
@@ -79,6 +96,11 @@ module MutationRate =
     let create fieldName v = 
         ConstrainedType.createFloat fieldName MutationRate 0.0 1.0 v
     let fromFloat v = create "" v |> Result.ExtractOrThrow
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>float)
+        }
 
 module SorterMutationType =
     let StrF (mt:SorterMutationType) =
@@ -93,12 +115,34 @@ module PoolFraction =
     let boundedMultiply pf rhs =
         Math.Max((int ((float rhs) * (value pf))), 1)
     let fromFloat v = create "" v |> Result.ExtractOrThrow
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>float)
+        }
+
+module PoolCount =
+    let value (PoolCount v) = v
+    let create fieldName v = 
+        ConstrainedType.createInt fieldName PoolCount 1 10000 v
+    let fromInt v = create "" v |> Result.ExtractOrThrow
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>int)
+        }
 
 module PoolGenCount =
     let value (PoolGenCount v) = v
     let create fieldName v = 
         ConstrainedType.createInt fieldName PoolGenCount 1 1000000000 v
     let fromInt v = create "" v |> Result.ExtractOrThrow
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>int)
+        }
+
 
 module PoolMemberRank =
     let value (PoolMemberRank v) = v
@@ -108,6 +152,11 @@ module PoolMemberRank =
     let repStr v = match v with
                     |Some r -> sprintf "%d" (value r)
                     |None -> ""
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>int)
+        }
 
 module RandomSeed =
     let value (RandomSeed seed) = seed
@@ -115,18 +164,33 @@ module RandomSeed =
         let mSeed = Math.Abs(seed) % 2147483647
         ConstrainedType.createInt fieldName RandomSeed 1 2147483647 mSeed
     let fromInt v = create "" v |> Result.ExtractOrThrow
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>int)
+        }
 
 module ReplicaCount =
     let value (ReplicaCount count) = count
     let create fieldName (count:int) =
         ConstrainedType.createInt fieldName ReplicaCount 1 10000 count
     let fromInt v = create "" v |> Result.ExtractOrThrow
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>int)
+        }
 
 module ReportingFrequency =
     let value (ReportingFrequency freq) = freq
     let create fieldName (freq:int) =
         ConstrainedType.createInt fieldName ReportingFrequency 1 10000 freq
     let fromInt v = create "" v |> Result.ExtractOrThrow
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>int)
+        }
 
 module RngGen =
     let createLcg (seed:int) =
@@ -160,6 +224,11 @@ module SorterCount =
     let create fieldName v = 
         ConstrainedType.createInt fieldName SorterCount 1 100000 v
     let fromInt v = create "" v |> Result.ExtractOrThrow
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>int)
+        }
 
 module SortableCount =
     let value (SortableCount v) = v
@@ -169,6 +238,11 @@ module SortableCount =
     let repStr v = match v with
                           |Some r -> sprintf "%d" (value r)
                           |None -> ""
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>int)
+        }
 
 module SorterFitness =
     let value (SorterFitness v) = v
@@ -178,12 +252,34 @@ module SorterFitness =
     let repStr v = match v with
                           |Some r -> sprintf "%.4f" (value r)
                           |None -> ""
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>float)
+        }
 
 module SwitchCount =
     let value (SwitchCount v) = v
     let create fieldName v = 
         ConstrainedType.createInt fieldName SwitchCount 0 10000 v
     let fromInt v = create "" v |> Result.ExtractOrThrow
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>int)
+        }
+
+module SwitchFrequency =
+    let value (SwitchFrequency v) = v
+    let create fieldName v = 
+        ConstrainedType.createFloat fieldName SwitchFrequency 0.0 1.0 v
+    let fromFloat v = create "" v |> Result.ExtractOrThrow
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv :?> float)
+        }
+
 
 module StageCount =
     let value (StageCount v) = v
@@ -192,17 +288,32 @@ module StageCount =
     let ToSwitchCount (degree:Degree) (stageCount:StageCount) =
         SwitchCount.create "" ((Degree.value degree) * (value stageCount) / 2)
     let fromInt v = create "" v |> Result.ExtractOrThrow
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>int)
+        }
 
 module UseParallel = 
     let create (useParallel:bool) =
         UseParallel useParallel
     let value (UseParallel v) = v
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return create (gv:?>bool)
+        }
 
 module UseEagerProc = 
     let create (useEagerProc:bool) =
         UseEagerProc useEagerProc
     let value (UseEagerProc v) = v
-    
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return create (gv:?>bool)
+        }
+
 module SorterLength =
 
     let makeSwitchCountR switchCount =
@@ -210,7 +321,6 @@ module SorterLength =
             let! wc = (SwitchCount.create "" switchCount)
             return SorterLength.Switch wc
         }
-
 
     let makeStageCountR stageCount =
         result {

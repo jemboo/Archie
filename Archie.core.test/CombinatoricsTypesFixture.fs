@@ -76,7 +76,7 @@ type CombinatoricsTypesFixture () =
     [<TestMethod>]
     member this.makeFromTupleSeq() =        
         let rndy = Rando.LcgFromSeed 44
-        let switchFreq = 0.5
+        let switchFreq = SwitchFrequency.fromFloat 0.5
         let degree = Degree.fromInt 16
         let switchCount = SwitchCount.fromInt 8
         let stageTupes = Stage.makeRandomStagedSwitchSeq degree switchFreq rndy

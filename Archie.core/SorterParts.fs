@@ -116,9 +116,9 @@ module Stage =
                 }
 
 
-    let makeRandomStagedSwitchSeq (degree:Degree) (switchFreq:float) (rnd:IRando) =
+    let makeRandomStagedSwitchSeq (degree:Degree) (switchFreq:SwitchFrequency) (rnd:IRando) =
         let aa (rnd:IRando)  = 
-            (TwoCyclePerm.makeRandomTwoCycle degree rnd switchFreq)
+            (TwoCyclePerm.makeRandomTwoCycle degree rnd (SwitchFrequency.value switchFreq))
                     |> Switch.switchSeqFromTwoCyclePerm
         seq { while true do yield! (aa rnd) }
 
@@ -186,17 +186,17 @@ module Sorter =
 
 
     let private createWithRandomStages (degree:Degree) (stageCount:StageCount)
-                                    (switchFreq:float) (rando:IRando) =
+                                       (switchFreq:SwitchFrequency) (rando:IRando) =
         let switches = (Stage.makeRandomStagedSwitchSeq degree switchFreq rando)
                         |> Seq.take ((StageCount.value stageCount) * (Degree.value degree) / 2)
                         |> Seq.toArray
         create degree switches
 
 
-    let createRandom (degree:Degree) (sorterLength:SorterLength) (switchFreq:float option) (rnd:IRando) =
+    let createRandom (degree:Degree) (sorterLength:SorterLength) (switchFreq:SwitchFrequency option) (rnd:IRando) =
         let swf = match switchFreq with
                         | Some f -> f
-                        | None -> 1.0
+                        | None -> SwitchFrequency.fromFloat 1.0
 
         match sorterLength with
         | SorterLength.Switch wc -> createWithRandomSwitches degree wc rnd
@@ -204,7 +204,7 @@ module Sorter =
 
 
     let createRandomArray (degree:Degree) (sorterLength:SorterLength) 
-                          (switchFreq:float option) (rnd:IRando) 
+                          (switchFreq:SwitchFrequency option) (rnd:IRando) 
                           (sorterCount:SorterCount) =
         (seq {1 .. (SorterCount.value sorterCount)} 
                 |> Seq.map(fun _ -> (createRandom degree sorterLength switchFreq rnd))
@@ -256,6 +256,7 @@ module Sorter =
 
 type SorterSet = {degree:Degree; sorterCount:SorterCount; sorters:Sorter[] }
 module SorterSet =
+
     let fromSorters (degree:Degree) (sorters:seq<Sorter>) =
         let sorterArray = sorters |> Seq.toArray
         {
@@ -264,25 +265,25 @@ module SorterSet =
             sorters = sorterArray
         }
 
-    let createRandom (degree:Degree) (sorterLength:SorterLength) (switchFreq:float option)
-                        (sorterCount:SorterCount) (rnd:IRando) =
+    let createRandom (degree:Degree) (sorterLength:SorterLength) (switchFreq:SwitchFrequency option)
+                     (sorterCount:SorterCount) (rnd:IRando) =
         fromSorters degree 
             (seq {1 .. (SorterCount.value sorterCount)} 
                     |> Seq.map(fun _ -> (Sorter.createRandom degree sorterLength switchFreq rnd))
                     |> Seq.toArray)
 
 
-type SorterSetE = {degree:Degree; sorterCount:SorterCount;
-                    sorters:Map<EntityId, Entity<Sorter>> }
-module SorterSetE =
-    let fromSorterSet (rando1:IRando) (rando2:IRando) (sorterSet:SorterSet) =
-            {
-            degree = sorterSet.degree; 
-            sorterCount= sorterSet.sorterCount;
-            sorters = sorterSet.sorters |> Entity.createMany rando1 (Some rando2)
-                                        |> Seq.map(fun e-> (Entity.id e), e)
-                                        |> Map.ofSeq
-            }
+//type SorterSetE = {degree:Degree; sorterCount:SorterCount;
+//                    sorters:Map<EntityId, Entity<Sorter>> }
+//module SorterSetE =
+//    let fromSorterSet (rando1:IRando) (rando2:IRando) (sorterSet:SorterSet) =
+//            {
+//            degree = sorterSet.degree; 
+//            sorterCount= sorterSet.sorterCount;
+//            sorters = sorterSet.sorters |> Entity.createMany rando1 (Some rando2)
+//                                        |> Seq.map(fun e-> (Entity.id e), e)
+//                                        |> Map.ofSeq
+//            }
 
 
  

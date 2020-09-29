@@ -3,6 +3,8 @@ open System.Collections.Generic
 open Microsoft.FSharp.Core
 open System
 open System.IO
+open System.Security.Cryptography
+open System.Text
 
 module GuidUtils = 
 
@@ -25,6 +27,17 @@ module GuidUtils =
         let pcsS = Array.init 16 (fun i-> pcs1.[i] + pcs2.[i])
         new System.Guid(pcsS)
 
+
+    let guidFromObjs (objs:seq<obj>) =
+        let acc = Array.create 16 (byte 0)
+        let folder (a:byte[]) (b:byte[]) =
+            a |> Array.map2(fun a b -> a+b) b
+
+        let md5 = MD5.Create();
+        let laz = objs |> Seq.map(fun o -> md5.ComputeHash(BitConverter.GetBytes(o.GetHashCode())))
+                       |> Seq.fold(fun a b -> folder a b) acc
+        System.Guid(laz)
+        
 
 module ParseUtils =
 
@@ -119,6 +132,9 @@ module CollectionUtils =
             map |> Ok
         else "key duplicates" |> Error
 
+    let readMap (m:Map<'a,'b>) (key:'a) =
+        if (m.ContainsKey key) then m.[key] |> Ok
+        else (sprintf "key %A missing" key) |> Error 
 
     let mapSubset (m:Map<'a,'v>) (keys:seq<'a>) = 
         keys |> Seq.map(fun k-> k, (m.[k]))

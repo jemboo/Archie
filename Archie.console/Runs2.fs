@@ -53,7 +53,7 @@ module Runs2 =
 
         let reportSorterResults (genPool:int) (results:(Sorter*SorterTestResults*SorterFitness)) =
             let (srtr,r,f) = results
-            sprintf "%s %d %d %d %s %.3f %.3f %s %d %d %d" 
+            sprintf "%s %d %d %d %s %.3f %.3f %s %d %d %A" 
                      sorterInfo 
                      (SwitchCount.value r.usedSwitchCount) 
                      (StageCount.value r.stageUseCount)
@@ -63,12 +63,12 @@ module Runs2 =
                      (PoolFraction.value prams.winnerFrac)
                      (SorterMutationType.StrF prams.mutationType)
                      (SorterCount.value prams.poolCount) genPool 
-                     (RandomSeed.value prams.rngGen.seed)
+                     prams.id
 
         let reportEvalBinsMin (genPool:int) (results:(Sorter*SorterTestResults*SorterFitness)[]) =
             let summary = results|> Array.minBy (fun (srtr,r,f)-> r.usedSwitchCount)
             let (srtr,r,f) = summary
-            sprintf "%s %d %d %d %s %.3f %.3f %s %d %d %d" 
+            sprintf "%s %d %d %d %s %.3f %.3f %s %d %d %A" 
                      sorterInfo 
                      (SwitchCount.value r.usedSwitchCount) 
                      (StageCount.value r.stageUseCount)
@@ -78,7 +78,7 @@ module Runs2 =
                      (PoolFraction.value prams.winnerFrac)
                      (SorterMutationType.StrF prams.mutationType)
                      (SorterCount.value prams.poolCount) genPool 
-                     (RandomSeed.value prams.rngGen.seed)
+                     prams.id
 
         let nextGenArgs sorterWraps =
             NextGen<Sorter*SorterTestResults*SorterFitness, Sorter>
@@ -90,18 +90,18 @@ module Runs2 =
 
         let sortableSet = SortableSet.allBinary sorter.degree |> Result.ExtractOrThrow
         
-        let randy = Rando.fromRngGen prams.rngGen
+        let randy = Rando.fromGuid prams.rngType prams.id
         let sortersGen0 = seq {1.. (SorterCount.value prams.poolCount)}
                                 |> Seq.map(fun _ -> (PoolUpdateParamsBnW.mutator prams) randy sorter)
                                 |> Seq.toArray
 
-        Console.WriteLine(sprintf "%s %d" sorterInfo (RandomSeed.value prams.rngGen.seed))
+        Console.WriteLine(sprintf "%s %A" sorterInfo prams.id)
 
         let mutable currentEvals = Array.copy(sortersGen0)
         let mutable gen = 0
         let mutable nextRep = 0
         let mutable currentStandardSorterTestResults = res
-        while (gen < (GenerationNumber.value prams.generationNumber)) && (checkArray currentEvals) do
+        while (gen < (GenerationNumber.value prams.runLength)) && (checkArray currentEvals) do
             let genN = GenerationNumber.fromInt gen
             let currentSorterFitness = currentEvals |> (getSortingResults sortableSet)
                                        |> Seq.map(fun r -> (fst r), (snd r), (prams.fitnessFunc.func (Some (genN:>obj)) (snd r)))
@@ -168,7 +168,7 @@ module Runs2 =
                                      (SwitchCount.value w) (StageCount.value t)
 
         let sorterCount = SorterCount.create "" (InitialConditionCount.value icCount) |> Result.ExtractOrThrow
-        let sorters = (SorterSet.createRandom degree sorterLength (Some 1.00) sorterCount sorterRando).sorters
+        let sorters = (SorterSet.createRandom degree sorterLength (Some (SwitchFrequency.fromFloat 1.00)) sorterCount sorterRando).sorters
 
         let sorterPoolMembers = sorters
                                 |> (getSortingResults sortableSet)

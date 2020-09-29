@@ -8,19 +8,6 @@ open System
 type RunParamsFixture () =
 
     [<TestMethod>]
-    member this.IndexedRandomData() =
-       let rg = RngGen.createLcg 123
-       let seeds = RandoCollections.IndexedSeedGen rg
-                   |> Seq.take(10) |> Seq.toArray
-
-       let guids = RandoCollections.IndexedGuidGen rg None
-                    |> Seq.take(10) |> Seq.toArray
-
-       Assert.IsTrue(seeds.Length = 10)
-       Assert.IsTrue(guids.Length = 10)
-
-
-    [<TestMethod>]
     member this.FitnessFuncAlt() =
       let sstr = {
                     SorterTestResults.stageUseCount = StageCount.fromInt 1;
@@ -37,3 +24,13 @@ type RunParamsFixture () =
       let sorterFitness2 = dd.func (Some (genNum2:>obj)) sstr 
 
       Assert.IsTrue((SorterFitness.fromFloat 0.5) = sorterFitness0)
+
+
+    [<TestMethod>]
+    member this.FitnessFunc2Dto() =
+           let dto =  FitnessFunc2Dto.altSwitchStageAndSuccessDto (GenerationNumber.fromInt 5)
+           let json = Json.serialize dto
+           let dtoBack = Json.deserialize<FitnessFunc2Dto> json |> Result.ExtractOrThrow
+           Assert.AreEqual(dto, dtoBack)
+           let ff =  FitnessFunc2Dto.fromDto dto
+           Assert.IsTrue(true)

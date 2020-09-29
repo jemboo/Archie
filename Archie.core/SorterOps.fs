@@ -13,10 +13,12 @@ module SorterTestResults =
     let headers =
         [|"successfulSortCount"; "usedSwitchCount"; "stageUseCount"|]
 
+
     let report (sstr:SorterTestResults) =
         [|sprintf "%d" (SortableCount.value sstr.successfulSortCount);
           sprintf "%d" (SwitchCount.value sstr.usedSwitchCount);
           sprintf "%d" (StageCount.value sstr.stageUseCount);|]
+
 
     let reportOpt (sstr:SorterTestResults option) =
         match sstr with
