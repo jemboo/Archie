@@ -17,6 +17,7 @@ type ReplicaCount = private ReplicaCount of int
 type ReportingFrequency = private ReportingFrequency of int
 type RngType = | Lcg | Net
 type RngGen = {rngType:RngType; seed:RandomSeed}
+type RunCount = private RunCount of int
 type SortableCount = private SortableCount of int
 type SorterCount = private SorterCount of int
 type StageCount = private StageCount of int
@@ -211,6 +212,18 @@ module RngType =
         | "Lcg" -> RngType.Lcg |> Ok
         | "Net" -> RngType.Net |> Ok
         | _ -> Error (sprintf "no match for RngType: %s" str)
+
+module RunCount =
+    let value (RunCount v) = v
+    let create fieldName v = 
+        ConstrainedType.createInt fieldName RunCount 1 1000000 v
+    let fromInt v = create "" v |> Result.ExtractOrThrow
+    let fromKey (m:Map<'a, obj>) (key:'a) =
+        result {
+            let! gv = CollectionUtils.readMap m key
+            return! create "" (gv:?>int)
+        }
+
 
 module String50 =
     let value (String50 str) = str
