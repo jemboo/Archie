@@ -1,6 +1,85 @@
 ﻿namespace Archie.Base
-
 open System
+
+type SorterTestResultsDto = 
+    {
+        switchUsesDto:SwitchUsesDto;
+        successfulSortCount:int;
+        usedSwitchCount:int;
+        usedStageCount:int
+    }
+
+module SorterTestResultsDto = 
+    let fromDto (dto:SorterTestResultsDto) =
+        result {
+            let! switchUses = SwitchUsesDto.fromDto dto.switchUsesDto
+            let! successfulSortCount = SortableCount.create "" dto.successfulSortCount
+            let! usedSwitchCount = SwitchCount.create "" dto.usedSwitchCount
+            let! usedStageCount = StageCount.create "" dto.usedStageCount
+
+            return {
+                SorterTestResults.switchUses=switchUses;
+                successfulSortCount=successfulSortCount;
+                usedSwitchCount=usedSwitchCount;
+                usedStageCount=usedStageCount
+            }
+        }
+
+    let toDto (sorterTestResults:SorterTestResults) =
+        {
+            SorterTestResultsDto.switchUsesDto = sorterTestResults.switchUses |> SwitchUsesDto.toDto
+            successfulSortCount = (SortableCount.value sorterTestResults.successfulSortCount)
+            usedSwitchCount = (SwitchCount.value sorterTestResults.usedSwitchCount)
+            usedStageCount = (StageCount.value sorterTestResults.usedStageCount)
+        }
+
+
+type SorterPoolMemberDto = {
+    id:Guid;
+    poolMemberState:PoolMemberState; 
+    birthDate:int; 
+    parent:string;
+    sorterDto:SorterDto;
+    poolMemberRank:int;
+    testResults:SorterTestResults option;
+    fitness:float;
+}
+
+module SorterPoolMemberDto =
+    let keepGoig = Some "after SorterDto"
+    //let fromDto (dto:SorterPoolMemberDto) =
+    //    result {
+    //        let! switchUses = SwitchUsesDto.fromDto dto.switchUsesDto
+    //        let! successfulSortCount = SortableCount.create "" dto.successfulSortCount
+    //        let! usedSwitchCount = SwitchCount.create "" dto.usedSwitchCount
+    //        let! usedStageCount = StageCount.create "" dto.usedStageCount
+
+    //        return {
+    //            SorterPoolMember.id=switchUses;
+    //            poolMemberState=successfulSortCount;
+    //            birthDate=usedSwitchCount;
+    //            parent=usedStageCount
+    //            sorter
+    //            poolMemberRank
+    //            testResults
+    //            fitness
+    //        }
+    //    }
+
+    //let toDto (sorterPoolMember:SorterPoolMember) =
+    //    {
+    //        SorterPoolMemberDto.id = sorterPoolMember.id
+    //        poolMemberState = sorterPoolMember.poolMemberState
+    //        birthDate = (GenerationNumber.value sorterPoolMember.birthDate)
+    //        parent = sorterPoolMember.parent
+    //        sorterDto = sorterPoolMember.sorter |> SorterDto.toDto
+    //        poolMemberRank =  sorterPoolMember.poolMemberRank
+    //        testResults = sorterPoolMember.testResults
+    //        fitness = sorterPoolMember.fitness
+    //    }
+
+
+
 
 //type FitnessFuncDto = {cat:string; args:string;}
 //module FitnessFuncDto =

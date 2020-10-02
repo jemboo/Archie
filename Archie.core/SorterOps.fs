@@ -6,18 +6,18 @@ type SorterTestResults =
         switchUses:SwitchUses;
         successfulSortCount:SortableCount;
         usedSwitchCount:SwitchCount;
-        stageUseCount:StageCount
+        usedStageCount:StageCount
     }
 
 module SorterTestResults = 
     let headers =
-        [|"successfulSortCount"; "usedSwitchCount"; "stageUseCount"|]
+        [|"successfulSortCount"; "usedSwitchCount"; "usedStageCount"|]
 
 
     let report (sstr:SorterTestResults) =
         [|sprintf "%d" (SortableCount.value sstr.successfulSortCount);
           sprintf "%d" (SwitchCount.value sstr.usedSwitchCount);
-          sprintf "%d" (StageCount.value sstr.stageUseCount);|]
+          sprintf "%d" (StageCount.value sstr.usedStageCount);|]
 
 
     let reportOpt (sstr:SorterTestResults option) =
@@ -47,7 +47,7 @@ module SorterOps =
 
     let SortAllComplete (sorter:Sorter) (testCases:SortableSet) =
          let switchCount = (SwitchCount.value sorter.switchCount)
-         let switchUses = SwitchUses.create sorter.switchCount
+         let switchUses = SwitchUses.createEmpty sorter.switchCount
          let tcCopy = (SortableSet.copy testCases) |> Result.ExtractOrThrow
          let mutable i=0
          let mutable successCount = 0
@@ -80,7 +80,7 @@ module SorterOps =
 
     let SortAllEager (sorter:Sorter) (testCases:SortableSet) =
          let switchCount = (SwitchCount.value sorter.switchCount)
-         let switchUses = SwitchUses.create sorter.switchCount
+         let switchUses = SwitchUses.createEmpty sorter.switchCount
          let tcCopy = (SortableSet.copy testCases) |> Result.ExtractOrThrow
          let mutable i=0
          let mutable successCount = 0
@@ -97,7 +97,7 @@ module SorterOps =
             SorterTestResults.switchUses = su;
             SorterTestResults.successfulSortCount = sc;
             SorterTestResults.usedSwitchCount = w;
-            SorterTestResults.stageUseCount = t;
+            SorterTestResults.usedStageCount = t;
         }
 
     let private GetTheStandardSortingResults (sortableSet:SortableSet) (sorter:Sorter) 

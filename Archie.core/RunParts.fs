@@ -48,7 +48,7 @@ module FitnessFunc =
             let g = p |> Option.get :?> GenerationNumber
             let phase = (GenerationNumber.value g) % ((GenerationNumber.value cycleG) * 2)
             if (phase < (GenerationNumber.value cycleG)) then
-               SorterFitness.fromFloat (mesa offsetT (StageCount.value r.stageUseCount))
+               SorterFitness.fromFloat (mesa offsetT (StageCount.value r.usedStageCount))
             else
                SorterFitness.fromFloat (mesa offsetW (SwitchCount.value r.usedSwitchCount))
         { cat = (sprintf "WaltT");
@@ -79,7 +79,7 @@ module FitnessFunc =
             //              (nuCov - float (SortableCount.value r.successfulSortCount))
             let cov = (float (SortableCount.value r.successfulSortCount)) / 
                           (maxCoverage - float (SortableCount.value r.successfulSortCount))
-            let st = usageR * ( 1.0 + (cosy((float (StageCount.value r.stageUseCount) / 6.0) ) ))     //Degree12:9
+            let st = usageR * ( 1.0 + (cosy((float (StageCount.value r.usedStageCount) / 6.0) ) ))     //Degree12:9
             let sw = 0.5 * usageR * ( 1.0 + (cosy((float (SwitchCount.value r.usedSwitchCount) / 34.0) ) ))  //Degree12:39
             SorterFitness.fromFloat (cov + sw + st)
         { cat = (sprintf "tNs");

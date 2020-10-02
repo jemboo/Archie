@@ -29,7 +29,7 @@ module FitnessFunc2 =
         let ff p r =
             match p with
             | NoParam->
-                SorterFitness.fromFloat (float (StageCount.value r.stageUseCount) * -1.0)
+                SorterFitness.fromFloat (float (StageCount.value r.usedStageCount) * -1.0)
             | _ -> failwith (sprintf "param: %A incorrect for standardStage" p)
 
         create ff
@@ -40,7 +40,7 @@ module FitnessFunc2 =
             | Gen g ->
                 let phase = (GenerationNumber.value g) % ((GenerationNumber.value cycleG) * 2)
                 if (phase < (GenerationNumber.value cycleG)) then
-                   SorterFitness.fromFloat (float (StageCount.value r.stageUseCount) * -1.0)
+                   SorterFitness.fromFloat (float (StageCount.value r.usedStageCount) * -1.0)
                 else
                    SorterFitness.fromFloat (float (SwitchCount.value r.usedSwitchCount) * -1.0)
 
@@ -55,7 +55,7 @@ module FitnessFunc2 =
             | Gen g ->
                 let phase = (GenerationNumber.value g) % ((GenerationNumber.value cycleG) * 3)
                 if (phase < (GenerationNumber.value cycleG)) then
-                   SorterFitness.fromFloat (float (StageCount.value r.stageUseCount) * -1.0)
+                   SorterFitness.fromFloat (float (StageCount.value r.usedStageCount) * -1.0)
                 elif (phase < (GenerationNumber.value cycleG) * 2) then
                    SorterFitness.fromFloat (float (SwitchCount.value r.usedSwitchCount) * -1.0)
                 else

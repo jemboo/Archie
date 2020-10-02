@@ -56,7 +56,7 @@ module Runs2 =
             sprintf "%s %d %d %d %s %.3f %.3f %s %d %d %A" 
                      sorterInfo 
                      (SwitchCount.value r.usedSwitchCount) 
-                     (StageCount.value r.stageUseCount)
+                     (StageCount.value r.usedStageCount)
                      (SortableCount.value r.successfulSortCount)
                      prams.fitnessFunc.cat
                      (PoolFraction.value prams.breederFrac) 
@@ -71,7 +71,7 @@ module Runs2 =
             sprintf "%s %d %d %d %s %.3f %.3f %s %d %d %A" 
                      sorterInfo 
                      (SwitchCount.value r.usedSwitchCount) 
-                     (StageCount.value r.stageUseCount)
+                     (StageCount.value r.usedStageCount)
                      (SortableCount.value r.successfulSortCount)
                      prams.fitnessFunc.cat
                      (PoolFraction.value prams.breederFrac) 
@@ -172,7 +172,7 @@ module Runs2 =
 
         let sorterPoolMembers = sorters
                                 |> (getSortingResults sortableSet)
-                                |> Seq.map(fun (srtr,r) -> (sorterInfo r.usedSwitchCount r.stageUseCount), srtr, r)
+                                |> Seq.map(fun (srtr,r) -> (sorterInfo r.usedSwitchCount r.usedStageCount), srtr, r)
                                 |> Seq.toArray
 
         let sorterMutationType = SorterMutationType.Stage (MutationRate.fromFloat 0.1)

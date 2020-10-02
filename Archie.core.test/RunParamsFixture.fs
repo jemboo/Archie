@@ -10,10 +10,10 @@ type RunParamsFixture () =
     [<TestMethod>]
     member this.FitnessFuncAlt() =
       let sstr = {
-                    SorterTestResults.stageUseCount = StageCount.fromInt 1;
+                    SorterTestResults.usedStageCount = StageCount.fromInt 1;
                     SorterTestResults.successfulSortCount = SortableCount.fromInt 3;
                     SorterTestResults.usedSwitchCount = SwitchCount.fromInt 7;
-                    SorterTestResults.switchUses = SwitchUses.create(SwitchCount.fromInt 100);
+                    SorterTestResults.switchUses = SwitchUses.createEmpty(SwitchCount.fromInt 100);
                  }
       let genNum0 = GenerationNumber.fromInt 9
       let genNum1 = GenerationNumber.fromInt 10

@@ -21,7 +21,7 @@ type CommonTypesFixture() =
 
     [<TestMethod>]
     member this.PrintArray() =
-        let st = SwitchUses.create ((SwitchCount.create "" 1000) |> Result.ExtractOrThrow)
+        let st = SwitchUses.createEmpty ((SwitchCount.create "" 1000) |> Result.ExtractOrThrow)
         let wts = SwitchUses.getWeights st
         let ss = sprintf "%A" wts |> (fun s->s.Replace("\n ", ""))
         Assert.AreEqual(1, 1)

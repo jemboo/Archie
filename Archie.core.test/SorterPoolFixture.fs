@@ -18,7 +18,7 @@ type SorterPoolFixture () =
 
 
     [<TestMethod>]
-    member this.yabba() =
+    member this.makeBatchOfRunReplicas() =
         let rngSorters = RngGen.createLcg 123
         let rngTypeForSorterIds = RngType.Lcg
         let degree = Degree.fromInt 10
@@ -31,11 +31,12 @@ type SorterPoolFixture () =
         let sorterMutationType = SorterMutationType.Stage (MutationRate.fromFloat 0.1)
         let runLength =  GenerationNumber.fromInt 99
         let poolCount = PoolCount.fromInt 3
+        let runCount = RunCount.fromInt 12
 
         let batch = SorterPoolBatchRunParams.makeBatchOfRunReplicas rngSorters
                         rngTypeForSorterIds degree sorterLength switchFreq
                         sorterPoolSize rngGenMut breederFrac winnerFrac
-                        sorterMutationType runLength poolCount
+                        sorterMutationType runLength poolCount runCount
 
         Assert.IsTrue(true);
 
