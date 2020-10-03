@@ -124,7 +124,7 @@ module Stage =
                     stageTracker.[sw.low] <- true
                     curDex <- curDex + 1
                 yield curDex
-                }
+           }
 
 
     let makeRandomStagedSwitchSeq (degree:Degree) (switchFreq:SwitchFrequency) (rnd:IRando) =

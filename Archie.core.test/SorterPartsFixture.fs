@@ -179,6 +179,7 @@ type SortingFixture () =
         Assert.AreEqual(stage.degree, mutant.degree)
         Assert.IsTrue(mutant <> stage)
 
+
     [<TestMethod>]
     member this.switchMutateByStage() =
         let rnd = Rando.LcgFromSeed 6241

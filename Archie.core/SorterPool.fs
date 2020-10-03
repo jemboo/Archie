@@ -47,16 +47,9 @@ module SorterPoolMemberF =
 
     let toMeasured (pm:SorterPoolMember) (measure:Sorter->SorterTestResults) =
         match pm.poolMemberState with
-        | Root -> 
-            {SorterPoolMember.id = pm.id;
-             poolMemberState = PoolMemberState.Measured;
-             birthDate = pm.birthDate;
-             parent = Some pm;
-             sorter = pm.sorter;
-             poolMemberRank = None;
-             testResults = Some (measure pm.sorter);
-             fitness = None;}
-        | Initiate | Evaluated | Measured | Legacy ->
+        | Archived _ -> failwith "cannot convert Archived to Tested"
+
+        | _ ->
             {SorterPoolMember.id = pm.id;
              poolMemberState = PoolMemberState.Measured;
              birthDate = pm.birthDate;
@@ -65,7 +58,6 @@ module SorterPoolMemberF =
              poolMemberRank = None;
              testResults = Some (measure pm.sorter);
              fitness = None;}
-        | Archived _ -> failwith "cannot convert Archived to Tested"
 
 
     let toEvaluated (pm:SorterPoolMember) (fitnessFunc:FitnessFunc) 

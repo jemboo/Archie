@@ -18,6 +18,9 @@ module Json =
         | Some s -> (deserialize<'a> s)
         | None -> failwith  "data missing"
 
+module Dto =
+    let toOption (v:'a option) =
+        None
 
 type LogFileDto = {cat:string; descr:string; header:string; records:string[]}
 

@@ -36,47 +36,73 @@ module SorterTestResultsDto =
 
 type SorterPoolMemberDto = {
     id:Guid;
-    poolMemberState:PoolMemberState; 
+    poolMemberState:string; 
     birthDate:int; 
-    parent:string;
+    parent:SorterPoolMemberDto option;
     sorterDto:SorterDto;
-    poolMemberRank:int;
-    testResults:SorterTestResults option;
-    fitness:float;
+    poolMemberRank:int option;
+    testResults:SorterTestResultsDto option;
+    fitness:float option;
 }
 
 module SorterPoolMemberDto =
-    let keepGoig = Some "after SorterDto"
-    //let fromDto (dto:SorterPoolMemberDto) =
-    //    result {
-    //        let! switchUses = SwitchUsesDto.fromDto dto.switchUsesDto
-    //        let! successfulSortCount = SortableCount.create "" dto.successfulSortCount
-    //        let! usedSwitchCount = SwitchCount.create "" dto.usedSwitchCount
-    //        let! usedStageCount = StageCount.create "" dto.usedStageCount
 
-    //        return {
-    //            SorterPoolMember.id=switchUses;
-    //            poolMemberState=successfulSortCount;
-    //            birthDate=usedSwitchCount;
-    //            parent=usedStageCount
-    //            sorter
-    //            poolMemberRank
-    //            testResults
-    //            fitness
-    //        }
-    //    }
+    let rec fromDto (dto:SorterPoolMemberDto) =
+        result {
+            let id = dto.id
+            let! pms = dto.poolMemberState |> PoolMemberState.fromDto
+            let! birthDate = GenerationNumber.create "" dto.birthDate
+            let! parent = match dto.parent with
+                          | Some dto -> Some ((fromDto dto) |> Result.ExtractOrThrow) |> Ok
+                          | None -> None |> Ok
+            let! sorter = dto.sorterDto |> SorterDto.fromDto
+            let poolMemberRank = match dto.poolMemberRank with
+                                 | Some pmr -> Some (PoolMemberRank.fromInt pmr)
+                                 | None -> None
+            let testResults = match dto.testResults with
+                               | Some tr -> Some ((SorterTestResultsDto.fromDto tr) |> Result.ExtractOrThrow)
+                               | None -> None
+            let fitness =  match dto.fitness with
+                            | Some f -> Some (SorterFitness.fromFloat f)
+                            | None -> None
+            return {
+                SorterPoolMember.id = id;
+                poolMemberState = pms
+                birthDate=birthDate;
+                parent=parent
+                sorter=sorter
+                poolMemberRank = poolMemberRank
+                testResults = testResults
+                fitness = fitness
+            }
+        }
 
-    //let toDto (sorterPoolMember:SorterPoolMember) =
-    //    {
-    //        SorterPoolMemberDto.id = sorterPoolMember.id
-    //        poolMemberState = sorterPoolMember.poolMemberState
-    //        birthDate = (GenerationNumber.value sorterPoolMember.birthDate)
-    //        parent = sorterPoolMember.parent
-    //        sorterDto = sorterPoolMember.sorter |> SorterDto.toDto
-    //        poolMemberRank =  sorterPoolMember.poolMemberRank
-    //        testResults = sorterPoolMember.testResults
-    //        fitness = sorterPoolMember.fitness
-    //    }
+
+    let rec toDto (sorterPoolMember:SorterPoolMember) =
+        {
+            SorterPoolMemberDto.id = sorterPoolMember.id
+            poolMemberState = sorterPoolMember.poolMemberState 
+                                    |> PoolMemberState.toDto
+            birthDate = (GenerationNumber.value sorterPoolMember.birthDate)
+
+            parent = match sorterPoolMember.parent with
+                        | Some spm -> Some (toDto spm)
+                        | None -> None
+
+            sorterDto = sorterPoolMember.sorter |> SorterDto.toDto
+
+            poolMemberRank =  match sorterPoolMember.poolMemberRank with
+                                | Some r -> Some (PoolMemberRank.value r)
+                                | None -> None
+
+            testResults = match sorterPoolMember.testResults with
+                           | Some tr ->  Some (tr |> SorterTestResultsDto.toDto)
+                           | None -> None
+
+            fitness = match sorterPoolMember.fitness with
+                        | Some v -> Some (SorterFitness.value v)
+                        | None -> None
+        }
 
 
 

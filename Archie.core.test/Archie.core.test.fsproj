@@ -26,6 +26,7 @@
     <Compile Include="SorterPartsFixture.fs" />
     <Compile Include="SorterOpsFixture.fs" />
     <Compile Include="SorterPoolFixture.fs" />
+    <Compile Include="SorterPoolDtoFixture.fs" />
     <Compile Include="RunParamsFixture.fs" />
     <Compile Include="GaRunFixture.fs" />
     <Compile Include="GaRunDtoFixture.fs" />

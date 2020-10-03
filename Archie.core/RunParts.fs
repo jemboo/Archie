@@ -11,6 +11,29 @@ type PoolMemberState =
     | Archived
 
 
+module PoolMemberState =
+
+    let toDto (pms:PoolMemberState) =
+        match pms with
+              | Root -> "Root"
+              | Initiate -> "Initiate"
+              | Measured -> "Measured"
+              | Evaluated -> "Evaluated"
+              | Legacy -> "Legacy"
+              | Archived -> "Archived"
+
+
+    let fromDto (pms:string) =
+        match pms with
+              | "Root" -> Root |> Ok
+              | "Initiate" -> Initiate |> Ok
+              | "Measured" -> Measured |> Ok
+              | "Evaluated" -> Evaluated |> Ok
+              | "Legacy" -> Legacy |> Ok
+              | "Archived" -> Archived |> Ok
+              | _ -> Error (sprintf "%s not handled" pms)
+
+
 type SorterPoolMember = {
         id:Guid;
         poolMemberState:PoolMemberState; 
