@@ -14,7 +14,8 @@ type SorterPoolFixture () =
         let rngSorters = RngGen.createLcg 123
         let yab = SorterPool2.createRandom degree sorterLength 
                     switchFreq sorterCount rngSorters RngType.Lcg
-        Assert.IsTrue(true);
+                    |> Result.ExtractOrThrow
+        Assert.IsTrue(yab.degree = degree)
 
 
     [<TestMethod>]

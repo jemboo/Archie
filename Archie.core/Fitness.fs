@@ -104,3 +104,6 @@ module FitnessFunc2Dto =
                      let! g = GenerationNumber.fromKey fitnessFunc2Dto.prams "cycleG"
                      return FitnessFunc2.altSwitchStageAndSuccess g
                   }
+
+
+     

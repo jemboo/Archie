@@ -105,6 +105,16 @@ module CollectionUtils =
                                          lstRet <- dAdd.[k]::lstRet)
         lstRet
 
+    // returns a sequence of items that occur more than once 
+    let duplicates items =
+        seq {
+            let d = System.Collections.Generic.Dictionary()
+            for i in items do
+                match d.TryGetValue(i) with
+                | false,_    -> d.[i] <- false         // first observance
+                | true,false -> d.[i] <- true; yield i // second observance
+                | true,true  -> ()                     // already seen at least twice
+        }
 
     // returns a list of the new items added
     let cumulate (cumer:Dictionary<int, Dictionary<'a,'b>>) (key:int) (group:'a) (item:'b) =

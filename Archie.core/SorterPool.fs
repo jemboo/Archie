@@ -15,9 +15,10 @@ module SorterPoolMemberF =
             fitness=fit;
         }
 
-    let toArchived (spm:SorterPoolMember) =
+    let toArchived (archiver:SorterPoolMember->unit) (spm:SorterPoolMember) =
+        archiver spm
         match spm.poolMemberState with
-        | Legacy | Evaluated | Initiate | Measured ->
+        | Legacy | Evaluated | Initiate | Measured | Root  ->
         {
             id=spm.id;
             poolMemberState=PoolMemberState.Archived; 
@@ -28,7 +29,7 @@ module SorterPoolMemberF =
             testResults=spm.testResults;
             fitness=spm.fitness;
         }
-        | Root | Archived _ -> spm
+        | Archived _ -> spm
 
         
     let toInitiate (mutator:Sorter->Sorter) (parent:SorterPoolMember) 
@@ -77,9 +78,10 @@ module SorterPoolMemberF =
         | Archived -> failwith "cannot convert Archived to Evaluated"
 
 
-    let toLegacy (pm:SorterPoolMember) (rank:PoolMemberRank) =
+    let toLegacy (pm:SorterPoolMember) (rank:PoolMemberRank) 
+                 (archiver:SorterPoolMember->unit) =
         match pm.poolMemberState with
-        | Legacy | Measured | Evaluated -> 
+        | Legacy ->
             {SorterPoolMember.id = pm.id;
              poolMemberState=PoolMemberState.Legacy;
              birthDate=pm.birthDate;
@@ -88,6 +90,18 @@ module SorterPoolMemberF =
              poolMemberRank=Some rank;
              testResults=pm.testResults;
              fitness=pm.fitness;}
+        | Evaluated -> 
+            {SorterPoolMember.id = pm.id;
+             poolMemberState=PoolMemberState.Legacy;
+             birthDate=pm.birthDate;
+             parent= match pm.parent with
+                     |Some pmem-> Some (pmem |> toArchived archiver);
+                     |None -> None
+             sorter=pm.sorter;
+             poolMemberRank=Some rank;
+             testResults=pm.testResults;
+             fitness=pm.fitness;}
+        | Measured -> failwith "cannot convert Measured to Legacy"
         | Initiate -> failwith "cannot convert Initiate to Legacy"
         | Archived -> failwith "cannot convert Archived to Legacy"
         | Root -> failwith "cannot convert Root to Legacy"
@@ -165,6 +179,28 @@ type SorterPool2 =
   }
 
 module SorterPool2 =
+    
+    let create (id:Guid) (degree:Degree) 
+               (sorterPoolMembers:SorterPoolMember[]) =
+        let dupes = sorterPoolMembers 
+                    |> Array.map(fun m->m.id)
+                    |> CollectionUtils.duplicates
+                    |> Seq.toArray
+
+        let wrongDegree = sorterPoolMembers 
+                            |> Array.filter(fun m -> (m.sorter.degree <> degree))
+
+        if (dupes.Length > 0) then
+            "duplicates found in list" |> Error
+        elif (wrongDegree.Length > 0) then
+            "mixed degrees found in list" |> Error
+        else
+            {
+                id=id;
+                degree=degree;
+                sorterPoolMembers=sorterPoolMembers;
+            } |> Ok
+    
     let createRandom (degree:Degree) 
                      (sorterLength:SorterLength) 
                      (switchFreq:SwitchFrequency)
@@ -191,11 +227,8 @@ module SorterPool2 =
                     (Sorter.createRandom degree sorterLength (Some switchFreq) rndSorters)
                     None 
                     None)
-        {
-            id=poolId;
-            degree=degree;
-            sorterPoolMembers = sorterPoolMembers; 
-        }
+        create poolId degree sorterPoolMembers
+        
 
 
 type SorterPoolRunParams = 
@@ -329,13 +362,8 @@ module SorterPoolBatchRunParams =
                   SorterPool2.createRandom degree sorterLength switchFreq
                                            sorterPoolSize rngGenSorter rngTypeForSorterIds
 
-              let sorterPools = RandoCollections.IndexedSeedGen rngSorters
-                                |> Seq.map(fun (dex, rng) -> makeStartingSorterPool rng)
-                                |> Seq.take (PoolCount.value poolCount)
-                                |> Seq.toArray
-
-              let startingSorterPoolGen (dex:int) =
-                  sorterPools.[dex % (PoolCount.value poolCount)]
+              let startingSorterPoolGen (sorterPools:SorterPool2 list) (dex:int)  =
+                  sorterPools.[dex % (sorterPools.Length)]
 
               let runLengthGen dex =
                   runLength
@@ -345,8 +373,17 @@ module SorterPoolBatchRunParams =
                         FitnessFunc2.standardStage 
                         breederFrac sorterMutationType sorterPoolSize winnerFrac
 
-              fromGens batchRunlId rngGenMut startingSorterPoolGen 
-                       runLengthGen sorterPoolUpdateParamsGen runCount
+              result {
+                  let! pools = RandoCollections.IndexedSeedGen rngSorters
+                                |> Seq.map(fun (dex, rng) -> makeStartingSorterPool rng)
+                                |> Seq.take (PoolCount.value poolCount)
+                                |> Seq.toList
+                                |> Result.sequence 
+
+                  return fromGens batchRunlId rngGenMut (startingSorterPoolGen pools)
+                                  runLengthGen sorterPoolUpdateParamsGen runCount
+              }
+
               
 
 //let createRandom (degree:Degree) 
