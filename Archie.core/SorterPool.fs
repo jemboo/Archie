@@ -62,7 +62,7 @@ module SorterPoolMemberF =
 
 
     let toEvaluated (pm:SorterPoolMember) (fitnessFunc:FitnessFunc) 
-                    (gen:GenerationNumber) =
+                    (fitnessFuncParam:FitnessFuncParam) =
         match pm.poolMemberState with
         | Legacy | Measured | Evaluated ->
             {SorterPoolMember.id = pm.id;
@@ -72,7 +72,8 @@ module SorterPoolMemberF =
              sorter = pm.sorter;
              poolMemberRank = None;
              testResults = pm.testResults;
-             fitness = Some (fitnessFunc.func (Some (gen:>obj)) ((pm.testResults) |> Option.get));}
+             fitness = Some ((fitnessFunc.func |> FF.value) fitnessFuncParam ((pm.testResults) |> Option.get));}
+
         | Root -> failwith "cannot convert Root to Evaluated"
         | Initiate -> failwith "cannot convert Initiate to Evaluated"
         | Archived -> failwith "cannot convert Archived to Evaluated"
@@ -165,7 +166,7 @@ type SorterPoolUpdateParams =
   {
       id: Guid;
       breederSelector: SorterPoolMember[] -> seq<SorterPoolMember>;
-      fitnessFunc: FitnessFunc2;
+      fitnessFunc: FitnessFunc;
       sorterMutator: IRando->Sorter->Sorter;
       sorterCount: SorterCount;
       winnerSelector: SorterPoolMember[] -> seq<SorterPoolMember>;
@@ -243,7 +244,7 @@ type SorterPoolRunParams =
 
 module SorterPoolUpdateParams =
 
-    let ss (fitnessFunc:FitnessFunc2)
+    let ss (fitnessFunc:FitnessFunc)
            (breederFrac:PoolFraction)
            (mutationType:SorterMutationType) 
            (sorterCount:SorterCount)
@@ -370,7 +371,7 @@ module SorterPoolBatchRunParams =
 
               let sorterPoolUpdateParamsGen (dex:int) = 
                   SorterPoolUpdateParams.ss
-                        FitnessFunc2.standardStage 
+                        FitnessFunc.standardStage 
                         breederFrac sorterMutationType sorterPoolSize winnerFrac
 
               result {

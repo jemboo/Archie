@@ -36,7 +36,13 @@ type SorterPoolDtoFixture () =
         let spmMeasBack = dtoMeas |> SorterPoolMemberDto.fromDto |> Result.ExtractOrThrow
         Assert.AreEqual(spmMeas, spmMeasBack)
 
-        let spmEval = SorterPoolMemberF.toEvaluated spmMeas (FitnessFunc.standardStage 1.0) (GenerationNumber.fromInt 3)
+        let ff2 = FitnessFunc.standardStage
+       // let spmEval = SorterPoolMemberF.toEvaluated spmMeas (FitnessFunc.standardStage 1.0) (GenerationNumber.fromInt 3)
+        let spmEval = SorterPoolMemberF.toEvaluated  
+                                spmMeas 
+                                ff2 
+                                (FitnessFuncParam.Gen (GenerationNumber.fromInt 3))
+
         let dtoEval = spmEval |> SorterPoolMemberDto.toDto
         let spmEvalBack = dtoEval |> SorterPoolMemberDto.fromDto |> Result.ExtractOrThrow
         Assert.AreEqual(spmEval, spmEvalBack)

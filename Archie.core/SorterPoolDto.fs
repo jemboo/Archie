@@ -139,7 +139,7 @@ type SorterPoolUpdateParamsDto =
   {
       id: Guid;
       breederSelector: SorterPoolMember[] -> seq<SorterPoolMember>;
-      fitnessFuncDto: FitnessFunc2Dto;
+      fitnessFuncDto: FitnessFuncDto;
       sorterMutator: IRando->Sorter->Sorter;
       sorterCount: int;
       winnerSelector: SorterPoolMember[] -> seq<SorterPoolMember>;
@@ -148,7 +148,7 @@ type SorterPoolUpdateParamsDto =
 module SorterPoolUpdateParamsDto =
    let fromDto (sorterPoolUpdateParamsDto:SorterPoolUpdateParamsDto) = 
      result {
-         let! ff = FitnessFunc2Dto.fromDto sorterPoolUpdateParamsDto.fitnessFuncDto
+         let! ff = FitnessFuncDto.fromDto sorterPoolUpdateParamsDto.fitnessFuncDto
          //let! spms = sorterPool2dto.sorterPoolMembers
          //            |> Array.map(SorterPoolMemberDto.fromDto)
          //            |> Array.toList |> Result.sequence
@@ -172,24 +172,24 @@ module SorterPoolUpdateParamsDto =
 
 
  type SorterMutatorDto = {cat:string; args:string;}
-module FitnessFuncDto =
-    //let toDto (ff:FitnessFunc) =
-    //    {
-    //        cat=ff.funcType;
-    //        args = sprintf "%float" (ff.funcParam :?> float)
-    //    }
+//module SorterMutatorDto =
+//    //let toDto (ff:FitnessFunc) =
+//    //    {
+//    //        cat=ff.funcType;
+//    //        args = sprintf "%float" (ff.funcParam :?> float)
+//    //    }
 
-    //let fromDto (dto:FitnessFuncDto) =
-    //    result {
-    //            match dto.cat with
-    //            | "Switch" -> let! off = ParseUtils.StringToOneFloat dto.args
-    //                          return FitnessFunc.standardSwitch off
-    //            | "Stage" ->  let! off = ParseUtils.StringToOneFloat dto.args
-    //                          return FitnessFunc.standardStage off
-    //            | _ ->        let! res =  Error (sprintf "no match for FitnessFunc: %s" dto.cat)
-    //                          return res
-    //        }
-    let theEnd = None
+//    //let fromDto (dto:FitnessFuncDto) =
+//    //    result {
+//    //            match dto.cat with
+//    //            | "Switch" -> let! off = ParseUtils.StringToOneFloat dto.args
+//    //                          return FitnessFunc.standardSwitch off
+//    //            | "Stage" ->  let! off = ParseUtils.StringToOneFloat dto.args
+//    //                          return FitnessFunc.standardStage off
+//    //            | _ ->        let! res =  Error (sprintf "no match for FitnessFunc: %s" dto.cat)
+//    //                          return res
+//    //        }
+//    let theEnd = None
 //type PoolUpdateParamsDto = {id:Guid;
 //                            breederFrac:float; 
 //                            runLength:int;

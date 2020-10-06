@@ -26,11 +26,12 @@ module SorterRun =
 
 
     let Evaluate (prams:PoolUpdateParamsBnW) (sorterPool:SorterPoolMember[]) 
-                 (gen:GenerationNumber) =
+                 (fitnessFuncParam:FitnessFuncParam) =
         sorterPool
         |> Array.map(fun pm-> match pm.poolMemberState with
                               | Legacy -> pm
-                              | _ -> SorterPoolMemberF.toEvaluated pm prams.fitnessFunc gen)
+                              | _ -> SorterPoolMemberF.toEvaluated pm prams.fitnessFunc
+                                                       fitnessFuncParam)
 
 
     let NextGen (prams:PoolUpdateParamsBnW) (sorterPool:SorterPoolMember[]) (rando:IRando)
@@ -77,7 +78,7 @@ module SorterRun =
         let mutable lastWinningBirtdate = GenerationNumber.fromInt 0
         while ((GenerationNumber.value gen) < (GenerationNumber.value poolUpdateParamsBnW.runLength)) do
             sorterPool <- Measure sorterPool sortableSet
-            sorterPool <- Evaluate poolUpdateParamsBnW sorterPool gen
+            sorterPool <- Evaluate poolUpdateParamsBnW sorterPool (FitnessFuncParam.NoParam)
             sorterPool <- NextGen poolUpdateParamsBnW sorterPool rando gen
             let winner = sorterPool |> Array.filter(fun pm -> SorterPoolMemberF.isTopRanked pm) |> Array.exactlyOne
             if winner.birthDate <> lastWinningBirtdate then
@@ -151,16 +152,16 @@ module SorterRun =
         let sorterPoolMembers = SorterOps.GetStandardSortingResultsEager sortableSet (UseParallel.create false) sorters
                                 |> Array.map(fun tup -> SorterPoolMemberF.makeRoot (Guid.NewGuid()) (fst tup) (Some (snd tup)) None)
 
-        let sorterAndPrams = PoolUpdateParamsBnW.ParamsSnS rngGenParams poolGenCount poolCount
-                                sorterMutationType legacyBias 1024.0 0.0 0.0005 0.0005
-                                |> Seq.take (ReplicaCount.value replicaCount) 
-                                |> Seq.toArray
-                                |> Array.allPairs sorterPoolMembers
-
-        //let sorterAndPrams = PoolUpdateParamsBnW.ParamsMr rngGenParams poolGenCount
+        //let sorterAndPrams = PoolUpdateParamsBnW.ParamsSnS rngGenParams poolGenCount poolCount
+        //                        sorterMutationType legacyBias 1024.0 0.0 0.0005 0.0005
         //                        |> Seq.take (ReplicaCount.value replicaCount) 
         //                        |> Seq.toArray
         //                        |> Array.allPairs sorterPoolMembers
+
+        let sorterAndPrams = PoolUpdateParamsBnW.ParamsMr rngGenParams poolGenCount
+                                |> Seq.take (ReplicaCount.value replicaCount) 
+                                |> Seq.toArray
+                                |> Array.allPairs sorterPoolMembers
 
 
         let _res = sorterAndPrams 

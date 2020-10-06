@@ -58,7 +58,7 @@ module Runs2 =
                      (SwitchCount.value r.usedSwitchCount) 
                      (StageCount.value r.usedStageCount)
                      (SortableCount.value r.successfulSortCount)
-                     prams.fitnessFunc.cat
+                     (fst (FitnessFuncCat.report prams.fitnessFunc.cat))
                      (PoolFraction.value prams.breederFrac) 
                      (PoolFraction.value prams.winnerFrac)
                      (SorterMutationType.StrF prams.mutationType)
@@ -73,7 +73,7 @@ module Runs2 =
                      (SwitchCount.value r.usedSwitchCount) 
                      (StageCount.value r.usedStageCount)
                      (SortableCount.value r.successfulSortCount)
-                     prams.fitnessFunc.cat
+                     (fst (FitnessFuncCat.report prams.fitnessFunc.cat))
                      (PoolFraction.value prams.breederFrac) 
                      (PoolFraction.value prams.winnerFrac)
                      (SorterMutationType.StrF prams.mutationType)
@@ -102,9 +102,9 @@ module Runs2 =
         let mutable nextRep = 0
         let mutable currentStandardSorterTestResults = res
         while (gen < (GenerationNumber.value prams.runLength)) && (checkArray currentEvals) do
-            let genN = GenerationNumber.fromInt gen
+            let ffp =  FitnessFuncParam.Gen (GenerationNumber.fromInt gen)
             let currentSorterFitness = currentEvals |> (getSortingResults sortableSet)
-                                       |> Seq.map(fun r -> (fst r), (snd r), (prams.fitnessFunc.func (Some (genN:>obj)) (snd r)))
+                                       |> Seq.map(fun r -> (fst r), (snd r), (FF.value prams.fitnessFunc.func) ffp (snd r))
                                        |> Seq.toArray
 
             if (nextRep = (ReportingFrequency.value reportingFrequency)) then 
@@ -117,10 +117,10 @@ module Runs2 =
             nextRep <- nextRep + (SorterCount.value prams.poolCount)
 
         if (checkArray currentEvals) then
-            let genN = GenerationNumber.fromInt gen
+            let ffp =  FitnessFuncParam.Gen (GenerationNumber.fromInt gen)
             let binRecords = currentEvals 
                               |> getSortingResults sortableSet
-                              |> Seq.map(fun r -> (fst r), (snd r), (prams.fitnessFunc.func (Some (genN:>obj)) (snd r)))
+                              |> Seq.map(fun r -> (fst r), (snd r), (FF.value prams.fitnessFunc.func) ffp (snd r))
                               |> Seq.toArray |> reportEvalBinsMin (gen * (SorterCount.value prams.poolCount))
             logToFile binRecords true
         true

@@ -2,19 +2,79 @@
 
 open System
 
+type PoolMemberState =
+    | Root
+    | Initiate
+    | Measured
+    | Evaluated
+    | Legacy
+    | Archived
+
+
+module PoolMemberState =
+
+    let toDto (pms:PoolMemberState) =
+        match pms with
+              | Root -> "Root"
+              | Initiate -> "Initiate"
+              | Measured -> "Measured"
+              | Evaluated -> "Evaluated"
+              | Legacy -> "Legacy"
+              | Archived -> "Archived"
+
+
+    let fromDto (pms:string) =
+        match pms with
+              | "Root" -> Root |> Ok
+              | "Initiate" -> Initiate |> Ok
+              | "Measured" -> Measured |> Ok
+              | "Evaluated" -> Evaluated |> Ok
+              | "Legacy" -> Legacy |> Ok
+              | "Archived" -> Archived |> Ok
+              | _ -> Error (sprintf "%s not handled" pms)
+
+
+type SorterPoolMember = {
+        id:Guid;
+        poolMemberState:PoolMemberState; 
+        birthDate:GenerationNumber; 
+        parent:SorterPoolMember option;
+        sorter:Sorter;
+        poolMemberRank:PoolMemberRank option;
+        testResults:SorterTestResults option;
+        fitness:SorterFitness option;
+    }
+
+
+type FitnessFuncCat =
+     | StandardSwitch
+     | StandardStage
+     | AltSwitchAndStage of GenerationNumber
+     | AltSwitchStageAndSuccess of GenerationNumber
+
+module FitnessFuncCat =
+    let report (ffc:FitnessFuncCat) =
+        match ffc with
+        | StandardSwitch ->  ("StandardSwitch", "")
+        | StandardStage ->  ("StandardStage", "")
+        | AltSwitchAndStage g ->  ("AltSwitchAndStage", sprintf "%d" (GenerationNumber.value g))
+        | AltSwitchStageAndSuccess g -> ("AltSwitchStageAndSuccess", sprintf "%d" (GenerationNumber.value g))
+
 type FitnessFuncParam =
      | NoParam
-     | SwitchOnly of SwitchCount
-     | StageOnly of StageCount
      | Gen of GenerationNumber
      | Pool of GenerationNumber*SorterPoolMember[]
 
-type FitnessFunc2 = private FitnessFunc2 of (FitnessFuncParam->SorterTestResults->SorterFitness)
 
-module FitnessFunc2 =
+
+type FF = private FF of (FitnessFuncParam->SorterTestResults->SorterFitness)
+
+module FF =
     
     let create ff =
-        (FitnessFunc2 ff)
+        (FF ff)
+
+    let value (FF ff) = ff
 
     let standardSwitch = 
         let ff p r =
@@ -66,43 +126,55 @@ module FitnessFunc2 =
         create ff
 
 
-type FitnessFunc2DtoCat =
-     | StandardSwitch
-     | StandardStage
-     | AltSwitchAndStage
-     | AltSwitchStageAndSuccess
+type FitnessFunc = {cat:FitnessFuncCat; func:FF}
 
-type FitnessFunc2Dto = {cat:FitnessFunc2DtoCat; prams:Map<string, obj>}
+module FitnessFunc = 
 
-module FitnessFunc2Dto =
+    let standardSwitch = 
+        {FitnessFunc.cat=FitnessFuncCat.StandardSwitch; func=FF.standardSwitch}
+
+    let standardStage = 
+        {FitnessFunc.cat=FitnessFuncCat.StandardStage; func=FF.standardSwitch}
+
+    let altSwitchAndStage (cycleG:GenerationNumber) = 
+        {FitnessFunc.cat=FitnessFuncCat.AltSwitchAndStage cycleG; func=FF.altSwitchAndStage cycleG}
+
+    let altSwitchStageAndSuccess (cycleG:GenerationNumber) = 
+        {FitnessFunc.cat=FitnessFuncCat.AltSwitchStageAndSuccess cycleG; func=FF.altSwitchStageAndSuccess cycleG}
+
+
+
+type FitnessFuncDto = {cat:string; prams:Map<string, obj>}
+
+module FitnessFuncDto =
     
     let standardSwitchDto = 
-        {cat=FitnessFunc2DtoCat.StandardSwitch; prams = Seq.empty |> Map.ofSeq}
+        {cat="StandardSwitch"; prams = Seq.empty |> Map.ofSeq}
 
     let standardStageDto = 
-        {cat=FitnessFunc2DtoCat.StandardStage;  prams = Seq.empty |> Map.ofSeq}
+        {cat="StandardStage";  prams = Seq.empty |> Map.ofSeq}
 
     let altSwitchAndStageDto (cycleG:GenerationNumber) =  
-        {cat=FitnessFunc2DtoCat.AltSwitchAndStage; 
+        {cat="AltSwitchAndStage"; 
          prams = seq { ("cycleG", (GenerationNumber.value cycleG) :> obj) } |> Map.ofSeq}
        
     let altSwitchStageAndSuccessDto (cycleG:GenerationNumber) = 
-        {cat=FitnessFunc2DtoCat.AltSwitchStageAndSuccess; 
+        {cat="AltSwitchStageAndSuccess"; 
          prams = seq { ("cycleG", (GenerationNumber.value cycleG) :> obj) } |> Map.ofSeq}
 
-    let fromDto (fitnessFunc2Dto:FitnessFunc2Dto) =
-        match fitnessFunc2Dto.cat with
-        | StandardSwitch -> FitnessFunc2.standardSwitch |> Ok
-        | StandardStage -> FitnessFunc2.standardStage |> Ok
-        | AltSwitchAndStage ->  
+    let fromDto (FitnessFuncDto:FitnessFuncDto) =
+        match FitnessFuncDto.cat with
+        | "StandardSwitch" -> FitnessFunc.standardSwitch |> Ok
+        | "StandardStage" -> FitnessFunc.standardStage |> Ok
+        | "AltSwitchAndStage" ->  
            result {
-                    let! g = GenerationNumber.fromKey fitnessFunc2Dto.prams "cycleG"
-                    return FitnessFunc2.altSwitchAndStage g
+                    let! g = GenerationNumber.fromKey FitnessFuncDto.prams "cycleG"
+                    return FitnessFunc.altSwitchAndStage g
                   }
-        | AltSwitchStageAndSuccess ->
+        | "AltSwitchStageAndSuccess" ->
            result {
-                     let! g = GenerationNumber.fromKey fitnessFunc2Dto.prams "cycleG"
-                     return FitnessFunc2.altSwitchStageAndSuccess g
+                     let! g = GenerationNumber.fromKey FitnessFuncDto.prams "cycleG"
+                     return FitnessFunc.altSwitchStageAndSuccess g
                   }
 
 

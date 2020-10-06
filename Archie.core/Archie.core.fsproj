@@ -26,8 +26,8 @@
     <Compile Include="CombinatoricsTypes.fs" />
     <Compile Include="SorterParts.fs" />
     <Compile Include="SorterOps.fs" />
-    <Compile Include="RunParts.fs" />
     <Compile Include="Fitness.fs" />
+    <Compile Include="RunParts.fs" />
     <Compile Include="SorterPool.fs" />
     <Compile Include="SorterRun.fs" />
     <Compile Include="SorterPoolDto.fs" />
