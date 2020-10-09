@@ -134,62 +134,6 @@ module SorterPool2dto =
                                 |> Array.map(fun spm -> SorterPoolMemberDto.toDto spm)
        }
 
-
-type SorterPoolUpdateParamsDto = 
-  {
-      id: Guid;
-      breederSelector: SorterPoolMember[] -> seq<SorterPoolMember>;
-      fitnessFuncDto: FitnessFuncDto;
-      sorterMutator: IRando->Sorter->Sorter;
-      sorterCount: int;
-      winnerSelector: SorterPoolMember[] -> seq<SorterPoolMember>;
-  }
-
-module SorterPoolUpdateParamsDto =
-   let fromDto (sorterPoolUpdateParamsDto:SorterPoolUpdateParamsDto) = 
-     result {
-         let! ff = FitnessFuncDto.fromDto sorterPoolUpdateParamsDto.fitnessFuncDto
-         //let! spms = sorterPool2dto.sorterPoolMembers
-         //            |> Array.map(SorterPoolMemberDto.fromDto)
-         //            |> Array.toList |> Result.sequence
-
-         //return {
-         //            SorterPool2.id =sorterPool2dto.id;
-         //            degree = degree;
-         //            sorterPoolMembers = spms |> List.toArray
-         //       }
-         return 1
-     }
-
-   let toDto (sorterPoolUpdateParams:SorterPoolUpdateParams) =
-    //{
-    //     SorterPool2dto.id = sorterPool.id;
-    //     degree = (Degree.value sorterPool.degree);
-    //     sorterPoolMembers = sorterPool.sorterPoolMembers
-    //                         |> Array.map(fun spm -> SorterPoolMemberDto.toDto spm)
-    //}
-    1
-
-
- type SorterMutatorDto = {cat:string; args:string;}
-//module SorterMutatorDto =
-//    //let toDto (ff:FitnessFunc) =
-//    //    {
-//    //        cat=ff.funcType;
-//    //        args = sprintf "%float" (ff.funcParam :?> float)
-//    //    }
-
-//    //let fromDto (dto:FitnessFuncDto) =
-//    //    result {
-//    //            match dto.cat with
-//    //            | "Switch" -> let! off = ParseUtils.StringToOneFloat dto.args
-//    //                          return FitnessFunc.standardSwitch off
-//    //            | "Stage" ->  let! off = ParseUtils.StringToOneFloat dto.args
-//    //                          return FitnessFunc.standardStage off
-//    //            | _ ->        let! res =  Error (sprintf "no match for FitnessFunc: %s" dto.cat)
-//    //                          return res
-//    //        }
-//    let theEnd = None
 //type PoolUpdateParamsDto = {id:Guid;
 //                            breederFrac:float; 
 //                            runLength:int;
@@ -265,3 +209,40 @@ module SorterPoolUpdateParamsDto =
 //                    sorterLength = sorterLength
 //            }
 //        }
+
+
+type SorterPoolUpdateParamsDto = 
+  {
+      id: Guid;
+      breederSelector: PoolSelector2Dto;
+      fitnessFuncDto: FitnessFuncDto;
+      sorterMutator: SorterMutation;
+      sorterCount: int;
+      winnerSelector: PoolSelector2Dto;
+  }
+
+module SorterPoolUpdateParamsDto =
+   let fromDto (sorterPoolUpdateParamsDto:SorterPoolUpdateParamsDto) = 
+     result {
+         let! ff = FitnessFuncDto.fromDto sorterPoolUpdateParamsDto.fitnessFuncDto
+         //let! spms = sorterPool2dto.sorterPoolMembers
+         //            |> Array.map(SorterPoolMemberDto.fromDto)
+         //            |> Array.toList |> Result.sequence
+
+         //return {
+         //            SorterPool2.id =sorterPool2dto.id;
+         //            degree = degree;
+         //            sorterPoolMembers = spms |> List.toArray
+         //       }
+         return 1
+     }
+
+   let toDto (sorterPoolUpdateParams:SorterPoolUpdateParams) =
+    //{
+    //     SorterPool2dto.id = sorterPool.id;
+    //     degree = (Degree.value sorterPool.degree);
+    //     sorterPoolMembers = sorterPool.sorterPoolMembers
+    //                         |> Array.map(fun spm -> SorterPoolMemberDto.toDto spm)
+    //}
+    1
+
