@@ -102,10 +102,7 @@ module FF =
         create ff
 
 
-
 type FitnessFunc = {cat:FitnessFuncCat; func:FF}
-
-
 
 module PoolMemberState =
 
@@ -295,7 +292,7 @@ module FitnessFunc =
         {FitnessFunc.cat=FitnessFuncCat.StandardSwitch; func=FF.standardSwitch}
 
     let standardStage = 
-        {FitnessFunc.cat=FitnessFuncCat.StandardStage; func=FF.standardSwitch}
+        {FitnessFunc.cat=FitnessFuncCat.StandardStage; func=FF.standardStage}
 
     let altSwitchAndStage (cycleG:GenerationNumber) = 
         {FitnessFunc.cat=FitnessFuncCat.AltSwitchAndStage cycleG; func=FF.altSwitchAndStage cycleG}
@@ -338,13 +335,29 @@ module FitnessFuncDto =
                   }
         | _ -> sprintf "%s not handled" fitnessFuncDto.cat |> Error
 
+    let toDto (ff:FitnessFunc) =
+        match ff.cat with
+              | StandardSwitch -> {cat ="StandardSwitch"; prams = Map.empty}
+              | StandardStage -> {cat="StandardStage"; prams = Map.empty}
+              | AltSwitchAndStage gen -> 
+                {cat="AltSwitchAndStage"; 
+                prams= seq { ("cycleG", (GenerationNumber.value gen) :> obj) } |> Map.ofSeq}
+              | AltSwitchStageAndSuccess gen -> 
+                {cat="AltSwitchStageAndSuccess"; 
+                prams = seq { ("cycleG", (GenerationNumber.value gen) :> obj) } |> Map.ofSeq}
+
+
+//type FitnessFuncCat =
+//    | StandardSwitch
+//    | StandardStage
+//    | AltSwitchAndStage of GenerationNumber
+//    | AltSwitchStageAndSuccess of GenerationNumber
+
 
 type SM = private SM of (IRando->Sorter->Sorter)
 module SM =
     let create ff = (SM ff)
-     
     let value (SM ff) = ff
-     
     let fromSorterMutationType smt =
         create (Sorter.mutate smt)
 
@@ -395,14 +408,27 @@ module SorterMutationDto =
                   }
         | _ -> sprintf "%s not handled" sorterMutationDto.cat |> Error
 
+    let toDto (sm:SorterMutation) =
+        match sm.cat with
+              | SwitchBased mr -> 
+                    {cat="SwitchBased"; 
+                     prams= seq { ("mutationRate", (MutationRate.value mr) :> obj) } |> Map.ofSeq}
+              | StageBased mr -> 
+                    {cat="StageBased"; 
+                     prams = seq { ("mutationRate", (MutationRate.value mr) :> obj) } |> Map.ofSeq}
+
+
 
 type PS = private PS of (SorterPoolMember[] -> SorterPoolMember[])
 module PS =
     let create ff = (PS ff)
-     
     let value (PS ff) = ff
 
-type PoolSelector2 = {poolFraction:PoolFraction; func:PS}
+    
+type PoolSelectorCat =
+        | Standard of PoolFraction
+
+type PoolSelector2 = {cat:PoolSelectorCat; func:PS}
 module PoolSelector2 =
     let standard (poolFraction:PoolFraction) =
         let ss = fun (sorterPoolMembers:SorterPoolMember[]) ->
@@ -414,21 +440,27 @@ module PoolSelector2 =
                    |> Array.map(fst)
                    |> Array.take(fractionCount)
 
-        { poolFraction=poolFraction; func = PS.create ss }
+        { cat = PoolSelectorCat.Standard poolFraction; func = PS.create ss }
+
+        
 
 type PoolSelector2Dto = {cat:string; prams:Map<string, obj>}
-
 module PoolSelector2Dto =
 
-    let standard (mutationRate:MutationRate) =  
+    let standard (poolFraction:PoolFraction) =  
         {cat="standard"; 
-         prams = seq { ("mutationRate", (MutationRate.value mutationRate) :> obj) } |> Map.ofSeq}
+         prams = seq { ("mutationRate", (PoolFraction.value poolFraction) :> obj) } |> Map.ofSeq}
        
-    let fromDto (sorterMutationDto:SorterMutationDto) =
-        match sorterMutationDto.cat with
+    let fromDto (poolSelector2Dto:PoolSelector2Dto) =
+        match poolSelector2Dto.cat with
         | "standard" ->  
            result {
-                    let! mr = MutationRate.fromKey sorterMutationDto.prams "mutationRate"
-                    return SorterMutation.standardSwitch mr
+                    let! mr = PoolFraction.fromKey poolSelector2Dto.prams "poolFraction"
+                    return PoolSelector2.standard mr
                   }
-        | _ -> sprintf "%s not handled" sorterMutationDto.cat |> Error
+        | _ -> sprintf "%s not handled" poolSelector2Dto.cat |> Error
+
+    let toDto (ps:PoolSelector2) =
+        match ps.cat with
+              | Standard pf -> {cat="SwitchBased"; 
+                                prams= seq { ("poolFraction", (PoolFraction.value pf) :> obj) } |> Map.ofSeq}

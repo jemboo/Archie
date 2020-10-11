@@ -4,11 +4,11 @@ open System
 type SorterPoolUpdateParams = 
   {
       id: Guid;
-      breederSelector: SorterPoolMember[] -> seq<SorterPoolMember>;
+      breederSelector: PoolSelector2;
       fitnessFunc: FitnessFunc;
       sorterMutator: SorterMutation;
       sorterCount: SorterCount;
-      winnerSelector: SorterPoolMember[] -> seq<SorterPoolMember>;
+      winnerSelector: PoolSelector2;
   }
 
 type SorterPool2 = 
@@ -70,7 +70,6 @@ module SorterPool2 =
         create poolId degree sorterPoolMembers
         
 
-
 type SorterPoolRunParams = 
   {
      id:Guid;
@@ -95,28 +94,14 @@ module SorterPoolUpdateParams =
                               (mutationType :> obj);
                               (sorterCount :> obj);
                               (winnerFrac :> obj);} )
-
-        let breederCount = PoolFraction.boundedMultiply breederFrac (SorterCount.value sorterCount)
-        let winnerCount = PoolFraction.boundedMultiply winnerFrac (SorterCount.value sorterCount)
-        let breederSelector (sorterPoolMembers:SorterPoolMember[]) =
-            sorterPoolMembers
-            |> Array.sortByDescending(fun spm-> SorterPoolMember.getFitness spm)
-            |> Seq.take breederCount
-
-        let winnerSelector (sorterPoolMembers:SorterPoolMember[]) =
-            sorterPoolMembers
-            |> Array.sortByDescending(fun spm-> SorterPoolMember.getFitness spm)
-            |> Seq.take winnerCount
-
         {
             SorterPoolUpdateParams.id = poolId;
-            breederSelector = breederSelector;
+            breederSelector = breederFrac |> PoolSelector2.standard;
             fitnessFunc = fitnessFunc;
             sorterMutator = SorterMutation.standardMutator mutationType;
             sorterCount = sorterCount;
-            winnerSelector = winnerSelector;
+            winnerSelector = winnerFrac |> PoolSelector2.standard;
         }
-
 
 
 module SorterPoolRunParams =
@@ -222,12 +207,3 @@ module SorterPoolBatchRunParams =
                   return fromGens batchRunlId rngGenMut (startingSorterPoolGen pools)
                                   runLengthGen sorterPoolUpdateParamsGen runCount
               }
-
-              
-
-//let createRandom (degree:Degree) 
-//                 (sorterLength:SorterLength) 
-//                 (switchFreq:float)
-//                 (sorterCount:SorterCount) 
-//                 (rngSorters:RngGen)
-//                 (rngTypeIds:RngType) =

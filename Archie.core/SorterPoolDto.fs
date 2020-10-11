@@ -109,10 +109,10 @@ module SorterPoolMemberDto =
         }
 
 
-type SorterPool2dto = {id:Guid; degree:int; sorterPoolMembers:SorterPoolMemberDto[];}
+type SorterPool2Dto = {id:Guid; degree:int; sorterPoolMembers:SorterPoolMemberDto[];}
 
-module SorterPool2dto =
-   let fromDto (sorterPool2dto:SorterPool2dto) = 
+module SorterPool2Dto =
+   let fromDto (sorterPool2dto:SorterPool2Dto) = 
         result {
             let! degree = Degree.create "" sorterPool2dto.degree
             let! spms = sorterPool2dto.sorterPoolMembers
@@ -128,7 +128,7 @@ module SorterPool2dto =
 
    let toDto (sorterPool:SorterPool2) =
        {
-            SorterPool2dto.id = sorterPool.id;
+            SorterPool2Dto.id = sorterPool.id;
             degree = (Degree.value sorterPool.degree);
             sorterPoolMembers = sorterPool.sorterPoolMembers
                                 |> Array.map(fun spm -> SorterPoolMemberDto.toDto spm)
@@ -214,35 +214,82 @@ module SorterPool2dto =
 type SorterPoolUpdateParamsDto = 
   {
       id: Guid;
-      breederSelector: PoolSelector2Dto;
+      breederSelectorDto: PoolSelector2Dto;
       fitnessFuncDto: FitnessFuncDto;
-      sorterMutator: SorterMutation;
+      sorterMutatorDto: SorterMutationDto;
       sorterCount: int;
-      winnerSelector: PoolSelector2Dto;
+      winnerSelectorDto: PoolSelector2Dto;
   }
 
 module SorterPoolUpdateParamsDto =
    let fromDto (sorterPoolUpdateParamsDto:SorterPoolUpdateParamsDto) = 
      result {
-         let! ff = FitnessFuncDto.fromDto sorterPoolUpdateParamsDto.fitnessFuncDto
-         //let! spms = sorterPool2dto.sorterPoolMembers
-         //            |> Array.map(SorterPoolMemberDto.fromDto)
-         //            |> Array.toList |> Result.sequence
-
-         //return {
-         //            SorterPool2.id =sorterPool2dto.id;
-         //            degree = degree;
-         //            sorterPoolMembers = spms |> List.toArray
-         //       }
-         return 1
+         let! fitnessFunc = FitnessFuncDto.fromDto sorterPoolUpdateParamsDto.fitnessFuncDto
+         let! breederSelector = sorterPoolUpdateParamsDto.breederSelectorDto
+                                |> PoolSelector2Dto.fromDto
+         let! winnerSelector = sorterPoolUpdateParamsDto.winnerSelectorDto
+                                |> PoolSelector2Dto.fromDto
+         let! sorterCount = SorterCount.create "" sorterPoolUpdateParamsDto.sorterCount
+         let! sorterMutator = sorterPoolUpdateParamsDto.sorterMutatorDto
+                              |> SorterMutationDto.fromDto
+         return {
+                     SorterPoolUpdateParams.id = sorterPoolUpdateParamsDto.id;
+                     SorterPoolUpdateParams.breederSelector = breederSelector;
+                     SorterPoolUpdateParams.sorterCount = sorterCount;
+                     SorterPoolUpdateParams.sorterMutator = sorterMutator;
+                     SorterPoolUpdateParams.fitnessFunc = fitnessFunc
+                     SorterPoolUpdateParams.winnerSelector = winnerSelector
+                }
      }
 
    let toDto (sorterPoolUpdateParams:SorterPoolUpdateParams) =
-    //{
-    //     SorterPool2dto.id = sorterPool.id;
-    //     degree = (Degree.value sorterPool.degree);
-    //     sorterPoolMembers = sorterPool.sorterPoolMembers
-    //                         |> Array.map(fun spm -> SorterPoolMemberDto.toDto spm)
-    //}
-    1
+      {
+            SorterPoolUpdateParamsDto.id = sorterPoolUpdateParams.id;
+            SorterPoolUpdateParamsDto.breederSelectorDto = sorterPoolUpdateParams.breederSelector |> PoolSelector2Dto.toDto;
+            SorterPoolUpdateParamsDto.sorterCount = sorterPoolUpdateParams.sorterCount |> SorterCount.value
+            SorterPoolUpdateParamsDto.sorterMutatorDto = sorterPoolUpdateParams.sorterMutator |> SorterMutationDto.toDto;
+            SorterPoolUpdateParamsDto.fitnessFuncDto = sorterPoolUpdateParams.fitnessFunc |> FitnessFuncDto.toDto;
+            SorterPoolUpdateParamsDto.winnerSelectorDto = sorterPoolUpdateParams.winnerSelector |> PoolSelector2Dto.toDto;
+       }
 
+    
+type SorterPoolRunParamsDto = 
+    {
+        id:Guid;
+        startingSorterPoolDto:SorterPool2Dto;
+        runLength:int;
+        sorterPoolUpdateParamsDto:SorterPoolUpdateParamsDto;
+        rngGenDtos:Map<string, RngGenDto>
+    }
+        
+module SorterPoolRunParamsDto =
+   let fromDto (sorterPoolRunParamsDto:SorterPoolRunParamsDto) = 
+     result {
+         let! startingSorterPool = SorterPool2Dto.fromDto sorterPoolRunParamsDto.startingSorterPoolDto
+         let! runLength = sorterPoolRunParamsDto.runLength |> GenerationNumber.create ""
+         let! sorterPoolUpdateParams = sorterPoolRunParamsDto.sorterPoolUpdateParamsDto
+                                        |> SorterPoolUpdateParamsDto.fromDto
+         let! rngGens = sorterPoolRunParamsDto.rngGenDtos
+                        |> Map.toList 
+                        |> List.map(fun (k,v) ->
+                                v |> RngGenDto.fromDto |> Result.map(fun r -> (k,r)))
+                        |> Result.sequence
+                        |> Result.map(fun l -> Map.ofList l)
+         return {
+                     SorterPoolRunParams.id = sorterPoolRunParamsDto.id;
+                     SorterPoolRunParams.startingSorterPool = startingSorterPool;
+                     SorterPoolRunParams.runLength = runLength;
+                     SorterPoolRunParams.sorterPoolUpdateParams = sorterPoolUpdateParams;
+                     SorterPoolRunParams.rngGens = rngGens
+                }
+     }
+
+   let toDto (sorterPoolRunParams:SorterPoolRunParams) =
+      {
+            SorterPoolRunParamsDto.id = sorterPoolRunParams.id;
+            SorterPoolRunParamsDto.startingSorterPoolDto = sorterPoolRunParams.startingSorterPool |> SorterPool2Dto.toDto;
+            SorterPoolRunParamsDto.runLength = sorterPoolRunParams.runLength |> GenerationNumber.value
+            SorterPoolRunParamsDto.sorterPoolUpdateParamsDto = sorterPoolRunParams.sorterPoolUpdateParams |> SorterPoolUpdateParamsDto.toDto;
+            SorterPoolRunParamsDto.rngGenDtos = sorterPoolRunParams.rngGens  |> Map.map(fun k v -> v |> RngGenDto.toDto)
+       }
+       

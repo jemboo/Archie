@@ -41,7 +41,7 @@ type SorterPoolDtoFixture () =
         let spmEval = SorterPoolMember.toEvaluated  
                                 spmMeas 
                                 ff2 
-                                (FitnessFuncParam.Gen (GenerationNumber.fromInt 3))
+                                (FitnessFuncParam.NoParam)
 
         let dtoEval = spmEval |> SorterPoolMemberDto.toDto
         let spmEvalBack = dtoEval |> SorterPoolMemberDto.fromDto |> Result.ExtractOrThrow
@@ -52,3 +52,21 @@ type SorterPoolDtoFixture () =
         let dtoArchived = spmArchived |> SorterPoolMemberDto.toDto
         let spmArchivedBack = dtoArchived |> SorterPoolMemberDto.fromDto |> Result.ExtractOrThrow
         Assert.AreEqual(spmArchived, spmArchivedBack)
+
+
+    [<TestMethod>]
+     member this.SorterPoolRunParamsDto() =
+
+        let rngGenkvps = [| ("key0", RngGen.createLcg 123); ("key1", RngGen.createLcg 23); ("key3", RngGen.createLcg 3); |]
+        let rngGens = rngGenkvps |>Map.ofArray
+        let rngGensDto = rngGens |> Map.map(fun k v -> v |> RngGenDto.toDto)
+
+        let gg = rngGensDto |> Map.toList 
+                            |> List.map(fun (k,v) ->
+                                v |> RngGenDto.fromDto |> Result.map(fun r -> (k,r)))
+                            |> Result.sequence
+                            |> Result.map(fun l -> Map.ofList l)
+
+        let rngGensBack = rngGensDto |> Map.map(fun k v -> v |> RngGenDto.fromDto |> Result.map(fun r -> (k,r)))
+                                     |> Map.toList
+        Assert.AreEqual(1,1)
