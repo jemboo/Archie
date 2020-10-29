@@ -4,8 +4,6 @@ open Archie.Base
 open System
 open System.Collections.Generic
 
-
-
 [<TestClass>]
 type UtilsFixture () =
 
@@ -62,3 +60,23 @@ type UtilsFixture () =
         let res = CollectionUtils.listToTuples wab
 
         Assert.IsTrue(true)
+
+
+    [<TestMethod>]
+    member this.MapWithKeyDupes() =
+        let kvps = seq { ("a", 1); ("b", 2); ("c", 3); ("b", 5) } |> Seq.toArray
+        let ma = CollectionUtils.tuplesToMap kvps
+        let result = match ma with
+                     | Ok m -> "success"
+                     | Error m -> m
+        Assert.IsTrue((result = "key dupicates"))
+
+
+    [<TestMethod>]
+    member this.MapWithoutKeyDupes() =
+        let kvps = seq { ("a", 1); ("b", 2); ("c", 3); } |> Seq.toArray
+        let ma = CollectionUtils.tuplesToMap kvps
+        let result = match ma with
+                        | Ok m -> "success"
+                        | Error m -> m
+        Assert.IsTrue((result = "success"))

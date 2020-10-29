@@ -28,6 +28,79 @@ module SorterTestResults =
 
 module SorterOps =
 
+    let SwitchOnSortableIntArray (switch:Switch) 
+                                 (sortableIntArray:SortableIntArray) =
+        let intArray = SortableIntArray.value sortableIntArray
+        let lv = intArray.[switch.low]
+        let hv = intArray.[switch.hi]
+        if(lv > hv) then
+            let sCopy = sortableIntArray |> SortableIntArray.copy
+            let copyInts = SortableIntArray.value sCopy
+            copyInts.[switch.hi] <- lv
+            copyInts.[switch.low] <- hv
+            sCopy
+        else sortableIntArray
+
+
+    let rec SortableHistory (swtiches:Switch list)
+                            (sortHistory:SortableIntArray list) =
+        match swtiches with
+        | [] -> sortHistory
+        | swHead::swTail -> [(SwitchOnSortableIntArray swHead (sortHistory|> List.last))] |> List.append
+                                (SortableHistory swTail sortHistory)
+
+    let SwitchesOnSortableIntArray (swtiches:Switch list)
+                                   (sortableIntArray:SortableIntArray) =
+        let recList = (swtiches  |> List.rev)
+        (SortableHistory swtiches  [sortableIntArray])
+
+
+    let SortTHistSection2 (sorter:Sorter) (mindex:int) (maxdex:int)
+                       (testCase:SortableIntArray) =
+       let sws = sorter.switches |> Array.skip(mindex)
+                                 |> Array.take(maxdex - mindex)
+                                 |> Array.toList
+       SwitchesOnSortableIntArray sws testCase
+
+    let SortTHist2 (sorter:Sorter) (testCase:SortableIntArray) =
+       let sl = SwitchCount.value sorter.switchCount
+       SortTHistSection2 sorter 0 (sl - 1) testCase
+
+
+
+    let SortTHistSwitches(switches:Switch list)
+                      (testCase:SortableIntArray) =
+        let mutable i = 0
+        let mutable lstRet = [testCase]
+        let mutable newCase = testCase
+
+        while (i < switches.Length) do
+            newCase <- newCase |> SortableIntArray.copy
+            let intArray = SortableIntArray.value newCase
+            let switch = switches.[i]
+            let lv = intArray.[switch.low]
+            let hv = intArray.[switch.hi]
+            if(lv > hv) then
+                intArray.[switch.hi] <- lv
+                intArray.[switch.low] <- hv
+            lstRet <- newCase::lstRet
+            i <- i+1
+        lstRet |> List.rev
+
+
+    let SortTHistSwitchList (sorter:Sorter) (mindex:int) (maxdex:int) 
+                         (testCase:SortableIntArray) =
+       let sws = sorter.switches |> Array.skip(mindex)
+                                 |> Array.take(maxdex - mindex)
+                                 |> Array.toList
+       SortTHistSwitches sws testCase
+
+
+    let SortTHist (sorter:Sorter) (testCase:SortableIntArray) =
+       let sl = SwitchCount.value sorter.switchCount
+       SortTHistSwitchList sorter 0 (sl - 1) testCase
+
+
     let SortTR (sorter:Sorter) (mindex:int) (maxdex:int) 
                (switchUses:SwitchUses) (testCases:SortableSet) 
                (index:int) =

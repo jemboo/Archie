@@ -75,6 +75,7 @@ module Combinatorics =
         looP
 
 
+
     let isSortedOffset (baseValues:int[]) (offset:int) (length:int) =
         let mutable i=1
         let mutable looP = true

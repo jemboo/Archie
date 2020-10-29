@@ -61,12 +61,11 @@ type SorterPoolDtoFixture () =
         let rngGens = rngGenkvps |>Map.ofArray
         let rngGensDto = rngGens |> Map.map(fun k v -> v |> RngGenDto.toDto)
 
-        let gg = rngGensDto |> Map.toList 
+        let rngGensBack = rngGensDto |> Map.toList 
                             |> List.map(fun (k,v) ->
                                 v |> RngGenDto.fromDto |> Result.map(fun r -> (k,r)))
                             |> Result.sequence
                             |> Result.map(fun l -> Map.ofList l)
+                            |> Result.ExtractOrThrow
 
-        let rngGensBack = rngGensDto |> Map.map(fun k v -> v |> RngGenDto.fromDto |> Result.map(fun r -> (k,r)))
-                                     |> Map.toList
-        Assert.AreEqual(1,1)
+        Assert.AreEqual(rngGens,rngGensBack)

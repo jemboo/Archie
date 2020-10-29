@@ -1,7 +1,5 @@
 ﻿namespace Archie.Base
 open System
-open System.Collections.Generic
-
 
 [<Struct>]
 type Switch = {low:int; hi:int}
@@ -48,11 +46,22 @@ module Switch =
         switches |> Seq.map(fun sw-> mutateSwitch sw)
 
 
-module SwitchDto =
-    let fromDto dex = Switch.switchMap.[dex]
-    let toDto (switch:Switch) =
-        (switch.hi * (switch.hi + 1)) / 2 + switch.low
-        
+type SortableIntArray = private SortableIntArray of int[]
+module SortableIntArray =
+    let create (intArray:int[]) = SortableIntArray intArray
+    let Identity (order: int) = create [|0 .. order-1|]
+    let value (SortableIntArray p) = p
+    let apply f (p:SortableIntArray) = f (value p)
+
+    let copy (sortableIntArray:SortableIntArray) = 
+        create (Array.copy (value sortableIntArray))
+
+    let fromRandomPermutation (degree:Degree) (rnd:IRando) =
+        create (Combinatorics.randomPermutation rnd (Degree.value degree))
+
+    let fromRandomBits (degree:Degree) (rnd:IRando) =
+        create (ZeroOneSequence.Random rnd (Degree.value degree) 0.5 |> Seq.toArray)
+
 
 type SortableSet = {degree:Degree; baseArray:int[]; count:int}
 module SortableSet =
@@ -86,7 +95,6 @@ module SortableSet =
 
 type Stage = {switches:Switch list; degree:Degree}
 module Stage =
-
     let createRandom (degree:Degree) (rnd:IRando) =
         let switches = (TwoCyclePerm.makeRandomFullTwoCycle degree rnd )
                         |> Switch.fromTwoCyclePerm
@@ -410,30 +418,3 @@ module SwitchUses =
         StringUtils.printArrayf 
             (fun ((s,w,t),f) -> sprintf "%d %d %d %f" gen (SwitchCount.value w) (StageCount.value t) (SorterFitness.value f)) 
             stats
-
-
-type SwitchUsesDto = private {switchCount:int; weights:int[]}
-module SwitchUsesDto =
-    let fromDto (dto:SwitchUsesDto) =
-        result {
-            let! switchCount = SwitchCount.create "" dto.switchCount
-            return! SwitchUses.create switchCount dto.weights
-        }
-
-    let toDto (switchUses:SwitchUses) =
-        {SwitchUsesDto.switchCount= (SwitchCount.value switchUses.switchCount); 
-         weights=switchUses.weights}
-
-type SorterDto = {degree:int; switches:int[]}
-module SorterDto =
-    let fromDto (dto:SorterDto) =
-        result {
-            let! degree = Degree.create "" dto.degree
-            let switches = dto.switches |> Array.map(fun sw -> SwitchDto.fromDto sw)
-            return Sorter.create degree switches
-        }
-    let toDto (sorter:Sorter) =
-        {
-            SorterDto.degree = (Degree.value sorter.degree); 
-            switches = sorter.switches |> Array.map(fun sw -> SwitchDto.toDto sw)
-        }

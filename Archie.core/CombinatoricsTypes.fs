@@ -109,13 +109,13 @@ module TwoCyclePerm =
         { degree=degree; values=curPa }
 
 
-type BitArray = {order:int; items:array<bool>}
-module BitArray =
-    let Zero (order: int) =  { order=order; items=Array.init order (fun i -> false) }
-    let Next (bits: BitArray) =  { order=bits.order; items=bits.items }
+//type BitArray = {order:int; items:array<bool>}
+//module BitArray =
+//    let Zero (order: int) =  { order=order; items=Array.init order (fun i -> false) }
+//    let Next (bits: BitArray) =  { order=bits.order; items=bits.items }
+
 
 module ZeroOneSequence =
-
     let Random (rnd : IRando) (len: int) (pctOnes:float) =
         Seq.init len (fun n -> if (rnd.NextFloat > pctOnes) then 0 else 1)
 
@@ -136,6 +136,7 @@ module ZeroOneSequence =
 
 
 module IntBits =
+
     let Sorted_O_1_Sequence (blockLen:int) (onesCount:int) =
         seq {for i = 1 to blockLen - onesCount do yield 0; 
              for i = 1 to onesCount do yield 1 }
@@ -148,7 +149,7 @@ module IntBits =
 
     let AllBinaryTestCasesSeq (order:int) =
         {0 .. (1 <<< order) - 1}
-        |> Seq.map (fun i -> ZeroOneSequence.FromInteger  order i)
+        |> Seq.map (fun i -> ZeroOneSequence.FromInteger order i)
 
     let AllBinaryTestCasesArray (order:int) =
         Array.init (1 <<< order) (fun i -> ZeroOneSequence.FromInteger order i)

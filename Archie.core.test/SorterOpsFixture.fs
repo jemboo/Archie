@@ -24,21 +24,36 @@ type SorterOpsFixture() =
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
 
          let res = SorterOps.GetStandardSortingResultsComplete sortableSet (UseParallel.create false) sorterSet.sorters 
-         let goodies = res |> Array.filter(fun (_, r) -> SortableCount.value r.successfulSortCount =sortableSet.count)
+         let goodies = res |> Array.filter(fun (_, r) -> SortableCount.value r.successfulSortCount = sortableSet.count)
          let duke = goodies.Length
          Assert.IsTrue (duke > 0)
+
+
+    [<TestMethod>]
+     member this.SortTHist() =
+         let switchList = [{Switch.low=0; Switch.hi=0}; 
+                           {Switch.low=0; Switch.hi=1}; 
+                           {Switch.low=0; Switch.hi=0}; 
+                           {Switch.low=1; Switch.hi=2}
+                           {Switch.low=0; Switch.hi=1};]
+         
+         let quak = switchList |> List.head
+         let sortableIntArray = SortableIntArray.create [|2;1;0|]
+         let res = SorterOps.SortTHistSwitches switchList sortableIntArray
+
+         Assert.IsTrue (true)
 
 
     [<TestMethod>]
      member this.RandomStagePackedSorterTR() =
          let degree = (Degree.create "" 16 ) |> Result.ExtractOrThrow
          let stageCount = (StageCount.create "" 110) |> Result.ExtractOrThrow
-         let randSorterGen = SorterLength.Stage stageCount
+         let sorterLength = SorterLength.Stage stageCount
          let sorterCount = (SorterCount.create "" 10) |> Result.ExtractOrThrow
          let seed = RandomSeed.create "" 4124 |> Result.ExtractOrThrow
          let randoLcg = new RandomLcg(seed) :> IRando
 
-         let sorterSet = SorterSet.createRandom degree randSorterGen None
+         let sorterSet = SorterSet.createRandom degree sorterLength None
                                     sorterCount randoLcg
 
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow

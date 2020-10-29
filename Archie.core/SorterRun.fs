@@ -36,7 +36,7 @@ module SorterRun =
 
     let NextGen (prams:PoolUpdateParamsBnW) (sorterPool:SorterPoolMember[]) 
                 (rando:IRando) (gen:GenerationNumber) =
-        let archiver = fun spm -> spm |> ignore
+        let archiver = fun (spm:SorterPoolMember) -> spm |> ignore
         let mutator = PoolUpdateParamsBnW.mutator prams rando
         let breederCount = PoolFraction.boundedMultiply prams.breederFrac sorterPool.Length
         let winnerCount = PoolFraction.boundedMultiply prams.winnerFrac sorterPool.Length
@@ -55,6 +55,7 @@ module SorterRun =
                         |> Seq.mapi(fun rankM tup -> SorterPoolMember.toLegacy 
                                                       (fst tup) 
                                                       (PoolMemberRank.fromInt (rankM + 1))
+                                                      (fst tup).parent
                                                       archiver)
                         |> Seq.toArray
         let stsMutants = stsBreeders 
