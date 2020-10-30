@@ -109,6 +109,113 @@ module SorterPoolMemberDto =
         }
 
 
+
+
+
+
+
+
+
+
+
+type SorterPoolMemberDto2 = {
+    id:Guid;
+    poolMemberState:string; 
+    birthDate:int; 
+    parent:Guid option;
+    sorterDto:SorterDto;
+    poolMemberRank:int option;
+    testResults:SorterTestResultsDto option;
+    fitness:float option;
+}
+
+module SorterPoolMemberDto2 =
+
+    let rec fromDto (dto:SorterPoolMemberDto2) =
+        result {
+            let id = dto.id
+            let! pms = dto.poolMemberState |> PoolMemberState.fromDto
+            let! birthDate = GenerationNumber.create "" dto.birthDate
+            let  parent = match dto.parent with
+                          | Some guey -> Some (SorterPoolMemberRef.I guey)
+                          | None -> None
+            let! sorter = dto.sorterDto |> SorterDto.fromDto
+            let! poolMemberRank = match dto.poolMemberRank with
+                                  | Some pmr -> (PoolMemberRank.create "" pmr) 
+                                                 |> Result.map Some
+                                  | None -> None |> Ok
+            let! testResults = match dto.testResults with
+                               | Some tr -> (SorterTestResultsDto.fromDto tr)
+                                             |> Result.map Some
+                               | None -> None |> Ok
+
+            let! fitness =  match dto.fitness with
+                            | Some f -> (SorterFitness.create "" f) 
+                                         |> Result.map Some
+                            | None -> None |> Ok
+            return {
+                SorterPoolMember2.id = id;
+                poolMemberState = pms
+                birthDate=birthDate;
+                parent= parent
+                sorter=sorter
+                poolMemberRank = poolMemberRank
+                testResults = testResults
+                fitness = fitness
+            }
+        }
+
+
+    let toDto (sorterPoolMember:SorterPoolMember2) =
+        {
+            SorterPoolMemberDto2.id = sorterPoolMember.id
+            poolMemberState = sorterPoolMember.poolMemberState 
+                                    |> PoolMemberState.toDto
+            birthDate = (GenerationNumber.value sorterPoolMember.birthDate)
+
+            parent = match sorterPoolMember.parent with
+                        | Some spm -> match spm with        
+                                      | R s -> Some s.id
+                                      | I g -> Some g
+                        | None -> None
+
+            sorterDto = sorterPoolMember.sorter |> SorterDto.toDto
+
+            poolMemberRank =  match sorterPoolMember.poolMemberRank with
+                                | Some r -> Some (PoolMemberRank.value r)
+                                | None -> None
+
+            testResults = match sorterPoolMember.testResults with
+                           | Some tr ->  Some (tr |> SorterTestResultsDto.toDto)
+                           | None -> None
+
+            fitness = match sorterPoolMember.fitness with
+                        | Some v -> Some (SorterFitness.value v)
+                        | None -> None
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 type SorterPool2Dto = {id:Guid; degree:int; sorterPoolMembers:SorterPoolMemberDto[];}
 
 module SorterPool2Dto =

@@ -55,7 +55,6 @@ module SorterRun =
                         |> Seq.mapi(fun rankM tup -> SorterPoolMember.toLegacy 
                                                       (fst tup) 
                                                       (PoolMemberRank.fromInt (rankM + 1))
-                                                      (fst tup).parent
                                                       archiver)
                         |> Seq.toArray
         let stsMutants = stsBreeders 

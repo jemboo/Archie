@@ -30,18 +30,25 @@ type SorterOpsFixture() =
 
 
     [<TestMethod>]
-     member this.SortTHist() =
+     member this.SortTHistSwitches() =
          let switchList = [{Switch.low=0; Switch.hi=0}; 
                            {Switch.low=0; Switch.hi=1}; 
                            {Switch.low=0; Switch.hi=0}; 
                            {Switch.low=1; Switch.hi=2}
                            {Switch.low=0; Switch.hi=1};]
          
-         let quak = switchList |> List.head
          let sortableIntArray = SortableIntArray.create [|2;1;0|]
          let res = SorterOps.SortTHistSwitches switchList sortableIntArray
-
          Assert.IsTrue (true)
+
+
+    [<TestMethod>]
+     member this.SortTHistSorter() =
+        let sorter = RefSorter.CreateRefSorter RefSorter.Green16 |> Result.ExtractOrThrow
+        let sortableIntArray = SortableIntArray.create [|2;1;0;15;14;13;12;11;10;9;8;7;6;5;4;3|]
+        let hist = SorterOps.SortTHist sorter sortableIntArray
+        let res = SortableIntArray.value (hist |> List.last)
+        Assert.IsTrue (Combinatorics.isSorted(res))
 
 
     [<TestMethod>]
@@ -52,12 +59,10 @@ type SorterOpsFixture() =
          let sorterCount = (SorterCount.create "" 10) |> Result.ExtractOrThrow
          let seed = RandomSeed.create "" 4124 |> Result.ExtractOrThrow
          let randoLcg = new RandomLcg(seed) :> IRando
-
          let sorterSet = SorterSet.createRandom degree sorterLength None
                                     sorterCount randoLcg
 
          let sortableSet = SortableSet.allBinary degree |> Result.ExtractOrThrow
-
          let res = SorterOps.GetStandardSortingResultsEager sortableSet (UseParallel.create false) sorterSet.sorters
          let goodies = res |> Array.filter(fun (_, r) -> SortableCount.value r.successfulSortCount = sortableSet.count)
          let duke = goodies.Length
@@ -72,7 +77,6 @@ type SorterOpsFixture() =
          let sorterCount = (SorterCount.create "" 200) |> Result.ExtractOrThrow
          let seed = RandomSeed.create "" 41324 |> Result.ExtractOrThrow
          let randoLcg = new RandomLcg(seed) :> IRando
-
          let sorterSet = SorterSet.createRandom degree sorterLength None
                                     sorterCount randoLcg
 
