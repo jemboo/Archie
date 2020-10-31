@@ -45,68 +45,68 @@ type SorterPoolMemberDto = {
     fitness:float option;
 }
 
-module SorterPoolMemberDto =
+//module SorterPoolMemberDto =
 
-    let rec fromDto (dto:SorterPoolMemberDto) =
-        result {
-            let id = dto.id
-            let! pms = dto.poolMemberState |> PoolMemberState.fromDto
-            let! birthDate = GenerationNumber.create "" dto.birthDate
-            let! parent = match dto.parent with
-                          | Some dto -> (fromDto dto) |> Result.map Some
-                          | None -> None |> Ok
-            let! sorter = dto.sorterDto |> SorterDto.fromDto
-            let! poolMemberRank = match dto.poolMemberRank with
-                                  | Some pmr -> (PoolMemberRank.create "" pmr) 
-                                                 |> Result.map Some
-                                  | None -> None |> Ok
-            let! testResults = match dto.testResults with
-                               | Some tr -> (SorterTestResultsDto.fromDto tr)
-                                             |> Result.map Some
-                               | None -> None |> Ok
+//    let rec fromDto (dto:SorterPoolMemberDto) =
+//        result {
+//            let id = dto.id
+//            let! pms = dto.poolMemberState |> PoolMemberState.fromDto
+//            let! birthDate = GenerationNumber.create "" dto.birthDate
+//            let! parent = match dto.parent with
+//                          | Some dto -> (fromDto dto) |> Result.map Some
+//                          | None -> None |> Ok
+//            let! sorter = dto.sorterDto |> SorterDto.fromDto
+//            let! poolMemberRank = match dto.poolMemberRank with
+//                                  | Some pmr -> (PoolMemberRank.create "" pmr) 
+//                                                 |> Result.map Some
+//                                  | None -> None |> Ok
+//            let! testResults = match dto.testResults with
+//                               | Some tr -> (SorterTestResultsDto.fromDto tr)
+//                                             |> Result.map Some
+//                               | None -> None |> Ok
 
-            let! fitness =  match dto.fitness with
-                            | Some f -> (SorterFitness.create "" f) 
-                                         |> Result.map Some
-                            | None -> None |> Ok
-            return {
-                SorterPoolMember.id = id;
-                poolMemberState = pms
-                birthDate=birthDate;
-                parent=parent
-                sorter=sorter
-                poolMemberRank = poolMemberRank
-                testResults = testResults
-                fitness = fitness
-            }
-        }
+//            let! fitness =  match dto.fitness with
+//                            | Some f -> (SorterFitness.create "" f) 
+//                                         |> Result.map Some
+//                            | None -> None |> Ok
+//            return {
+//                SorterPoolMember.id = id;
+//                poolMemberState = pms
+//                birthDate=birthDate;
+//                parent=parent
+//                sorter=sorter
+//                poolMemberRank = poolMemberRank
+//                testResults = testResults
+//                fitness = fitness
+//            }
+//        }
 
 
-    let rec toDto (sorterPoolMember:SorterPoolMember) =
-        {
-            SorterPoolMemberDto.id = sorterPoolMember.id
-            poolMemberState = sorterPoolMember.poolMemberState 
-                                    |> PoolMemberState.toDto
-            birthDate = (GenerationNumber.value sorterPoolMember.birthDate)
+//    let rec toDto (sorterPoolMember:SorterPoolMember) =
+//        {
+//            SorterPoolMemberDto.id = sorterPoolMember.id
+//            poolMemberState = sorterPoolMember.poolMemberState 
+//                                    |> PoolMemberState.toDto
+//            birthDate = (GenerationNumber.value sorterPoolMember.birthDate)
 
-            parent = match sorterPoolMember.parent with
-                        | Some spm -> Some (toDto spm)
-                        | None -> None
+//            parent = match sorterPoolMember.parent with
+//                        | Some spm -> Some (toDto spm)
+//                        | None -> None
 
-            sorterDto = sorterPoolMember.sorter |> SorterDto.toDto
+//            sorterDto = sorterPoolMember.sorter |> SorterDto.toDto
 
-            poolMemberRank =  match sorterPoolMember.poolMemberRank with
-                                | Some r -> Some (PoolMemberRank.value r)
-                                | None -> None
+//            poolMemberRank =  match sorterPoolMember.poolMemberRank with
+//                                | Some r -> Some (PoolMemberRank.value r)
+//                                | None -> None
 
-            testResults = match sorterPoolMember.testResults with
-                           | Some tr ->  Some (tr |> SorterTestResultsDto.toDto)
-                           | None -> None
+//            testResults = match sorterPoolMember.testResults with
+//                           | Some tr ->  Some (tr |> SorterTestResultsDto.toDto)
+//                           | None -> None
 
-            fitness = match sorterPoolMember.fitness with
-                        | Some v -> Some (SorterFitness.value v)
-                        | None -> None
-        }
+//            fitness = match sorterPoolMember.fitness with
+//                        | Some v -> Some (SorterFitness.value v)
+//                        | None -> None
+//        }
 
 
 
@@ -216,14 +216,14 @@ module SorterPoolMemberDto2 =
 
 
 
-type SorterPool2Dto = {id:Guid; degree:int; sorterPoolMembers:SorterPoolMemberDto[];}
+type SorterPool2Dto = {id:Guid; degree:int; sorterPoolMembers:SorterPoolMemberDto2[];}
 
 module SorterPool2Dto =
    let fromDto (sorterPool2dto:SorterPool2Dto) = 
         result {
             let! degree = Degree.create "" sorterPool2dto.degree
             let! spms = sorterPool2dto.sorterPoolMembers
-                        |> Array.map(SorterPoolMemberDto.fromDto)
+                        |> Array.map(SorterPoolMemberDto2.fromDto)
                         |> Array.toList |> Result.sequence
 
             return {
@@ -238,7 +238,7 @@ module SorterPool2Dto =
             SorterPool2Dto.id = sorterPool.id;
             degree = (Degree.value sorterPool.degree);
             sorterPoolMembers = sorterPool.sorterPoolMembers
-                                |> Array.map(fun spm -> SorterPoolMemberDto.toDto spm)
+                                |> Array.map(fun spm -> SorterPoolMemberDto2.toDto spm)
        }
 
 //type PoolUpdateParamsDto = {id:Guid;

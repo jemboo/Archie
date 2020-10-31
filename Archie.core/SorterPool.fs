@@ -15,13 +15,13 @@ type SorterPool2 =
   {
         id: Guid;
         degree:Degree;
-        sorterPoolMembers: SorterPoolMember[];
+        sorterPoolMembers: SorterPoolMember2[];
   }
 
 module SorterPool2 =
     
     let create (id:Guid) (degree:Degree) 
-               (sorterPoolMembers:SorterPoolMember[]) =
+               (sorterPoolMembers:SorterPoolMember2[]) =
         let dupes = sorterPoolMembers 
                     |> Array.map(fun m->m.id)
                     |> CollectionUtils.duplicates
@@ -62,7 +62,7 @@ module SorterPool2 =
 
         let rndSorters = Rando.fromRngGen rngSorters
         let sorterPoolMembers = ids |> Array.map(fun g -> 
-                SorterPoolMember.makeRoot 
+                SorterPoolMember2.makeRoot 
                     g
                     (Sorter.createRandom degree sorterLength (Some switchFreq) rndSorters)
                     None 

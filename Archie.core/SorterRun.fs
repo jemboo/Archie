@@ -5,38 +5,42 @@ open System
 module SorterRun =
 
     let RunHeadersForBnW =
-        let ha = SorterPoolMember.reportHeader
+        let ha = SorterPoolMember2.reportHeader
                 |> Array.append PoolUpdateParamsBnW.headers
                 |> Array.append [|"RunId"|]
         StringUtils.printArrayAsTabDelimited ha
 
 
-    let RunReportForBnW (runid:Guid) (prams:PoolUpdateParamsBnW) (spm:SorterPoolMember) =
+    let RunReportForBnW (runid:Guid) (prams:PoolUpdateParamsBnW) (spm:SorterPoolMember2) =
         let litem =
-            SorterPoolMember.report spm
+            SorterPoolMember2.report spm
             |> Array.append (PoolUpdateParamsBnW.report prams)
             |> Array.append [|(sprintf "%A" runid)|]
         StringUtils.printArrayAsTabDelimited litem
 
 
-    let Measure (sorterPool:SorterPoolMember[]) (sortableSet:SortableSet)  =
+    let Measure (sorterPool:SorterPoolMember2[]) (sortableSet:SortableSet)  =
         sorterPool
         |> Array.map(fun spm-> let eval = SorterOps.GetTheStandardSortingResultsComplete sortableSet
-                               SorterPoolMember.toMeasured spm eval)
+                               SorterPoolMember2.toMeasured spm eval)
+        |> Array.toList
+        |> Result.sequence
+        |> Result.ExtractOrThrow
+        |> List.toArray
 
 
-    let Evaluate (prams:PoolUpdateParamsBnW) (sorterPool:SorterPoolMember[]) 
+    let Evaluate (prams:PoolUpdateParamsBnW) (sorterPool:SorterPoolMember2[]) 
                  (fitnessFuncParam:FitnessFuncParam) =
         sorterPool
         |> Array.map(fun pm-> match pm.poolMemberState with
                               | Legacy -> pm
-                              | _ -> SorterPoolMember.toEvaluated pm prams.fitnessFunc
-                                                       fitnessFuncParam)
+                              | _ -> (SorterPoolMember2.toEvaluated pm prams.fitnessFunc
+                                                       fitnessFuncParam) |> Result.ExtractOrThrow)
 
 
-    let NextGen (prams:PoolUpdateParamsBnW) (sorterPool:SorterPoolMember[]) 
+    let NextGen (prams:PoolUpdateParamsBnW) (sorterPool:SorterPoolMember2[]) 
                 (rando:IRando) (gen:GenerationNumber) =
-        let archiver = fun (spm:SorterPoolMember) -> spm |> ignore
+        let archiver = fun (spm:SorterPoolMember2) -> spm |> ignore
         let mutator = PoolUpdateParamsBnW.mutator prams rando
         let breederCount = PoolFraction.boundedMultiply prams.breederFrac sorterPool.Length
         let winnerCount = PoolFraction.boundedMultiply prams.winnerFrac sorterPool.Length
@@ -45,26 +49,28 @@ module SorterRun =
         let fitnessRankedMembers =
             sorterPool
             |> Array.map(fun w ->
-                (w, SorterFitness.value (SorterPoolMember.getAdjFitness w prams.legacyBias)))
+                (w, (SorterFitness.value (w.fitness |> Option.get))))
             |> Array.sortByDescending(snd)
 
         let stsBreeders = fitnessRankedMembers |> Array.take(breederCount)
 
         let stsWinners = fitnessRankedMembers
                         |> Seq.take(winnerCount)
-                        |> Seq.mapi(fun rankM tup -> SorterPoolMember.toLegacy 
+                        |> Seq.mapi(fun rankM tup -> SorterPoolMember2.toLegacy 
                                                       (fst tup) 
-                                                      (PoolMemberRank.fromInt (rankM + 1))
-                                                      archiver)
-                        |> Seq.toArray
+                                                      (PoolMemberRank.fromInt (rankM + 1)))
+                        |> Seq.toList
+                        |> Result.sequence
+                        |> Result.ExtractOrThrow
+                        |> List.toArray
         let stsMutants = stsBreeders 
                         |> CollectionUtils.IterateCircular mutantCount
-                        |> Seq.map(fun tup-> SorterPoolMember.toInitiate mutator (fst tup) gen)
+                        |> Seq.map(fun tup-> SorterPoolMember2.toInitiate mutator (fst tup) gen)
                         |> Seq.toArray
         stsMutants |> Array.append stsWinners
 
 
-    let RunBnW (sorterPoolMember:SorterPoolMember) 
+    let RunBnW (sorterPoolMember:SorterPoolMember2) 
                (poolUpdateParamsBnW:PoolUpdateParamsBnW) 
                (sortableSet:SortableSet) 
                (logToFile:(int->Guid->string->unit)) =
@@ -80,7 +86,7 @@ module SorterRun =
             sorterPool <- Measure sorterPool sortableSet
             sorterPool <- Evaluate poolUpdateParamsBnW sorterPool (FitnessFuncParam.NoParam)
             sorterPool <- NextGen poolUpdateParamsBnW sorterPool rando gen
-            let winner = sorterPool |> Array.filter(fun pm -> SorterPoolMember.isTopRanked pm) |> Array.exactlyOne
+            let winner = sorterPool |> Array.filter(fun pm -> SorterPoolMember2.isTopRanked pm) |> Array.exactlyOne
             if winner.birthDate <> lastWinningBirtdate then
                Console.WriteLine(sprintf "%A %d" runId (GenerationNumber.value gen))
                logToFile  (GenerationNumber.value gen) runId (RunReportForBnW runId poolUpdateParamsBnW winner)
@@ -150,7 +156,7 @@ module SorterRun =
                              (Some initialSwitchFrequency) sorterRando sorterCount
         
         let sorterPoolMembers = SorterOps.GetStandardSortingResultsEager sortableSet (UseParallel.create false) sorters
-                                |> Array.map(fun tup -> SorterPoolMember.makeRoot (Guid.NewGuid()) (fst tup) (Some (snd tup)) None)
+                                |> Array.map(fun tup -> SorterPoolMember2.makeRoot (Guid.NewGuid()) (fst tup) (Some (snd tup)) None)
 
         //let sorterAndPrams = PoolUpdateParamsBnW.ParamsSnS rngGenParams poolGenCount poolCount
         //                        sorterMutationType legacyBias 1024.0 0.0 0.0005 0.0005
