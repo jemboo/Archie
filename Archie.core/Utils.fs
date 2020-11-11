@@ -4,7 +4,6 @@ open Microsoft.FSharp.Core
 open System
 open System.IO
 open System.Security.Cryptography
-open System.Text
 
 module GuidUtils = 
 

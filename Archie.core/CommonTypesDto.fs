@@ -16,7 +16,9 @@ module Json =
     let deserializeOption<'a> str =
         match str with
         | Some s -> (deserialize<'a> s)
-        | None -> failwith  "data missing"
+        | None -> Result.Error  "option was none"
+
+
 
 module Dto =
     let toOption (v:'a option) =

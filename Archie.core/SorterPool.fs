@@ -11,34 +11,214 @@ type SorterPoolUpdateParams =
       winnerSelector: PoolSelector2;
   }
 
-type SorterPool2 = 
+
+module SorterPoolUpdateParams =
+
+    let ss (fitnessFunc:FitnessFunc)
+           (breederFrac:PoolFraction)
+           (mutationType:SorterMutationType) 
+           (sorterCount:SorterCount)
+           (winnerFrac:PoolFraction) =
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        let poolId = GuidUtils.guidFromObjs(
+                        seq { (fitnessFunc :> obj);
+                              (breederFrac :> obj);
+                              (mutationType :> obj);
+                              (sorterCount :> obj);
+                              (winnerFrac :> obj); } )
+        {
+            SorterPoolUpdateParams.id = poolId;
+            breederSelector = breederFrac |> PoolSelector2.standard;
+            fitnessFunc = fitnessFunc;
+            sorterMutator = SorterMutation.standardMutator mutationType;
+            sorterCount = sorterCount;
+            winnerSelector = winnerFrac |> PoolSelector2.standard;
+        }
+
+type SorterPoolState =
+    | Initiated
+    | Measured
+    | Evaluated
+    | Selected
+
+module SorterPoolState =
+    let IsCompatable (sorterPoolState:SorterPoolState) 
+                     (poolMemberState:PoolMemberState) =
+        match sorterPoolState with
+        | Initiated -> (poolMemberState =  PoolMemberState.Root) || 
+                        (poolMemberState = PoolMemberState.Initiate) || 
+                        (poolMemberState = PoolMemberState.Legacy)
+        | Measured -> (poolMemberState = PoolMemberState.Measured)
+        | Evaluated -> (poolMemberState = PoolMemberState.Evaluated)
+        | Selected -> (poolMemberState = PoolMemberState.Evaluated)
+
+
+type SorterPool2 =
   {
         id: Guid;
         degree:Degree;
-        sorterPoolMembers: SorterPoolMember2[];
+        sorterPoolMembers: SorterPoolMember list;
+        sorterPoolState: SorterPoolState;
+        generation:GenerationNumber
   }
 
 module SorterPool2 =
-    
-    let create (id:Guid) (degree:Degree) 
-               (sorterPoolMembers:SorterPoolMember2[]) =
+
+    let create (id:Guid) 
+               (degree:Degree) 
+               (sorterPoolMembers:SorterPoolMember list)
+               (generation:GenerationNumber) 
+               (sorterPoolState:SorterPoolState) =
         let dupes = sorterPoolMembers 
-                    |> Array.map(fun m->m.id)
+                    |> List.map(fun m->m.id)
                     |> CollectionUtils.duplicates
                     |> Seq.toArray
 
         let wrongDegree = sorterPoolMembers 
-                            |> Array.filter(fun m -> (m.sorter.degree <> degree))
+                            |> List.filter(fun m -> (m.sorter.degree <> degree))
 
+        let matchingStates = 
+            sorterPoolMembers 
+                |> List.forall(fun spm -> SorterPoolState.IsCompatable 
+                                                sorterPoolState spm.poolMemberState)
+                           
         if (dupes.Length > 0) then
             "duplicates found in list" |> Error
         elif (wrongDegree.Length > 0) then
             "mixed degrees found in list" |> Error
+        elif (not matchingStates) then
+            sprintf "not all member states are compatable with %s" (sorterPoolState.ToString()) |> Error
         else
             {
                 id=id;
                 degree=degree;
                 sorterPoolMembers=sorterPoolMembers;
+                generation=generation
+                sorterPoolState=sorterPoolState
             } |> Ok
     
     let createRandom (degree:Degree) 
@@ -58,17 +238,177 @@ module SorterPool2 =
         let randyForIds = Rando.fromGuid rngTypeForIds poolId
         let ids = seq {1 .. (SorterCount.value sorterCount)}
                   |> Seq.map(fun _ ->  Rando.NextGuid randyForIds None)
-                  |> Seq.toArray
+                  |> Seq.toList
 
         let rndSorters = Rando.fromRngGen rngSorters
-        let sorterPoolMembers = ids |> Array.map(fun g -> 
-                SorterPoolMember2.makeRoot 
+        let sorterPoolMembers = ids |> List.map(fun g -> 
+                SorterPoolMember.makeRoot 
                     g
                     (Sorter.createRandom degree sorterLength (Some switchFreq) rndSorters)
                     None 
                     None)
-        create poolId degree sorterPoolMembers
+        create poolId degree sorterPoolMembers  (GenerationNumber.fromInt 0) SorterPoolState.Initiated
         
+
+    let Measure (sortableSet:SortableSet) 
+                (sorterPool:SorterPool2) =
+
+        let eval = SorterOps.GetTheStandardSortingResultsComplete sortableSet
+        let measure spm = 
+                match spm.poolMemberState with
+                        | Legacy -> spm |> Ok
+                        | _ -> SorterPoolMember.toMeasured spm eval
+
+        if sorterPool.sorterPoolState <> SorterPoolState.Initiated then
+            sprintf "SorterPoolState %s is not for Measure" 
+                        (sorterPool.sorterPoolState.ToString()) |> Result.Error
+        else
+            result {
+                let! spRet = sorterPool.sorterPoolMembers
+                            |> List.map(measure)
+                            |> Result.sequence
+            return 
+                {
+                     SorterPool2.id = sorterPool.id;
+                     degree=sorterPool.degree;
+                     sorterPoolMembers=spRet;
+                     sorterPoolState=SorterPoolState.Measured;
+                     generation=sorterPool.generation
+                }
+            }
+
+
+    let Evaluate (prams:SorterPoolUpdateParams) 
+                 (fitnessFuncParam:FitnessFuncParam)
+                 (sorterPool:SorterPool2) =
+
+        let evalo (spm:SorterPoolMember) =
+            match spm.poolMemberState with
+                    | Legacy -> spm |> Ok
+                    | _ -> SorterPoolMember.toEvaluated spm prams.fitnessFunc fitnessFuncParam
+
+        if sorterPool.sorterPoolState <> SorterPoolState.Measured then
+            sprintf "SorterPoolState %s is not for Evaluate" 
+                    (sorterPool.sorterPoolState.ToString()) |> Result.Error
+        else
+            result {
+                let! spRet = sorterPool.sorterPoolMembers
+                            |> List.map(evalo)
+                            |> Result.sequence
+            return 
+                {
+                     SorterPool2.id = sorterPool.id;
+                     degree=sorterPool.degree;
+                     sorterPoolMembers=spRet;
+                     sorterPoolState=SorterPoolState.Evaluated;
+                     generation=sorterPool.generation
+                }
+            }
+
+        
+    let Select (prams:SorterPoolUpdateParams) 
+               (fitnessFuncParam:FitnessFuncParam)
+               (sorterPool:SorterPool2) =
+
+        //let breederCount = PoolFraction.boundedMultiply prams.breederFrac sorterPool.Length
+        //let winnerCount = PoolFraction.boundedMultiply prams.winnerFrac sorterPool.Length
+        //let mutantCount = SorterCount.value prams.poolCount - winnerCount
+
+        //let fitnessRankedMembers =
+        //    sorterPool
+        //    |> Array.map(fun w ->
+        //        (w, (SorterFitness.value (w.fitness |> Option.get))))
+        //    |> Array.sortByDescending(snd)
+
+        //let stsBreeders = fitnessRankedMembers |> Array.take(breederCount)
+
+        let yak = PS.value prams.winnerSelector.func
+        let nubes = sorterPool.sorterPoolMembers 
+                    |> List.toArray 
+                    |> yak 
+
+
+
+
+
+
+
+
+
+
+
+
+        let evalo (spm:SorterPoolMember) =
+            match spm.poolMemberState with
+                    | Legacy -> spm |> Ok
+                    | _ -> SorterPoolMember.toEvaluated spm prams.fitnessFunc fitnessFuncParam
+
+        if sorterPool.sorterPoolState <> SorterPoolState.Evaluated then
+            sprintf "SorterPoolState %s is not for Select" 
+                    (sorterPool.sorterPoolState.ToString()) |> Result.Error
+        else
+            result {
+                let! spRet = sorterPool.sorterPoolMembers
+                            |> List.map(evalo)
+                            |> Result.sequence
+            return 
+                {
+                        SorterPool2.id = sorterPool.id;
+                        degree=sorterPool.degree;
+                        sorterPoolMembers=spRet;
+                        sorterPoolState=SorterPoolState.Evaluated;
+                        generation=sorterPool.generation
+                }
+            }
+
+
+    let Reproduce (prams:SorterPoolUpdateParams) 
+                  (fitnessFuncParam:FitnessFuncParam)
+                  (sorterPool:SorterPool2) =
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        let evalo (spm:SorterPoolMember) =
+            match spm.poolMemberState with
+                    | Legacy -> spm |> Ok
+                    | _ -> SorterPoolMember.toEvaluated spm prams.fitnessFunc fitnessFuncParam
+
+        if sorterPool.sorterPoolState <> SorterPoolState.Selected then
+            sprintf "SorterPoolState %s is not for Reproduce" 
+                    (sorterPool.sorterPoolState.ToString()) |> Result.Error
+        else
+            result {
+                let! spRet = sorterPool.sorterPoolMembers
+                            |> List.map(evalo)
+                            |> Result.sequence
+            return 
+                {
+                        SorterPool2.id = sorterPool.id;
+                        degree=sorterPool.degree;
+                        sorterPoolMembers=spRet;
+                        sorterPoolState=SorterPoolState.Evaluated;
+                        generation=sorterPool.generation
+                }
+            }
+
+
+
+
+
+
+
 
 type SorterPoolRunParams = 
   {
@@ -78,30 +418,6 @@ type SorterPoolRunParams =
      sorterPoolUpdateParams:SorterPoolUpdateParams;
      rngGens:Map<string, RngGen>
   }
-    
-
-module SorterPoolUpdateParams =
-
-    let ss (fitnessFunc:FitnessFunc)
-           (breederFrac:PoolFraction)
-           (mutationType:SorterMutationType) 
-           (sorterCount:SorterCount)
-           (winnerFrac:PoolFraction) =
-
-        let poolId = GuidUtils.guidFromObjs(
-                        seq { (fitnessFunc :> obj);
-                              (breederFrac :> obj);
-                              (mutationType :> obj);
-                              (sorterCount :> obj);
-                              (winnerFrac :> obj);} )
-        {
-            SorterPoolUpdateParams.id = poolId;
-            breederSelector = breederFrac |> PoolSelector2.standard;
-            fitnessFunc = fitnessFunc;
-            sorterMutator = SorterMutation.standardMutator mutationType;
-            sorterCount = sorterCount;
-            winnerSelector = winnerFrac |> PoolSelector2.standard;
-        }
 
 
 module SorterPoolRunParams =
@@ -128,6 +444,7 @@ type SorterPoolBatchRunParams = {
    id:Guid;
    sorterPoolRunParamsSet:SorterPoolRunParams[];
 }
+
 
 module SorterPoolBatchRunParams =
 

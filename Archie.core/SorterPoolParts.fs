@@ -10,18 +10,7 @@ type PoolMemberState =
     | Legacy
     | Archived
 
-//type SorterPoolMember = {
-//        id:Guid;
-//        poolMemberState:PoolMemberState; 
-//        birthDate:GenerationNumber; 
-//        parent:SorterPoolMember option;
-//        sorter:Sorter;
-//        poolMemberRank:PoolMemberRank option;
-//        testResults:SorterTestResults option;
-//        fitness:SorterFitness option;
-//    }
-
-type SorterPoolMember2 = {
+type SorterPoolMember = {
     id:Guid;
     poolMemberState:PoolMemberState; 
     birthDate:GenerationNumber; 
@@ -31,13 +20,15 @@ type SorterPoolMember2 = {
     testResults:SorterTestResults option;
     fitness:SorterFitness option;
 }
-and SorterPoolMemberRef = R of SorterPoolMember2 | I of Guid
+and SorterPoolMemberRef = R of SorterPoolMember | I of Guid
+
 
 type FitnessFuncCat =
      | StandardSwitch
      | StandardStage
      | AltSwitchAndStage of GenerationNumber
      | AltSwitchStageAndSuccess of GenerationNumber
+
 
 module FitnessFuncCat =
     let report (ffc:FitnessFuncCat) =
@@ -51,7 +42,7 @@ module FitnessFuncCat =
 type FitnessFuncParam =
      | NoParam
      | Gen of GenerationNumber
-     | Pool of GenerationNumber*SorterPoolMember2[]
+     | Pool of GenerationNumber*SorterPoolMember[]
 
 type FF = private FF of (FitnessFuncParam->SorterTestResults->SorterFitness) 
 
@@ -137,157 +128,12 @@ module PoolMemberState =
               | "Archived" -> Archived |> Ok
               | _ -> Error (sprintf "%s not handled" pms)
 
-//module SorterPoolMember =
 
-//    let makeRoot id rootSorter res fit =
-//        {
-//            SorterPoolMember.id=id;
-//            poolMemberState=PoolMemberState.Root; 
-//            birthDate=GenerationNumber.fromInt 0; 
-//            parent=None;
-//            sorter=rootSorter;
-//            poolMemberRank=None;
-//            testResults=res;
-//            fitness=fit;
-//        }
-
-//    let getFitness (pm:SorterPoolMember) =
-//       match pm.poolMemberState with
-//       | Legacy | Evaluated -> pm.fitness |> Option.get
-//       | Measured -> failwith "cannot getFitness from Measured"
-//       | Initiate _ -> failwith "cannot getFitness from Initiate"
-//       | Archived _ -> failwith "cannot getFitness from Archived"
-//       | Root _ -> failwith "cannot getFitness from None"
-
-
-//    let isTopRanked (pm:SorterPoolMember) =
-//       match pm.poolMemberRank with
-//       | Some r -> r = (PoolMemberRank.fromInt 1)
-//       | None -> false
-
-
-//    let toArchived (archiver:SorterPoolMember->unit) (spm:SorterPoolMember) =
-//        archiver spm
-//        {
-//            SorterPoolMember.id=spm.id;
-//            poolMemberState=PoolMemberState.Archived; 
-//            birthDate=spm.birthDate; 
-//            parent=None;
-//            sorter=spm.sorter;
-//            poolMemberRank=spm.poolMemberRank;
-//            testResults=spm.testResults;
-//            fitness=spm.fitness;
-//        }
-
-
-//    let toInitiate (mutator:Sorter->Sorter) (parent:SorterPoolMember) 
-//           (generation:GenerationNumber) =
-//        { 
-//            SorterPoolMember.id = Guid.NewGuid();
-//            poolMemberState=PoolMemberState.Initiate;
-//            birthDate=generation;
-//            parent=Some parent;
-//            sorter= (mutator parent.sorter);
-//            poolMemberRank=None;
-//            testResults=None;
-//            fitness=None;
-//        }
-
-//    let toMeasured (pm:SorterPoolMember) (measure:Sorter->SorterTestResults) =
-//        match pm.poolMemberState with
-//        | Archived _ -> failwith "cannot convert Archived to Measured"
-
-//        | _ ->
-//            {SorterPoolMember.id = pm.id;
-//             poolMemberState = PoolMemberState.Measured;
-//             birthDate = pm.birthDate;
-//             parent = pm.parent;
-//             sorter = pm.sorter;
-//             poolMemberRank = None;
-//             testResults = Some (measure pm.sorter);
-//             fitness = None;}
-
-//    let toEvaluated (pm:SorterPoolMember) (fitnessFunc:FitnessFunc) 
-//                    (fitnessFuncParam:FitnessFuncParam) =
-//        match pm.poolMemberState with
-//        | Legacy | Measured | Evaluated ->
-//            {SorterPoolMember.id = pm.id;
-//             poolMemberState = PoolMemberState.Evaluated;
-//             birthDate = pm.birthDate;
-//             parent = pm.parent;
-//             sorter = pm.sorter;
-//             poolMemberRank = None;
-//             testResults = pm.testResults;
-//             fitness = Some ((fitnessFunc.func |> FF.value) fitnessFuncParam ((pm.testResults) |> Option.get));}
-//        | Root -> failwith "cannot convert Root to Evaluated"
-//        | Initiate -> failwith "cannot convert Initiate to Evaluated"
-//        | Archived -> failwith "cannot convert Archived to Evaluated"
-
-
-//    let toLegacy (pm:SorterPoolMember) 
-//                 (rank:PoolMemberRank)
-//                 (archiver:SorterPoolMember->unit) =
-//        match pm.poolMemberState with
-//        | Legacy ->
-//            {SorterPoolMember.id = pm.id;
-//             poolMemberState=PoolMemberState.Legacy;
-//             birthDate=pm.birthDate;
-//             parent=pm.parent;
-//             sorter=pm.sorter;
-//             poolMemberRank=Some rank;
-//             testResults=pm.testResults;
-//             fitness=pm.fitness;}
-//        | Evaluated -> 
-//            {SorterPoolMember.id = pm.id;
-//             poolMemberState=PoolMemberState.Legacy;
-//             birthDate=pm.birthDate;
-//             parent= match pm.parent with
-//                     |Some pmem-> Some (pmem |> toArchived archiver);
-//                     |None -> None
-//             sorter=pm.sorter;
-//             poolMemberRank=Some rank;
-//             testResults=pm.testResults;
-//             fitness=pm.fitness;}
-//        | Measured -> failwith "cannot convert Measured to Legacy"
-//        | Initiate -> failwith "cannot convert Initiate to Legacy"
-//        | Archived -> failwith "cannot convert Archived to Legacy"
-//        | Root -> failwith "cannot convert Root to Legacy"
-
-
-//    let parentReportHeader = [|"parentId"; "parentBirthdate"; "parentRank"; "parentFitness";|]
-
-//    let reportParent (spm:SorterPoolMember) =
-//        match spm.parent with
-//        | Some p ->
-//                match p.poolMemberState with
-//                | Legacy | Evaluated | Initiate -> 
-//                    [|(sprintf "%A" p.id);
-//                    (sprintf "%d" (GenerationNumber.value (p.birthDate))); 
-//                    (sprintf "%s" (PoolMemberRank.repStr p.poolMemberRank));
-//                    (sprintf "%.4f" (SorterFitness.value (getFitness p)))|]
-//                | _ -> [|"";"";"";""|]
-//        | None -> [|"";"";"";""|]
-
-
-//    let reportHeader =  SorterTestResults.headers
-//                        |> Array.append parentReportHeader
-//                        |> Array.append [|"sorter_id"; "birthdate"; "rank"; "fitness"|]
-
-
-//    let report (spm:SorterPoolMember) =
-//          (SorterTestResults.reportOpt (spm.testResults))
-//          |> Array.append (reportParent (spm))
-//          |> Array.append [|(sprintf "%A" spm.id); 
-//                            (sprintf "%d" (GenerationNumber.value (spm.birthDate))); 
-//                            (sprintf "%s" (PoolMemberRank.repStr spm.poolMemberRank)); 
-//                            (sprintf "%s" (SorterFitness.repStr spm.fitness));|]
-
-
-module SorterPoolMember2 =
+module SorterPoolMember =
 
     let makeRoot id rootSorter res fit =
         {
-            SorterPoolMember2.id=id;
+            SorterPoolMember.id=id;
             poolMemberState=PoolMemberState.Root; 
             birthDate=GenerationNumber.fromInt 0; 
             parent=None;
@@ -298,7 +144,7 @@ module SorterPoolMember2 =
         }
 
 
-    let getFitness (pm:SorterPoolMember2) =
+    let getFitness (pm:SorterPoolMember) =
        match pm.poolMemberState with
        | Legacy | Evaluated -> 
             match (pm.fitness) with
@@ -310,19 +156,19 @@ module SorterPoolMember2 =
        | Root _ -> "cannot getFitness from None" |> Result.Error
 
 
-    let getFitnessReport (pm:SorterPoolMember2) (errNum:float) =
+    let getFitnessReport (pm:SorterPoolMember) (errNum:float) =
         match (getFitness pm) with
         | Error r -> errNum
         | Ok f -> (SorterFitness.value f)
 
 
-    let isTopRanked (pm:SorterPoolMember2) =
+    let isTopRanked (pm:SorterPoolMember) =
        match pm.poolMemberRank with
        | Some r -> r = (PoolMemberRank.fromInt 1)
        | None -> false
 
 
-    let getParentId (spm:SorterPoolMember2) =
+    let getParentId (spm:SorterPoolMember) =
         match spm.parent with
          | Some r -> 
             match r with
@@ -331,12 +177,12 @@ module SorterPoolMember2 =
          | None -> None
 
 
-    let attachParent (spmParent:SorterPoolMember2) (spm:SorterPoolMember2) =
+    let attachParent (spmParent:SorterPoolMember) (spm:SorterPoolMember) =
         match (getParentId spm) with
         | None -> "Parent Id missing" |> Result.Error
         | Some id -> if (id = spmParent.id) then
                         {
-                            SorterPoolMember2.id=spm.id;
+                            SorterPoolMember.id=spm.id;
                             poolMemberState=spm.poolMemberState; 
                             birthDate=spm.birthDate; 
                             parent= Some (SorterPoolMemberRef.R spmParent);
@@ -349,12 +195,22 @@ module SorterPoolMember2 =
                         "Parent Id's do not match" |> Result.Error
 
 
-    let toArchived (spm:SorterPoolMember2) =
+    let toArchived (spm:SorterPoolMember) =
         match (getParentId spm) with
-        | None -> "parent id required for toArchived" |> Result.Error
+        | None -> 
+            {
+                SorterPoolMember.id=spm.id;
+                poolMemberState=PoolMemberState.Archived; 
+                birthDate=spm.birthDate; 
+                parent=None;
+                sorter=spm.sorter;
+                poolMemberRank=spm.poolMemberRank;
+                testResults=spm.testResults;
+                fitness=spm.fitness;
+            } |> Ok
         | Some guey ->
             {
-                SorterPoolMember2.id=spm.id;
+                SorterPoolMember.id=spm.id;
                 poolMemberState=PoolMemberState.Archived; 
                 birthDate=spm.birthDate; 
                 parent= Some (SorterPoolMemberRef.I guey);
@@ -365,10 +221,10 @@ module SorterPoolMember2 =
             } |> Ok
 
 
-    let toInitiate (mutator:Sorter->Sorter) (parent:SorterPoolMember2) 
+    let toInitiate (mutator:Sorter->Sorter) (parent:SorterPoolMember) 
            (generation:GenerationNumber) =
         { 
-            SorterPoolMember2.id = Guid.NewGuid();
+            SorterPoolMember.id = Guid.NewGuid();
             poolMemberState=PoolMemberState.Initiate;
             birthDate=generation;
             parent= Some (SorterPoolMemberRef.R parent);
@@ -378,12 +234,12 @@ module SorterPoolMember2 =
             fitness=None;
         }
 
-    let toMeasured (pm:SorterPoolMember2) (measure:Sorter->SorterTestResults) =
+    let toMeasured (pm:SorterPoolMember) (measure:Sorter->SorterTestResults) =
         match pm.poolMemberState with
         | Archived _ -> "cannot convert Archived to Measured" |> Result.Error
 
         | _ ->
-            {SorterPoolMember2.id = pm.id;
+            {SorterPoolMember.id = pm.id;
              poolMemberState = PoolMemberState.Measured;
              birthDate = pm.birthDate;
              parent = pm.parent;
@@ -392,11 +248,11 @@ module SorterPoolMember2 =
              testResults = Some (measure pm.sorter);
              fitness = None;} |> Result.Ok
 
-    let toEvaluated (pm:SorterPoolMember2) (fitnessFunc:FitnessFunc) 
+    let toEvaluated (pm:SorterPoolMember) (fitnessFunc:FitnessFunc) 
                     (fitnessFuncParam:FitnessFuncParam) =
         match pm.poolMemberState with
         | Legacy | Measured | Evaluated ->
-            {SorterPoolMember2.id = pm.id;
+            {SorterPoolMember.id = pm.id;
              poolMemberState = PoolMemberState.Evaluated;
              birthDate = pm.birthDate;
              parent = pm.parent;
@@ -410,16 +266,26 @@ module SorterPoolMember2 =
         | Archived -> "cannot convert Archived to Evaluated" |> Result.Error
 
 
-    let toLegacy (pm:SorterPoolMember2) 
+    let toLegacy (pm:SorterPoolMember) 
                  (rank:PoolMemberRank) =
 
         match pm.poolMemberState with
         | Evaluated -> 
             match (getParentId pm) with
-                 | None -> "parent id needed in toLegacy" |> Result.Error
+                 | None ->
+                     {
+                         SorterPoolMember.id = pm.id;
+                          poolMemberState=PoolMemberState.Legacy;
+                          birthDate=pm.birthDate;
+                          parent = None;
+                          sorter=pm.sorter;
+                          poolMemberRank=Some rank;
+                          testResults=pm.testResults;
+                          fitness=pm.fitness;
+                      } |> Result.Ok
                  | Some guey ->
                     {
-                        SorterPoolMember2.id = pm.id;
+                        SorterPoolMember.id = pm.id;
                          poolMemberState=PoolMemberState.Legacy;
                          birthDate=pm.birthDate;
                          parent = Some (SorterPoolMemberRef.I guey);
@@ -437,7 +303,7 @@ module SorterPoolMember2 =
 
     let parentReportHeader = [|"parentId"; "parentBirthdate"; "parentRank"; "parentFitness";|]
 
-    let reportParent (spm:SorterPoolMember2) =
+    let reportParent (spm:SorterPoolMember) =
         let yab = match spm.parent with
                   | Some r -> 
                     match r with
@@ -459,7 +325,7 @@ module SorterPoolMember2 =
                         |> Array.append [|"sorter_id"; "birthdate"; "rank"; "fitness"|]
 
 
-    let report (spm:SorterPoolMember2) =
+    let report (spm:SorterPoolMember) =
           (SorterTestResults.reportOpt (spm.testResults))
           |> Array.append (reportParent (spm))
           |> Array.append [|(sprintf "%A" spm.id); 
@@ -603,7 +469,7 @@ module SorterMutationDto =
 
 
 
-type PS = private PS of (SorterPoolMember2[] -> SorterPoolMember2[])
+type PS = private PS of (SorterPoolMember[] -> SorterPoolMember[])
 module PS =
     let create ff = (PS ff)
     let value (PS ff) = ff
@@ -615,11 +481,11 @@ type PoolSelectorCat =
 type PoolSelector2 = {cat:PoolSelectorCat; func:PS}
 module PoolSelector2 =
     let standard (poolFraction:PoolFraction) =
-        let ss = fun (sorterPoolMembers:SorterPoolMember2[]) ->
+        let ss = fun (sorterPoolMembers:SorterPoolMember[]) ->
                    let fractionCount = PoolFraction.boundedMultiply poolFraction sorterPoolMembers.Length
                    sorterPoolMembers
                    |> Array.map(fun w ->
-                       (w, (SorterFitness.value ((SorterPoolMember2.getFitness w) |> Result.ExtractOrThrow ))))
+                       (w, (SorterFitness.value ((SorterPoolMember.getFitness w) |> Result.ExtractOrThrow ))))
                    |> Array.sortByDescending(snd)
                    |> Array.map(fst)
                    |> Array.take(fractionCount)

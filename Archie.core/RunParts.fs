@@ -2,20 +2,6 @@
 open Microsoft.FSharp.Collections
 open System
 
-type PoolUpdateParamsBnW = 
-    {
-        id:Guid;
-        breederFrac:PoolFraction;
-        fitnessFunc:FitnessFunc;
-        runLength:GenerationNumber;
-        legacyBias:SorterFitness;
-        mutationType:SorterMutationType;
-        poolCount:SorterCount;
-        rngType:RngType;
-        winnerFrac:PoolFraction;
-    }
-
-
 module ParamUtils =
     let SplitPoolGenBnWFrac (poolSize:int) (dex:int) =
         match (dex % 6) with
@@ -67,6 +53,20 @@ module ParamUtils =
           | 1 -> (PoolGenCount.value poolGenCount) / 2, SorterCount.fromInt 2, SorterMutationType.Stage (MutationRate.fromFloat 0.10)
           | _ -> (PoolGenCount.value poolGenCount) / 2, SorterCount.fromInt 2, SorterMutationType.Stage (MutationRate.fromFloat 0.08)
 
+
+
+type PoolUpdateParamsBnW = 
+    {
+        id:Guid;
+        breederFrac:PoolFraction;
+        fitnessFunc:FitnessFunc;
+        runLength:GenerationNumber;
+        legacyBias:SorterFitness;
+        mutationType:SorterMutationType;
+        poolCount:SorterCount;
+        rngType:RngType;
+        winnerFrac:PoolFraction;
+    }
 
 module PoolUpdateParamsBnW =
 
